@@ -1,20 +1,20 @@
 # What is the Dataverse Browser?
 
 It's a browser which allows a Dataverse developer to:
-* Debug in live plugins
+* Debug plugins in live (while navigating on a Model Driven App)
 * Test plugins without having to deploy them. This speed ups developments and enable coauthoring on plugin assemblies.
-* Analyze in real time what plugins are triggerred, which is particularly useful when you have plugins triggerring other plugins.
+* Analyze in real time what plugins are triggerred. This is particularly useful when you have plugins triggerring other plugins.
 
 
 # How does it work?
 
-The application embeds a web browser based on Chromium (thanks to [CEFSharp](https://cefsharp.github.io/)). It intercepts all web api requests and translates them to SDK requests. Then it analyzes if some plugin steps are registered on the message. If yes, it loads them and make them run locally. All real requests are sent to the Dataverse, so that the plugins are interacting with the real database.
+The application embeds a web browser based on Chromium (thanks to [CEFSharp](https://cefsharp.github.io/)). It intercepts all web api requests and translates them to SDK requests. Then it analyzes if some plugin steps are registered on the message. If yes, it loads them and make them run locally. All other requests are sent to the Dataverse, so that the plugins are interacting with the real database.
 
-For now, only create and update requests are properly translated. Other requests (other messages, custom api, batch, ...) should be implemented in not so far future.
-Please note that the chosen architecture has some limits which will probably never fixed:
+For now, only create and update requests are properly translated. Other requests (retrieve, delete, custom api, batch, ...) should be implemented in not too distant future.
+Please note that the chosen architecture has some limits which will probably never fixed by this project:
 * There is no support for transactions
 * When plugins are triggered because of a server side operation, they will not be run locally
-Supporting these uses case would need a totally different approach with more complex infrastructure.
+* For many reasons, behavior will never be perfectly similar to the one when plugins are executed on server side.
 
 # How to start?
 
@@ -31,7 +31,8 @@ You need:
 
 ## Let's go!
 The simplest way to test the Dataverse.Browser is to:
-* Download the last release
+* Download [the latest release](https://github.com/NicolasPrats/DvBrowser/releases)
+* Unzip the file in the folder of your choice
 * Run the **start.cmd** file. If you run directly the .exe file, it will work, but you will not be able to edit plugins without restarting the app.
 * Enter the settings of your environment:
   * A name meaningful for you
