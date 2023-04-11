@@ -278,10 +278,6 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\Downloads\AspNetWebStack-main\src\System.Net.Http.Formatting\System.Net.Http.Formatting.csproj">
-      <Project>{668e9021-ce84-49d9-98fb-df125a9fcdb0}</Project>
-      <Name>System.Net.Http.Formatting</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Dataverse.Plugin.Emulator\Dataverse.Plugin.Emulator.csproj">
       <Project>{b4c68a77-61d1-4cae-accf-bef999aa026e}</Project>
       <Name>Dataverse.Plugin.Emulator</Name>
