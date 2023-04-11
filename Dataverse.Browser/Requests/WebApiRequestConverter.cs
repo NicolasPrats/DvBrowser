@@ -131,14 +131,14 @@ namespace Dataverse.Browser.Requests
             }
 
 
-            MemoryStream dataStream = AddMissingLF(request);
-            using (var content = new StreamContent(dataStream))
-            {
-                content.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
-                MultipartMemoryStreamProvider read = content.ReadAsMultipartAsync().Result;
+            //MemoryStream dataStream = AddMissingLF(request);
+            //using (var content = new StreamContent(dataStream))
+            //{
+            //    content.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
+            //    MultipartMemoryStreamProvider read = content.ReadAsMultipartAsync().Result;
                 
-                read.Contents.First().ReadAsHttpRequestMessageAsync();
-            }
+            //    read.Contents.First().ReadAsHttpRequestMessageAsync();
+            //}
             throw new NotImplementedException("Batch requests are not implemented");
         }
 
