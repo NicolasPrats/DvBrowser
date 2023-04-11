@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -12,6 +13,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using CefSharp;
 using CefSharp.DevTools.CSS;
+using CefSharp.DevTools.Network;
 using Dataverse.Browser.Context;
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
@@ -36,7 +38,6 @@ namespace Dataverse.Browser.Requests
 
         internal InterceptedWebApiRequest ConvertToOrganizationRequest(IRequest request)
         {
-
             var url = new Uri(request.Url);
             var localPath = url.LocalPath;
             if (!localPath.StartsWith("/api/data/v9."))
@@ -135,11 +136,38 @@ namespace Dataverse.Browser.Requests
             using (var content = new StreamContent(dataStream))
             {
                 content.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
-                MultipartMemoryStreamProvider read = content.ReadAsMultipartAsync().Result;
-                
-                read.Contents.First().ReadAsHttpRequestMessageAsync();
+                MultipartMemoryStreamProvider provider = content.ReadAsMultipartAsync().Result;
+
+                //TODO changesets
+                foreach (var httpContent in provider.Contents)
+                {
+                    var data = httpContent.ReadAsByteArrayAsync().Result;
+                    IRequest webRequest = CreateWebRequestFromMimeMessage(data);
+                }
+
             }
             throw new NotImplementedException("Batch requests are not implemented");
+        }
+
+        private IRequest CreateWebRequestFromMimeMessage(byte[] data)
+        {
+            int index = Array.FindIndex(data, b => b == (byte)'\r');
+            if (index == -1)
+            {
+                throw new NotSupportedException("Unable to parse data, no \\r found!");
+            }
+            string firstLine = Encoding.UTF8.GetString(data, 0, index);
+            if (!firstLine.StartsWith("GET"))
+            {
+                throw new ApplicationException("Unable to parse first line: " + firstLine);
+               
+            }
+            string url = firstLine.Substring(4);
+            if (url.EndsWith("HTTP/1.1"))
+            {
+                url = url.Substring(0, url.Length - 8);
+            }
+            //TODO : simplified request ?
         }
 
         private static MemoryStream AddMissingLF(IRequest request)
