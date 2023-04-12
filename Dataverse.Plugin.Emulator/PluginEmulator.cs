@@ -73,7 +73,7 @@ namespace Dataverse.Plugin.Emulator.Steps
             {
 
                 if (step.Contains("configuration")
-                    || step.Contains("impersonatinguserid")
+                    || (step.Contains("impersonatinguserid") && step.GetAttributeValue<EntityReference>("impersonatinguserid").Id != Guid.Empty)
                     || step.Contains("sdkmessageprocessingstepsecureconfigid"))
                 {
                     throw new NotImplementedException();
