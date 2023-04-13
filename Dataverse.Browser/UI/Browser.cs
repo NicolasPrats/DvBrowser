@@ -46,7 +46,7 @@ namespace Dataverse.Browser.UI
             var browser = new ChromiumWebBrowser("https://" + context.Host)
             {
                 RequestHandler = new BrowserRequestHandler(context),
-                
+
             };
             this.splitContainer1.Panel1.Controls.Add(browser);
             this.CurrentBrowser = browser;
@@ -60,7 +60,7 @@ namespace Dataverse.Browser.UI
             context.LastRequests.OnNewRequestIntercepted += LastRequests_OnNewRequestIntercepted;
             context.LastRequests.OnHistoryCleared += LastRequests_OnHistoryCleared;
             context.LastRequests.OnRequestUpdated += LastRequests_OnRequestUpdated;
-            
+
         }
 
         private void LastRequests_OnRequestUpdated(object sender, InterceptedWebApiRequest e)
@@ -78,6 +78,10 @@ namespace Dataverse.Browser.UI
             }
             if (this.Nodes.TryGetValue(request, out var node))
             {
+                if (request.ExecuteException != null)
+                {
+                    node.ToolTipText = request.ExecuteException.Message;
+                }
                 BuildTree(node, request.ExecutionTreeRoot);
                 if (request.ExecuteException != null)
                 {
@@ -122,14 +126,11 @@ namespace Dataverse.Browser.UI
                 index = request.ExecuteException == null ? Icons.RequestAnalyzed : Icons.RequestNotAnalyzed;
             }
             TreeNode node = new TreeNode(request.Method?.ToUpperInvariant() + " " + request.Url, (int)index, (int)index);
-            if (request.ConvertedRequest == null)
+            if (request.ConvertFailureMessage != null)
             {
                 node.ToolTipText = request.ConvertFailureMessage;
             }
-            else
-            {
-                this.Nodes[request] = node;
-            }
+            this.Nodes[request] = node;
 
             treeView1.Nodes.Add(node);
         }
@@ -138,6 +139,7 @@ namespace Dataverse.Browser.UI
         {
             if (executionTreeNode == null)
                 return;
+            parentNode.Nodes.Clear();
             TreeNode newNode = new TreeNode(executionTreeNode.Title);
             switch (executionTreeNode.Type)
             {

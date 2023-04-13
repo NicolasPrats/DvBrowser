@@ -129,7 +129,7 @@ namespace Dataverse.Browser.Requests.Converter
                         }
                         ConvertToCreateUpdateRequest(request, webApiRequest, path);
                         break;
-                    case "GETX":
+                    case "GET":
                         switch (path.Count)
                         {
                             case 1:
