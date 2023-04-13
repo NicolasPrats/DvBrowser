@@ -15,29 +15,20 @@ using Dataverse.Browser.Context;
 
 namespace Dataverse.Browser.Requests
 {
-    internal class WebApiResourceRequestHandler<T,U>
+    internal class WebApiResourceRequestHandler
         : CefSharp.Handler.ResourceRequestHandler
-        where T : OrganizationRequest
-        where U : BaseResourceHandler<T>, new()
     {
         protected DataverseContext Context { get; }
         public InterceptedWebApiRequest WebApiRequest { get; }
-        private T Request { get; }
-        public WebApiResourceRequestHandler(DataverseContext context, InterceptedWebApiRequest webApiRequest, T request)
+        public WebApiResourceRequestHandler(DataverseContext context, InterceptedWebApiRequest webApiRequest)
         {
             this.Context = context ?? throw new ArgumentNullException(nameof(context));
             this.WebApiRequest = webApiRequest ?? throw new ArgumentNullException(nameof(webApiRequest));
-            this.Request = request ?? throw new ArgumentNullException(nameof(request));
         }
 
         protected override IResourceHandler GetResourceHandler(IWebBrowser chromiumWebBrowser, IBrowser browser, IFrame frame, IRequest request)
         {
-            return new U()
-            {
-                Context = this.Context,
-                Request = this.Request,
-                WebApiRequest = this.WebApiRequest
-            };
+            return new WebApiResourceHandler(this.Context, this.WebApiRequest);
         }
     }
 

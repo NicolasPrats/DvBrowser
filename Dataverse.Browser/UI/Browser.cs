@@ -46,6 +46,7 @@ namespace Dataverse.Browser.UI
             var browser = new ChromiumWebBrowser("https://" + context.Host)
             {
                 RequestHandler = new BrowserRequestHandler(context),
+                
             };
             this.splitContainer1.Panel1.Controls.Add(browser);
             this.CurrentBrowser = browser;

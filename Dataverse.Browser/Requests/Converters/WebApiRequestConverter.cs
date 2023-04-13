@@ -1,28 +1,35 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.DirectoryServices.ActiveDirectory;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Formatting;
 using System.Net.Http.Headers;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 using System.Xml;
 using CefSharp;
 using CefSharp.DevTools.CSS;
+using CefSharp.DevTools.IndexedDB;
 using CefSharp.DevTools.Network;
 using Dataverse.Browser.Context;
+using Dataverse.Browser.Requests.SimpleClasses;
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Messages;
 using Microsoft.Xrm.Sdk.Metadata;
+using Microsoft.Xrm.Sdk.Query;
 using Microsoft.Xrm.Tooling.Connector;
+using static System.Net.WebRequestMethods;
 
-namespace Dataverse.Browser.Requests
+namespace Dataverse.Browser.Requests.Converter
 {
     internal class WebApiRequestConverter
 
@@ -36,22 +43,48 @@ namespace Dataverse.Browser.Requests
 
         }
 
-        internal InterceptedWebApiRequest ConvertToOrganizationRequest(IRequest request)
+        internal InterceptedWebApiRequest ConvertUnknowRequestToOrganizationRequest(IRequest request)
         {
             var url = new Uri(request.Url);
             var localPath = url.LocalPath;
             if (!localPath.StartsWith("/api/data/v9."))
                 return null;
+            SimpleHttpRequest simplifiedRequest;
+            try
+            {
+                simplifiedRequest = new SimpleHttpRequest(request, localPath);
+            }
+            catch (Exception ex)
+            {
+                return new InterceptedWebApiRequest()
+                {
+                    Url = localPath,
+                    ConvertFailureMessage = ex.Message,
+                    ExecuteException = ex
+                };
+            }
+            return ConvertDataApiSimplifiedRequestToOrganizationRequest(simplifiedRequest);
+        }
+
+        private InterceptedWebApiRequest ConvertUnknowSimplifiedRequestToOrganizationRequest(SimpleHttpRequest request)
+        {
+            if (!request.LocalPath.StartsWith("/api/data/v9."))
+                return null;
+            return ConvertDataApiSimplifiedRequestToOrganizationRequest(request);
+        }
+
+        private InterceptedWebApiRequest ConvertDataApiSimplifiedRequestToOrganizationRequest(SimpleHttpRequest request)
+        {
             InterceptedWebApiRequest webApiRequest = new InterceptedWebApiRequest()
             {
-                Url = localPath,
+                Url = request.LocalPath,
                 Method = request.Method
             };
             ODataUriParser parser;
             ODataPath path;
             try
             {
-                parser = new ODataUriParser(this.Context.Model, new Uri(localPath.Substring(15), UriKind.Relative));
+                parser = new ODataUriParser(this.Context.Model, new Uri(request.LocalPath.Substring(15), UriKind.Relative));
                 path = parser.ParsePath();
             }
             catch (Exception ex)
@@ -59,14 +92,9 @@ namespace Dataverse.Browser.Requests
                 webApiRequest.ConvertFailureMessage = "Unable to parse: " + ex.Message;
                 return webApiRequest;
             }
-            return ConvertToOrganizationRequest(new SimplifiedHttpRequest(request), webApiRequest, path);
-        }
-
-        private InterceptedWebApiRequest ConvertToOrganizationRequest(SimplifiedHttpRequest simplifiedRequest, InterceptedWebApiRequest webApiRequest, ODataPath path)
-        {
             try
             {
-                switch (simplifiedRequest.Method)
+                switch (request.Method)
                 {
                     case "POST":
                         if (path.Count != 1)
@@ -75,15 +103,15 @@ namespace Dataverse.Browser.Requests
                         }
                         if (path.FirstSegment.EdmType?.TypeKind == EdmTypeKind.Collection)
                         {
-                            ConvertToCreateUpdateRequest(simplifiedRequest, webApiRequest, path);
+                            ConvertToCreateUpdateRequest(request, webApiRequest, path);
                         }
                         else if (path.FirstSegment.Identifier == "$batch")
                         {
-                            if (simplifiedRequest.OriginRequest == null)
+                            if (request.OriginRequest == null)
                             {
                                 throw new NotSupportedException("batch requests embedded in another batch request are not supported!");
                             }
-                            ConvertToExecuteMultipleRequest(simplifiedRequest, webApiRequest);
+                            ConvertToExecuteMultipleRequest(request, webApiRequest);
                         }
                         else
                         {
@@ -99,7 +127,19 @@ namespace Dataverse.Browser.Requests
                         {
                             throw new NotImplementedException("PATCH is not implemented for: " + path.FirstSegment.EdmType?.TypeKind);
                         }
-                        ConvertToCreateUpdateRequest(simplifiedRequest, webApiRequest, path);
+                        ConvertToCreateUpdateRequest(request, webApiRequest, path);
+                        break;
+                    case "GETX":
+                        switch (path.Count)
+                        {
+                            case 1:
+                                throw new NotImplementedException("Retrievemultiple are not implemented");
+                            case 2:
+                                ConvertToRetrieveRequest(request, webApiRequest, path);
+                                break;
+                            default:
+                                throw new NotSupportedException("Unexpected number of segments:" + path.Count);
+                        }
                         break;
                     default:
                         webApiRequest.ConvertFailureMessage = "method not implemented";
@@ -113,7 +153,53 @@ namespace Dataverse.Browser.Requests
             return webApiRequest;
         }
 
-        private void ConvertToCreateUpdateRequest(SimplifiedHttpRequest request, InterceptedWebApiRequest webApiRequest, ODataPath path)
+        private void ConvertToRetrieveRequest(SimpleHttpRequest request, InterceptedWebApiRequest webApiRequest, ODataPath path)
+        {
+            var entitySegment = path.FirstSegment as EntitySetSegment ?? throw new NotSupportedException("First segment should not be of type: " + path.FirstSegment.EdmType);
+            var keySegment = path.LastSegment as KeySegment ?? throw new NotSupportedException("First segment should not be of type: " + path.FirstSegment.EdmType);
+            var entity = this.Context.MetadataCache.GetEntityFromSetName(entitySegment.Identifier);
+            if (entity == null)
+            {
+                throw new ApplicationException("Entity not found: " + entity);
+            }
+            var id = GetIdFromKeySegment(keySegment);
+
+            RetrieveRequest retrieveRequest = new RetrieveRequest
+            {
+                Target = new EntityReference(entity.LogicalName, id),
+                ColumnSet = GetColumnSet(request, entity)
+            };
+            webApiRequest.ConvertedRequest = retrieveRequest;
+        }
+
+        private ColumnSet GetColumnSet(SimpleHttpRequest request, EntityMetadata entity)
+        {
+            int index = request.LocalPath.IndexOf("?");
+            if (index == -1 || index == request.LocalPath.Length - 1)
+                return new ColumnSet(true);
+            var parsedQuery = new FormDataCollection(request.LocalPath.Substring(index + 1));
+            string[] columnList = null;
+            foreach (var kvp in parsedQuery)
+            {
+                if (kvp.Key != "$select")
+                    throw new NotImplementedException("Query not supported:" + kvp.Key);
+                columnList = kvp.Value.Split(',');
+            }
+            if (columnList == null)
+            {
+                return new ColumnSet(true);
+            }
+            var columnSet = new ColumnSet();
+            var entityMetadata = this.Context.MetadataCache.GetEntityMetadataWithAttributes(entity.LogicalName);
+            foreach (var column in columnList)
+            {
+                var attributeMetadata = entityMetadata.Attributes.FirstOrDefault(a => a.LogicalName == column) ?? throw new ApplicationException("attribute not found:" + column);
+                columnSet.AddColumn(attributeMetadata.LogicalName);
+            }
+            return columnSet;
+        }
+
+        private void ConvertToCreateUpdateRequest(SimpleHttpRequest request, InterceptedWebApiRequest webApiRequest, ODataPath path)
         {
             var entity = this.Context.MetadataCache.GetEntityFromSetName(path.FirstSegment.Identifier);
             if (entity == null)
@@ -129,7 +215,7 @@ namespace Dataverse.Browser.Requests
             webApiRequest.ConvertedRequest = ConvertToCreateUpdateRequest(keySegment, request, webApiRequest, entity.LogicalName);
         }
 
-        private OrganizationRequest ConvertToExecuteMultipleRequest(SimplifiedHttpRequest request, InterceptedWebApiRequest webApiRequest)
+        private OrganizationRequest ConvertToExecuteMultipleRequest(SimpleHttpRequest request, InterceptedWebApiRequest webApiRequest)
         {
             var originRequest = request.OriginRequest;
             string contentType = originRequest.Headers["Content-Type"];
@@ -144,22 +230,35 @@ namespace Dataverse.Browser.Requests
             using (var content = new StreamContent(dataStream))
             {
                 //TODO support des changesets
+                //TODO support des continue on error
                 content.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
+
                 MultipartMemoryStreamProvider provider = content.ReadAsMultipartAsync().Result;
 
                 //TODO changesets
                 foreach (var httpContent in provider.Contents)
                 {
                     var data = httpContent.ReadAsByteArrayAsync().Result;
-                    IRequest webRequest = CreateWebRequestFromMimeMessage(data);
+                    var innerRequest = CreateSimplifiedRequestFromMimeMessage(data);
+                    var convertedRequest = this.ConvertUnknowSimplifiedRequestToOrganizationRequest(innerRequest);
+                    if (convertedRequest.ConvertedRequest != null)
+                    {
+                        executeMultipleRequest.Requests.Add(convertedRequest.ConvertedRequest);
+                    }
+                    else
+                    {
+                        webApiRequest.ConvertFailureMessage = convertedRequest.ConvertFailureMessage;
+                        throw new NotSupportedException("One inner request could not be converted");
+                    }
                 }
 
             }
-            throw new NotImplementedException("Batch requests are not implemented");
+            return executeMultipleRequest;
         }
 
-        private IRequest CreateWebRequestFromMimeMessage(byte[] data)
+        private SimpleHttpRequest CreateSimplifiedRequestFromMimeMessage(byte[] data)
         {
+            var request = new SimpleHttpRequest();
             int index = Array.FindIndex(data, b => b == (byte)'\r');
             if (index == -1)
             {
@@ -169,14 +268,17 @@ namespace Dataverse.Browser.Requests
             if (!firstLine.StartsWith("GET"))
             {
                 throw new ApplicationException("Unable to parse first line: " + firstLine);
-               
+
             }
             string url = firstLine.Substring(4);
             if (url.EndsWith("HTTP/1.1"))
             {
                 url = url.Substring(0, url.Length - 8);
             }
-            //TODO : simplified request ?
+            request.Method = "GET";
+            request.LocalPath = url;
+            //TODO : body and headers
+            return request;
         }
 
         private static MemoryStream AddMissingLF(IRequest request)
@@ -206,7 +308,7 @@ namespace Dataverse.Browser.Requests
             return dataStream;
         }
 
-        private OrganizationRequest ConvertToCreateUpdateRequest(KeySegment keySegment, SimplifiedHttpRequest request, InterceptedWebApiRequest webApiRequest, string entityLogicalName)
+        private OrganizationRequest ConvertToCreateUpdateRequest(KeySegment keySegment, SimpleHttpRequest request, InterceptedWebApiRequest webApiRequest, string entityLogicalName)
         {
             string body = request.Body ?? throw new NotSupportedException("A body was expected!");
             webApiRequest.Body = body;
@@ -233,16 +335,7 @@ namespace Dataverse.Browser.Requests
                 {
                     Target = record
                 };
-                if (keySegment.Keys.Count() != 1)
-                {
-                    throw new NotImplementedException("Alternate key not supported");
-                }
-                var key = keySegment.Keys.First();
-                if (!(key.Value is Guid))
-                {
-                    throw new NotImplementedException("Alternate key not supported");
-                }
-                record.Id = (Guid)key.Value;
+                record.Id = GetIdFromKeySegment(keySegment); ;
             }
 
             using (JsonDocument json = JsonDocument.Parse(body))
@@ -272,6 +365,21 @@ namespace Dataverse.Browser.Requests
             }
 
             return request;
+        }
+
+        private static Guid GetIdFromKeySegment(KeySegment keySegment)
+        {
+            if (keySegment.Keys.Count() != 1)
+            {
+                throw new NotImplementedException("Alternate key not supported");
+            }
+            var key = keySegment.Keys.First();
+            if (!(key.Value is Guid))
+            {
+                throw new NotImplementedException("Alternate key not supported");
+            }
+            var id = (Guid)key.Value;
+            return id;
         }
 
         private object ConvertValueToAttribute(string entityLogicalName, string key, JsonElement value)
