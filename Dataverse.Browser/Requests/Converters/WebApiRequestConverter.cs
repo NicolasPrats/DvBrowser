@@ -59,7 +59,7 @@ namespace Dataverse.Browser.Requests.Converter
             {
                 return new InterceptedWebApiRequest()
                 {
-                    SimpleHttpRequest = new SimpleHttpRequest() {LocalPathWithQuery = localPathWithQuery },
+                    SimpleHttpRequest = new SimpleHttpRequest() {LocalPathWithQuery = localPathWithQuery , Method = request.Method },
                     ConvertFailureMessage = ex.Message,
                     ExecuteException = ex
                 };
@@ -251,14 +251,17 @@ namespace Dataverse.Browser.Requests.Converter
                     var data = httpContent.ReadAsByteArrayAsync().Result;
                     var innerRequest = CreateSimplifiedRequestFromMimeMessage(data);
                     var convertedRequest = this.ConvertUnknowSimplifiedRequestToOrganizationRequest(innerRequest);
+                    if (convertedRequest == null)
+                    {
+                        throw new NotSupportedException("Only web api requests are supported!");
+                    } else
                     if (convertedRequest.ConvertedRequest != null)
                     {
                         executeMultipleRequest.Requests.Add(convertedRequest.ConvertedRequest);
                     }
                     else
                     {
-                        webApiRequest.ConvertFailureMessage = convertedRequest.ConvertFailureMessage;
-                        throw new NotSupportedException("One inner request could not be converted");
+                        throw new NotSupportedException("One inner request could not be converted:" + convertedRequest.ConvertFailureMessage);
                     }
                 }
 
