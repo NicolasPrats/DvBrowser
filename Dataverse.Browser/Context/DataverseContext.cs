@@ -35,6 +35,7 @@ namespace Dataverse.Browser.Context
         public string WebApiBaseUrl => $"https://{this.Host}/api/data/v9.2/";
 
         public IEdmModel Model { get; internal set; }
+        public bool IsEnabled { get; set; } = true;
 
       
     }

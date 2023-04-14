@@ -31,7 +31,7 @@ namespace Dataverse.Browser.Requests
                 return null;
             }
             this.Context.LastRequests.AddRequest(webApiRequest);
-            if (webApiRequest.ConvertedRequest == null)
+            if (webApiRequest.ConvertedRequest == null || this.Context.IsEnabled)
             {
                 return null;
             }

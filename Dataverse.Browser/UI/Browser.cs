@@ -125,7 +125,7 @@ namespace Dataverse.Browser.UI
             {
                 index = request.ExecuteException == null ? Icons.RequestAnalyzed : Icons.RequestNotAnalyzed;
             }
-            TreeNode node = new TreeNode(request.Method?.ToUpperInvariant() + " " + request.Url, (int)index, (int)index);
+            TreeNode node = new TreeNode(request.SimpleHttpRequest.Method?.ToUpperInvariant() + " " + request.SimpleHttpRequest.LocalPathWithQuery, (int)index, (int)index);
             if (request.ConvertFailureMessage != null)
             {
                 node.ToolTipText = request.ConvertFailureMessage;
@@ -188,6 +188,11 @@ namespace Dataverse.Browser.UI
                 MessageBox.Show("Debugger is attached. You can add relevant breakpoints in your plugins code");
             }
 
+        }
+
+        private void cbEnabled_CheckedChanged(object sender, EventArgs e)
+        {
+            this.DataverseContext.IsEnabled = cbEnabled.Checked;
         }
     }
 }

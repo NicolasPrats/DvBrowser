@@ -10,7 +10,7 @@ namespace Dataverse.Browser.Requests.SimpleClasses
     internal class SimpleHttpRequest
     {
         public string Method { get; set; }
-        public string LocalPath { get; set; }
+        public string LocalPathWithQuery { get; set; }
         public string Body { get; set; }
         public IRequest OriginRequest { get;  }
 
@@ -26,7 +26,7 @@ namespace Dataverse.Browser.Requests.SimpleClasses
             }
             this.OriginRequest = request;
             this.Method = request.Method;
-            this.LocalPath = localPath;
+            this.LocalPathWithQuery = localPath;
             this.Body = ExtractRequestBody(request);
         }
 
