@@ -54,9 +54,7 @@ namespace Dataverse.Browser
             if (selectedEnvironment == null)
                 return;
 
-            TraceControlSettings.TraceLevel = SourceLevels.All;
-            TraceControlSettings.AddTraceListener(new TextWriterTraceListener(Path.Combine(ContextFactory.GetCachePath(selectedEnvironment.DataverseHost), "log.txt")));
-            DataverseContext context = ContextFactory.CreateContext(selectedEnvironment);
+            DataverseContext context = (new ContextFactory(selectedEnvironment)).CreateContext();
 
             //var record = new Entity("quote", new Guid("39a0477a-c2d3-ed11-a7c6-0022489bad9d"));
             //record["statecode"] = new OptionSetValue(2);

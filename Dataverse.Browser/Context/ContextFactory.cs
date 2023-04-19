@@ -12,19 +12,33 @@ using Microsoft.Xrm.Tooling.Connector;
 using System.Xml;
 using Microsoft.Xrm.Sdk;
 using Dataverse.Browser.Configuration;
+using System.Diagnostics;
 
 namespace Dataverse.Browser.Context
 {
-    internal static class ContextFactory
+    internal class ContextFactory
     {
-        public static DataverseContext CreateContext(Configuration.EnvironnementConfiguration selectedEnvironment)
+
+        public ContextFactory(EnvironnementConfiguration selectedEnvironment)
         {
-            string connectionString = ContextFactory.GetConnectionString(selectedEnvironment.DataverseHost);
+            this.SelectedEnvironment = selectedEnvironment ?? throw new ArgumentNullException(nameof(selectedEnvironment));
+        }
+
+        public EnvironnementConfiguration SelectedEnvironment { get; }
+
+        public DataverseContext CreateContext()
+        {
+
+            TraceControlSettings.TraceLevel = SourceLevels.All;
+            TraceControlSettings.AddTraceListener(new TextWriterTraceListener(Path.Combine(this.GetCachePath(), "log.txt")));
+
+
+            string connectionString = this.GetConnectionString(false);
             var client = new CrmServiceClient(connectionString);
             if (!client.IsReady)
             {
                 //Le auto ne semble par marcher tout le temps
-                var tmpConnectionString = ContextFactory.GetConnectionString(selectedEnvironment.DataverseHost, true);
+                var tmpConnectionString = this.GetConnectionString( true);
                 client = new CrmServiceClient(tmpConnectionString);
             }
 
@@ -33,12 +47,12 @@ namespace Dataverse.Browser.Context
                 throw new ApplicationException("Not connected to dataverse", client.LastCrmException);
             }
 
-            var emulator = ContextFactory.InitializePluginEmulator(selectedEnvironment, connectionString);
+            var emulator = this.InitializePluginEmulator(this.SelectedEnvironment, connectionString);
             DataverseContext context = new DataverseContext
             {
-                Host = selectedEnvironment.DataverseHost,
+                Host = this.SelectedEnvironment.DataverseHost,
                 ConnectionString = connectionString,
-                CachePath = ContextFactory.GetCachePath(selectedEnvironment.DataverseHost),
+                CachePath = this.GetCachePath(),
                 CrmServiceClient = client,
                 HttpClient = new System.Net.Http.HttpClient(),
                 MetadataCache = new MetadataCache(client),
@@ -57,17 +71,34 @@ namespace Dataverse.Browser.Context
             return context;
         }
 
-        public static string GetCachePath(string hostname)
+        public string GetCachePath()
         {
-            string cachePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Dataverse.Browser", hostname);
+            string hostname = this.SelectedEnvironment.DataverseHost;
+            StringBuilder directoryNameBuilder = new StringBuilder();
+            directoryNameBuilder.Append(this.SelectedEnvironment.Id).Append("-");
+            var invalidChars = Path.GetInvalidFileNameChars(); ;
+            foreach (var c in hostname)
+            {
+                if (!invalidChars.Contains(c))
+                {
+                    directoryNameBuilder.Append(c);
+                }
+                else
+                {
+                    directoryNameBuilder.Append(Convert.ToByte(c).ToString("x2"));
+                }
+            }
+            string cachePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Dataverse.Browser", directoryNameBuilder.ToString());
             if (!Directory.Exists(cachePath))
                 Directory.CreateDirectory(cachePath);
             return cachePath;
         }
-        private static string GetConnectionString(string host, bool forceLogin = false)
+
+        private string GetConnectionString(bool forceLogin)
         {
+            string hostname = this.SelectedEnvironment.DataverseHost;
             string loginPrompt = "Auto";
-            string tokenPath = Path.Combine(ContextFactory.GetCachePath(host), "token.dat");
+            string tokenPath = Path.Combine( "token.dat");
             if (forceLogin)
             {
                 loginPrompt = "Always";
@@ -76,9 +107,10 @@ namespace Dataverse.Browser.Context
                     File.Delete(tokenPath);
                 }
             }
-            return $"AuthType=OAuth;Url=https://{host};AppId=51f81489-12ee-4a9e-aaae-a2591f45987d;RedirectUri=app://58145B91-0C36-4500-8554-080854F2AC97;TokenCacheStorePath={tokenPath};LoginPrompt={loginPrompt};RequireNewInstance=true;";
+            return $"AuthType=OAuth;Url=https://{hostname};AppId=51f81489-12ee-4a9e-aaae-a2591f45987d;RedirectUri=app://58145B91-0C36-4500-8554-080854F2AC97;TokenCacheStorePath={tokenPath};LoginPrompt={loginPrompt};RequireNewInstance=true;";
         }
-        private static PluginEmulator InitializePluginEmulator(EnvironnementConfiguration environnementConfiguration, string connectionString)
+
+        private PluginEmulator InitializePluginEmulator(EnvironnementConfiguration environnementConfiguration, string connectionString)
         {
             var emulator = new PluginEmulator((callerId) =>
             {

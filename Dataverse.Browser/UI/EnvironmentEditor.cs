@@ -49,6 +49,10 @@ namespace Dataverse.Browser.UI
             this.SelectedEnvironment.PluginAssemblies = new string[] { assemblyPath };
 
             this.SelectedEnvironment.DataverseHost = hostName;
+            if (this.SelectedEnvironment.Id == Guid.Empty)//Environments created in first versions don't have an ID.
+            {
+                this.SelectedEnvironment.Id = Guid.NewGuid();
+            }
             this.Close();
         }
 

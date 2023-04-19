@@ -12,5 +12,6 @@ namespace Dataverse.Browser.Configuration
         public string DataverseHost { get; set; }
         public string[] PluginAssemblies { get; set; }
         public StepBehavior StepBehavior { get; set; }
+        public Guid Id {get; set; }
     }
 }
