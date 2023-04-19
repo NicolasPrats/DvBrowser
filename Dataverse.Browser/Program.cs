@@ -38,7 +38,12 @@ namespace Dataverse.Browser
             Application.SetCompatibleTextRenderingDefault(false);
 
 
-          
+            var appDataPath = ConfigurationManager.GetApplicationDataPath();
+            if (!Directory.Exists(appDataPath))
+            {
+                Directory.CreateDirectory(appDataPath);
+            }
+
             var configuration = ConfigurationManager.LoadConfiguration();
             EnvironnementConfiguration selectedEnvironment;
             using (var picker = new UI.EnvironmentPicker(configuration))
