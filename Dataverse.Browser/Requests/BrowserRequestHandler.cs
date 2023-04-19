@@ -7,6 +7,7 @@ using CefSharp;
 using Microsoft.Xrm.Sdk.Messages;
 using Dataverse.Plugin.Emulator;
 using Dataverse.Browser.Context;
+using Dataverse.Browser.Requests.Converter;
 
 namespace Dataverse.Browser.Requests
 {
@@ -24,28 +25,17 @@ namespace Dataverse.Browser.Requests
 
         protected override IResourceRequestHandler GetResourceRequestHandler(IWebBrowser chromiumWebBrowser, IBrowser browser, IFrame frame, IRequest request, bool isNavigation, bool isDownload, string requestInitiator, ref bool disableDefaultHandling)
         {
-            var webApiRequest = Converter.ConvertToOrganizationRequest(request);
+            var webApiRequest = Converter.ConvertUnknowRequestToOrganizationRequest(request);
             if (webApiRequest == null)
             {
                 return null;
             }
             this.Context.LastRequests.AddRequest(webApiRequest);
-            if (webApiRequest.ConvertedRequest == null)
+            if (webApiRequest.ConvertedRequest == null || !this.Context.IsEnabled)
             {
                 return null;
             }
-            switch (webApiRequest.ConvertedRequest)
-            {
-                case CreateRequest createRequest:
-                    //TODO headers
-                    // "prefer"
-                    //"mscrm.suppressduplicatedetection"
-                    return new WebApiResourceRequestHandler<CreateRequest, WebApiCreateResourceHandler>(this.Context, webApiRequest, createRequest);
-                    case UpdateRequest updateRequest:
-                    return new WebApiResourceRequestHandler<UpdateRequest, WebApiUpdateResourceHandler>(this.Context, webApiRequest, updateRequest);
-                default:
-                    return null;
-            }
+            return new WebApiResourceRequestHandler(this.Context, webApiRequest);
 
         }
     }

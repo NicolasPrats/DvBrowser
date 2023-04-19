@@ -98,8 +98,10 @@ namespace Dataverse.Browser
             {
                 CachePath = Path.Combine(context.CachePath, "browser"),
                 PersistSessionCookies = true,
-                LogFile = Path.Combine(context.CachePath, "cefdebug.log")
+                LogFile = Path.Combine(context.CachePath, "cefdebug.log"),
+                
             };
+
             Cef.Initialize(settings, performDependencyCheck: true, browserProcessHandler: null);
 
 

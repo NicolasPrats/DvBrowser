@@ -31,6 +31,7 @@
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Browser));
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
+            this.cbEnabled = new System.Windows.Forms.CheckBox();
             this.btnDebugger = new System.Windows.Forms.Button();
             this.btnClear = new System.Windows.Forms.Button();
             this.treeView1 = new System.Windows.Forms.TreeView();
@@ -50,6 +51,7 @@
             // 
             // splitContainer1.Panel2
             // 
+            this.splitContainer1.Panel2.Controls.Add(this.cbEnabled);
             this.splitContainer1.Panel2.Controls.Add(this.btnDebugger);
             this.splitContainer1.Panel2.Controls.Add(this.btnClear);
             this.splitContainer1.Panel2.Controls.Add(this.treeView1);
@@ -58,10 +60,24 @@
             this.splitContainer1.SplitterDistance = 531;
             this.splitContainer1.TabIndex = 1;
             // 
+            // cbEnabled
+            // 
+            this.cbEnabled.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.cbEnabled.AutoSize = true;
+            this.cbEnabled.Checked = true;
+            this.cbEnabled.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.cbEnabled.Location = new System.Drawing.Point(244, 12);
+            this.cbEnabled.Name = "cbEnabled";
+            this.cbEnabled.Size = new System.Drawing.Size(18, 17);
+            this.cbEnabled.TabIndex = 5;
+            this.toolTipButtons.SetToolTip(this.cbEnabled, "Are plugin run locally ?");
+            this.cbEnabled.UseVisualStyleBackColor = true;
+            this.cbEnabled.CheckedChanged += new System.EventHandler(this.cbEnabled_CheckedChanged);
+            // 
             // btnDebugger
             // 
             this.btnDebugger.Image = ((System.Drawing.Image)(resources.GetObject("btnDebugger.Image")));
-            this.btnDebugger.Location = new System.Drawing.Point(86, 5);
+            this.btnDebugger.Location = new System.Drawing.Point(49, 5);
             this.btnDebugger.Name = "btnDebugger";
             this.btnDebugger.Size = new System.Drawing.Size(31, 31);
             this.btnDebugger.TabIndex = 4;
@@ -71,8 +87,9 @@
             // 
             // btnClear
             // 
+            this.btnClear.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnClear.Image = ((System.Drawing.Image)(resources.GetObject("btnClear.Image")));
-            this.btnClear.Location = new System.Drawing.Point(49, 5);
+            this.btnClear.Location = new System.Drawing.Point(231, 416);
             this.btnClear.Name = "btnClear";
             this.btnClear.Size = new System.Drawing.Size(31, 31);
             this.btnClear.TabIndex = 3;
@@ -82,8 +99,8 @@
             // 
             // treeView1
             // 
-            this.treeView1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-            | System.Windows.Forms.AnchorStyles.Left)
+            this.treeView1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.treeView1.ImageIndex = 0;
             this.treeView1.ImageList = this.imageList1;
@@ -126,6 +143,7 @@
             this.Name = "Browser";
             this.Text = "Browser";
             this.splitContainer1.Panel2.ResumeLayout(false);
+            this.splitContainer1.Panel2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).EndInit();
             this.splitContainer1.ResumeLayout(false);
             this.ResumeLayout(false);
@@ -141,6 +159,7 @@
         private System.Windows.Forms.Button btnClear;
         private System.Windows.Forms.Button btnDebugger;
         private System.Windows.Forms.ToolTip toolTipButtons;
+        private System.Windows.Forms.CheckBox cbEnabled;
     }
 }
 

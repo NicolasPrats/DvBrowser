@@ -9,26 +9,29 @@ using System.Text.Encodings.Web;
 using System.Text;
 using Dataverse.Browser.Context;
 using Dataverse.Plugin.Emulator.ExecutionTree;
+using Dataverse.Browser.Requests.SimpleClasses;
+using Dataverse.Browser.Requests.Converters;
 
 namespace Dataverse.Browser.Requests
 {
-    internal abstract class BaseResourceHandler<T>
+    internal class WebApiResourceHandler
             : IResourceHandler
-         where T : OrganizationRequest
     {
 
         private bool IsAlreadyExecuted { get; set; }
         private Exception ExecuteException { get; set; }
-        protected byte[] ResultBody { get; set; }
-        protected NameValueCollection ResultHeaders { get; set; }
-        protected int ResultStatusCode { get; set; }
+        private SimpleHttpResponse HttpResponse { get; set; }
 
         private int TotalBytesRead { get; set; }
 
-        public DataverseContext Context { set; get; }
-        public T Request { set; get; }
-        public InterceptedWebApiRequest WebApiRequest { set; get; }
+        private DataverseContext Context { set; get; }
+        private InterceptedWebApiRequest WebApiRequest { set; get; }
 
+        public WebApiResourceHandler(DataverseContext context, InterceptedWebApiRequest webApiRequest = null)
+        {
+            this.Context = context;
+            this.WebApiRequest = webApiRequest;
+        }
 
         public void Cancel()
         {
@@ -44,12 +47,28 @@ namespace Dataverse.Browser.Requests
         {
             if (this.ExecuteException != null)
             {
-                //TODO faire en sorte que l'erreur soit bien remontée dans le navigateur
-                var errorText = JavaScriptEncoder.UnsafeRelaxedJsonEscaping.Encode(this.ExecuteException.Message);
-                var errorDetails = JavaScriptEncoder.UnsafeRelaxedJsonEscaping.Encode(this.ExecuteException.ToString());
-                this.ResultStatusCode = 400;
-                this.ResultBody = Encoding.UTF8.GetBytes(
- $@"{{
+                GenerateHttpResponseError();
+            }
+            var headers = this.HttpResponse.Headers;
+            if (headers == null)
+            {
+                responseLength = -1;
+                redirectUrl = null;
+                return;
+            }
+            response.StatusCode = this.HttpResponse.StatusCode;
+            response.Headers = headers;
+            responseLength = this.HttpResponse.Body.Length;
+            redirectUrl = null;
+        }
+
+        private void GenerateHttpResponseError()
+        {
+            var errorText = JavaScriptEncoder.UnsafeRelaxedJsonEscaping.Encode(this.ExecuteException.Message);
+            var errorDetails = JavaScriptEncoder.UnsafeRelaxedJsonEscaping.Encode(this.ExecuteException.ToString());
+
+            byte[] body = Encoding.UTF8.GetBytes(
+$@"{{
                 ""error"":
                     {{
                     ""code"":""0x80040265"",
@@ -58,32 +77,22 @@ namespace Dataverse.Browser.Requests
                     ""@Microsoft.PowerApps.CDS.InnerError"":""{errorText}"",
                     ""@Microsoft.PowerApps.CDS.TraceText"":""{errorDetails}""
                     }}
-                }}{new string(' ' , 100000)}");
-                //TODO : si le payload est trop petit, il n'est pas chargé en entier quand status code != 200
-                //problème de flush ? de header ?
-
-
-                this.ResultHeaders = new NameValueCollection()
+                }}{new string(' ', 100000)}");
+            //TODO : si le payload est trop petit, il n'est pas chargé en entier quand status code != 200
+            //problème de flush ? de header ?
+            this.HttpResponse = new SimpleHttpResponse()
+            {
+                StatusCode = 400,
+                Body = body,
+                Headers = new NameValueCollection()
                 {
                     { "OData-Version", "4.0" },
                     { "Content-Type", "application/json; odata.metadata = minimal" },
-                    { "Content-Length", this.ResultBody.Length.ToString() }
-                };
-                response.StatusText = "Error";
-            }
-            var headers = this.ResultHeaders;
-            if (headers == null)
-            {
-                responseLength = -1;
-                redirectUrl = null;
-                return;
-            }
-            response.StatusCode = this.ResultStatusCode;
-            response.Headers = headers;
-            responseLength = this.ResultBody.Length;
-            redirectUrl = null;
+                    { "Content-Length", body.Length.ToString() }
+                }
+            };
+            //response.StatusText = "Error";
         }
-
 
         public bool Open(IRequest request, out bool handleRequest, ICallback callback)
         {
@@ -103,12 +112,12 @@ namespace Dataverse.Browser.Requests
         {
             callback?.Dispose();
             InnerExecute();
-            int bytesToRead = ResultBody.Length - TotalBytesRead;
+            int bytesToRead = this.HttpResponse.Body.Length - TotalBytesRead;
             if (bytesToRead > dataOut.Length)
                 bytesToRead = (int)dataOut.Length;
-            dataOut.Write(ResultBody, TotalBytesRead, bytesToRead);
+            dataOut.Write(this.HttpResponse.Body, TotalBytesRead, bytesToRead);
             TotalBytesRead += bytesToRead;
-            if (TotalBytesRead == ResultBody.Length)
+            if (TotalBytesRead == this.HttpResponse.Body.Length)
             {
                 dataOut.Flush();
                 bytesRead = 0;
@@ -138,7 +147,8 @@ namespace Dataverse.Browser.Requests
             this.IsAlreadyExecuted = true;
             try
             {
-                this.Execute();
+                OrganizationResponse response = this.ExecuteWithTree();
+                this.HttpResponse = OrganizationResponseConverter.Convert(this.Context, this.WebApiRequest, response);
             }
             catch (Exception ex)
             {
@@ -152,11 +162,11 @@ namespace Dataverse.Browser.Requests
         protected OrganizationResponse ExecuteWithTree()
         {
             this.WebApiRequest.ExecutionTreeRoot = new ExecutionTreeNode();
-            var response = this.Context.ProxyForWeb.ExecuteWithTree(this.Request, this.WebApiRequest.ExecutionTreeRoot);
+            var response = this.Context.ProxyForWeb.ExecuteWithTree(this.WebApiRequest.ConvertedRequest, this.WebApiRequest.ExecutionTreeRoot);
             this.Context.LastRequests.TriggerUpdateRequest(this.WebApiRequest);
             return response;
         }
 
-        protected abstract void Execute();
+      
     }
 }
