@@ -1,26 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Net.Http;
-using System.ServiceModel.Description;
-using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Xml;
 using CefSharp;
-using CefSharp.DevTools.IO;
 using CefSharp.WinForms;
-using Microsoft.OData.Edm.Csdl;
-using Microsoft.OData.Edm;
-using Microsoft.Xrm.Sdk;
-using Microsoft.Xrm.Sdk.Client;
 using Microsoft.Xrm.Tooling.Connector;
-using Dataverse.Plugin.Emulator.Steps;
 using Dataverse.Browser.Context;
-using Dataverse.Browser.Properties;
-using Microsoft.Crm.Sdk.Messages;
-using Microsoft.Xrm.Sdk.Messages;
 using Dataverse.Browser.Configuration;
 
 namespace Dataverse.Browser
