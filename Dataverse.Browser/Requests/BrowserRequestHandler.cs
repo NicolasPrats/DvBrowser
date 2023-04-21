@@ -1,11 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using CefSharp;
-using Microsoft.Xrm.Sdk.Messages;
-using Dataverse.Plugin.Emulator;
 using Dataverse.Browser.Context;
 using Dataverse.Browser.Requests.Converter;
 

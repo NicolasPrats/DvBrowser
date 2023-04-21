@@ -24,7 +24,7 @@ namespace Dataverse.Plugin.Emulator.Services
             else
             {
                 this.CurrentExecutionTreeNode?.Trace.AppendLine(format);
-            }            
+            }
         }
     }
 }

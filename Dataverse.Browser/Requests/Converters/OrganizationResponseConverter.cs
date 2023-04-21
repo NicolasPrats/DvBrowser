@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Linq;
 using System.Net.Http;
-using System.Text;
-using System.Threading.Tasks;
 using Dataverse.Browser.Context;
 using Dataverse.Browser.Requests.SimpleClasses;
 using Microsoft.Xrm.Sdk;
@@ -18,7 +14,7 @@ namespace Dataverse.Browser.Requests.Converters
         {
             switch (response)
             {
-                case CreateResponse createResponse:                   
+                case CreateResponse createResponse:
                     return ConvertCreateResponse(context, (CreateRequest)webApiRequest.ConvertedRequest, createResponse);
                 case UpdateResponse _:
                     return ConvertUpdateResponse(context, (UpdateRequest)webApiRequest.ConvertedRequest);

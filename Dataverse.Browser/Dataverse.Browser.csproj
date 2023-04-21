@@ -197,6 +197,12 @@
     <Compile Include="Requests\Converters\OrganizationResponseConverter.cs" />
     <Compile Include="Requests\SimpleClasses\SimpleHttpResponse.cs" />
     <Compile Include="Requests\SimpleClasses\SimpleHttpRequest.cs" />
+    <Compile Include="UI\ContextSpinner.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\ContextSpinner.Designer.cs">
+      <DependentUpon>ContextSpinner.cs</DependentUpon>
+    </Compile>
     <Compile Include="UI\EnvironmentPicker.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -226,6 +232,9 @@
     <Compile Include="Requests\InterceptedWebApiRequest.cs" />
     <Compile Include="Requests\WebApiResourceRequestHandler.cs" />
     <Compile Include="Requests\Converters\WebApiRequestConverter.cs" />
+    <EmbeddedResource Include="UI\ContextSpinner.resx">
+      <DependentUpon>ContextSpinner.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="UI\EnvironmentPicker.resx">
       <DependentUpon>EnvironmentPicker.cs</DependentUpon>
     </EmbeddedResource>

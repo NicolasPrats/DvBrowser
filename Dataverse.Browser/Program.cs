@@ -1,27 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Net.Http;
-using System.ServiceModel.Description;
-using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Xml;
 using CefSharp;
-using CefSharp.DevTools.IO;
 using CefSharp.WinForms;
-using Microsoft.OData.Edm.Csdl;
-using Microsoft.OData.Edm;
-using Microsoft.Xrm.Sdk;
-using Microsoft.Xrm.Sdk.Client;
-using Microsoft.Xrm.Tooling.Connector;
-using Dataverse.Plugin.Emulator.Steps;
-using Dataverse.Browser.Context;
-using Dataverse.Browser.Properties;
-using Microsoft.Crm.Sdk.Messages;
-using Microsoft.Xrm.Sdk.Messages;
 using Dataverse.Browser.Configuration;
+using Dataverse.Browser.Context;
+using Dataverse.Browser.UI;
 
 namespace Dataverse.Browser
 {
@@ -38,12 +22,60 @@ namespace Dataverse.Browser
             Application.SetCompatibleTextRenderingDefault(false);
 
 
-            var appDataPath = ConfigurationManager.GetApplicationDataPath();
-            if (!Directory.Exists(appDataPath))
+            EnvironnementConfiguration selectedEnvironment = null;
+            DataverseContext context = null;
+            try
             {
-                Directory.CreateDirectory(appDataPath);
-            }
+                EnsureApplicationPathExists();
+                selectedEnvironment = SelectEnvironment();
+                if (selectedEnvironment == null)
+                    return;
+                context = CreateContext(selectedEnvironment);
+                if (context == null)
+                    return;
 
+                //var record = new Entity("quote", new Guid("39a0477a-c2d3-ed11-a7c6-0022489bad9d"));
+                //record["statecode"] = new OptionSetValue(2);
+                //record["statuscode"] = new OptionSetValue(4);
+                //UpdateRequest request = new UpdateRequest()
+                //{
+                //    Target = record
+                //};
+                //var treenode = new Plugin.Emulator.ExecutionTree.ExecutionTreeNode();
+                //context.ProxyForWeb.ExecuteWithTree(request, treenode);
+                //context.LastRequests.AddRequest(new Requests.InterceptedWebApiRequest()
+                //{
+                //    Method = "Fake",
+                //    ExecutionTreeRoot = treenode,
+                //    ConvertedRequest = request
+                //}) ;
+
+                StartBrowser(context);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString(), ex.Message, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                if (selectedEnvironment?.StepBehavior == StepBehavior.DisableAsyncSteps)
+                {
+                    context?.PluginsEmulator.ReenableAsyncSteps();
+                }
+            }
+        }
+
+        private static DataverseContext CreateContext(EnvironnementConfiguration selectedEnvironment)
+        {
+            var factory = new ContextFactory(selectedEnvironment);
+            var spinnerForm = new ContextSpinner(factory, selectedEnvironment);
+            Application.Run(spinnerForm);
+            DataverseContext context = factory.GetContext();
+            return context;
+        }
+
+        private static EnvironnementConfiguration SelectEnvironment()
+        {
             var configuration = ConfigurationManager.LoadConfiguration();
             EnvironnementConfiguration selectedEnvironment;
             using (var picker = new UI.EnvironmentPicker(configuration))
@@ -51,40 +83,19 @@ namespace Dataverse.Browser
                 Application.Run(picker);
                 selectedEnvironment = picker.SelectedEnvironment;
             }
-            if (selectedEnvironment == null)
-                return;
 
-            DataverseContext context = (new ContextFactory(selectedEnvironment)).CreateContext();
+            return selectedEnvironment;
+        }
 
-            //var record = new Entity("quote", new Guid("39a0477a-c2d3-ed11-a7c6-0022489bad9d"));
-            //record["statecode"] = new OptionSetValue(2);
-            //record["statuscode"] = new OptionSetValue(4);
-            //UpdateRequest request = new UpdateRequest()
-            //{
-            //    Target = record
-            //};
-            //var treenode = new Plugin.Emulator.ExecutionTree.ExecutionTreeNode();
-            //context.ProxyForWeb.ExecuteWithTree(request, treenode);
-            //context.LastRequests.AddRequest(new Requests.InterceptedWebApiRequest()
-            //{
-            //    Method = "Fake",
-            //    ExecutionTreeRoot = treenode,
-            //    ConvertedRequest = request
-            //}) ;
-            try
+        private static void EnsureApplicationPathExists()
+        {
+            var appDataPath = ConfigurationManager.GetApplicationDataPath();
+            if (!Directory.Exists(appDataPath))
             {
-                StartBrowser(context);
-            }
-            finally
-            {
-                if (selectedEnvironment.StepBehavior == StepBehavior.DisableAsyncSteps)
-                {
-                    context.PluginsEmulator.ReenableAsyncSteps();
-                }
+                Directory.CreateDirectory(appDataPath);
             }
         }
 
-     
 
         private static void StartBrowser(DataverseContext context)
         {
@@ -97,7 +108,7 @@ namespace Dataverse.Browser
                 CachePath = Path.Combine(context.CachePath, "browser"),
                 PersistSessionCookies = true,
                 LogFile = Path.Combine(context.CachePath, "cefdebug.log"),
-                
+
             };
 
             Cef.Initialize(settings, performDependencyCheck: true, browserProcessHandler: null);

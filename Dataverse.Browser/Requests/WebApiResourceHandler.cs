@@ -1,16 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IO;
-using CefSharp.Callback;
-using CefSharp;
-using Microsoft.Xrm.Sdk;
-using System.Text.Encodings.Web;
 using System.Text;
+using System.Text.Encodings.Web;
+using CefSharp;
+using CefSharp.Callback;
 using Dataverse.Browser.Context;
-using Dataverse.Plugin.Emulator.ExecutionTree;
-using Dataverse.Browser.Requests.SimpleClasses;
 using Dataverse.Browser.Requests.Converters;
+using Dataverse.Browser.Requests.SimpleClasses;
+using Dataverse.Plugin.Emulator.ExecutionTree;
+using Microsoft.Xrm.Sdk;
 
 namespace Dataverse.Browser.Requests
 {
@@ -167,6 +166,6 @@ $@"{{
             return response;
         }
 
-      
+
     }
 }

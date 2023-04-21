@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Microsoft.Xrm.Sdk;
 
 namespace Dataverse.Plugin.Emulator.Services
 {

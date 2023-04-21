@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using Dataverse.Plugin.Emulator.Context;
 using Dataverse.Plugin.Emulator.ExecutionTree;
@@ -88,10 +87,10 @@ namespace Dataverse.Plugin.Emulator.Services
 
         public OrganizationResponse Execute(OrganizationRequest request)
         {
-            return this.ExecuteWithTree(request, new ExecutionTreeNode() );
+            return this.ExecuteWithTree(request, new ExecutionTreeNode());
         }
 
-        public OrganizationResponse ExecuteWithTree(OrganizationRequest request,  ExecutionTreeNode executionTreeNode)
+        public OrganizationResponse ExecuteWithTree(OrganizationRequest request, ExecutionTreeNode executionTreeNode)
         {
             if (request == null)
             {
@@ -250,12 +249,12 @@ namespace Dataverse.Plugin.Emulator.Services
             var stepExecutionTreeNode = new ExecutionTreeNode(title, ExecutionTreeNodeType.Step);
             executionTreeNode.ChildNodes.Add(stepExecutionTreeNode);
             var context = GenerateContext(stepExecutionTreeNode, step, request, response, sharedVariables, preImages, postImages);
-            
+
             var serviceProvider = new EmulatedPluginServiceProvider();
             serviceProvider.AddService(context);
             serviceProvider.AddService(new EmulatedPluginTracingService(stepExecutionTreeNode));
             serviceProvider.AddService(new EmulatedPluginsServiceFactory(this.Emulator, context));
-            serviceProvider.AddService( new EmulatedPluginServiceProvider());
+            serviceProvider.AddService(new EmulatedPluginServiceProvider());
             serviceProvider.AddService(new EmulatedPluginLogger(stepExecutionTreeNode));
             serviceProvider.AddService(new EmulatedServiceEndpointNotificationService());
 

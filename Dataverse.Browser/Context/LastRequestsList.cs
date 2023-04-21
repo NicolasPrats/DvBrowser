@@ -1,14 +1,11 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Dataverse.Browser.Requests;
 
 namespace Dataverse.Browser.Context
 {
-    internal class LastRequestsList:IEnumerable<InterceptedWebApiRequest>
+    internal class LastRequestsList : IEnumerable<InterceptedWebApiRequest>
     {
         private List<InterceptedWebApiRequest> InnerList { get; } = new List<InterceptedWebApiRequest>();
         private readonly object Locker = new object();

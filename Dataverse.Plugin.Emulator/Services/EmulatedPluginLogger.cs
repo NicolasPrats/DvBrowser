@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Dataverse.Plugin.Emulator.ExecutionTree;
-using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.PluginTelemetry;
 
 namespace Dataverse.Plugin.Emulator.Services
