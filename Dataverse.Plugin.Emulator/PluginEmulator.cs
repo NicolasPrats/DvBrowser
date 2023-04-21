@@ -38,7 +38,7 @@ namespace Dataverse.Plugin.Emulator.Steps
             {
                 ColumnSet = new ColumnSet("stage", "rank", "filteringattributes", "eventhandlertypecode", "configuration", "impersonatinguserid", "mode", "sdkmessageprocessingstepsecureconfigid")
             };
-            
+
             //Plugin Type
             LinkEntity linkToPluginType = new LinkEntity("sdkmessageprocessingstep", "plugintype", "plugintypeid", "plugintypeid", JoinOperator.Inner)
             {

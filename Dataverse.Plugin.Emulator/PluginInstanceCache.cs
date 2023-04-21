@@ -26,7 +26,7 @@ namespace Dataverse.Plugin.Emulator.Steps
                 {
                     throw new NotSupportedException("No constructor found for plugin: " + step.EventHandler);
                 }
-                    Cache[key] = plugin;
+                Cache[key] = plugin;
             }
             return plugin;
         }

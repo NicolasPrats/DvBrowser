@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using CefSharp;
 
 namespace Dataverse.Browser.Requests.SimpleClasses
@@ -12,7 +10,7 @@ namespace Dataverse.Browser.Requests.SimpleClasses
         public string Method { get; set; }
         public string LocalPathWithQuery { get; set; }
         public string Body { get; set; }
-        public IRequest OriginRequest { get;  }
+        public IRequest OriginRequest { get; }
 
         public SimpleHttpRequest()
         {

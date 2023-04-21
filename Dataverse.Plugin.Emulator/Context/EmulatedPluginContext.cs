@@ -13,17 +13,19 @@ namespace Dataverse.Plugin.Emulator.Context
         public ExecutionTreeNode ExecutionTreeRoot { get; internal set; }
 
         public int Stage { get; internal set; }
-               
+
 
         public EmulatedPluginContext ParentContext { get; internal set; }
 
-        IPluginExecutionContext IPluginExecutionContext.ParentContext { get
+        IPluginExecutionContext IPluginExecutionContext.ParentContext
+        {
+            get
             {
                 return ParentContext;
             }
         }
 
-        public int Mode {get; internal set; }
+        public int Mode { get; internal set; }
 
         public int IsolationMode => 1;
 

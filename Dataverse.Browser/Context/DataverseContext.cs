@@ -1,15 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Net.Http;
 using Dataverse.Plugin.Emulator.Services;
 using Dataverse.Plugin.Emulator.Steps;
 using Microsoft.OData.Edm;
-using Microsoft.OData.UriParser;
-using Microsoft.Xrm.Sdk;
-using Microsoft.Xrm.Sdk.Messages;
 using Microsoft.Xrm.Tooling.Connector;
 
 
@@ -18,7 +10,6 @@ namespace Dataverse.Browser.Context
     internal class DataverseContext
     {
         public string Host { get; set; }
-        public string ConnectionString { get; set; }
         public string CachePath { get; set; }
         public PluginEmulator PluginsEmulator { get; set; }
 
@@ -37,6 +28,6 @@ namespace Dataverse.Browser.Context
         public IEdmModel Model { get; internal set; }
         public bool IsEnabled { get; set; } = true;
 
-      
+
     }
 }

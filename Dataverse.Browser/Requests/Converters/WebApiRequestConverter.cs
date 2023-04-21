@@ -1,24 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.DirectoryServices.ActiveDirectory;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Net.Http.Formatting;
 using System.Net.Http.Headers;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using System.Web.UI.WebControls;
-using System.Windows.Forms;
-using System.Xml;
 using CefSharp;
-using CefSharp.DevTools.CSS;
-using CefSharp.DevTools.IndexedDB;
-using CefSharp.DevTools.Network;
 using Dataverse.Browser.Context;
 using Dataverse.Browser.Requests.SimpleClasses;
 using Microsoft.OData.Edm;
@@ -27,8 +15,6 @@ using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Messages;
 using Microsoft.Xrm.Sdk.Metadata;
 using Microsoft.Xrm.Sdk.Query;
-using Microsoft.Xrm.Tooling.Connector;
-using static System.Net.WebRequestMethods;
 
 namespace Dataverse.Browser.Requests.Converter
 {
@@ -59,7 +45,7 @@ namespace Dataverse.Browser.Requests.Converter
             {
                 return new InterceptedWebApiRequest()
                 {
-                    SimpleHttpRequest = new SimpleHttpRequest() {LocalPathWithQuery = localPathWithQuery , Method = request.Method },
+                    SimpleHttpRequest = new SimpleHttpRequest() { LocalPathWithQuery = localPathWithQuery, Method = request.Method },
                     ConvertFailureMessage = ex.Message,
                     ExecuteException = ex
                 };
@@ -175,7 +161,7 @@ namespace Dataverse.Browser.Requests.Converter
         private ColumnSet GetColumnSet(ODataUriParser parser)
         {
             var selectAndExpand = parser.ParseSelectAndExpand();
-            if (selectAndExpand == null ||selectAndExpand.AllSelected)
+            if (selectAndExpand == null || selectAndExpand.AllSelected)
                 return new ColumnSet(true);
             ColumnSet columnSet = new ColumnSet();
             foreach (var item in selectAndExpand.SelectedItems)
@@ -219,7 +205,7 @@ namespace Dataverse.Browser.Requests.Converter
                 keySegment = path.LastSegment as KeySegment;
 
             }
-            webApiRequest.ConvertedRequest = ConvertToCreateUpdateRequest(keySegment,  webApiRequest, entity.LogicalName);
+            webApiRequest.ConvertedRequest = ConvertToCreateUpdateRequest(keySegment, webApiRequest, entity.LogicalName);
         }
 
         private OrganizationRequest ConvertToExecuteMultipleRequest(InterceptedWebApiRequest webApiRequest)
@@ -254,7 +240,8 @@ namespace Dataverse.Browser.Requests.Converter
                     if (convertedRequest == null)
                     {
                         throw new NotSupportedException("Only web api requests are supported!");
-                    } else
+                    }
+                    else
                     if (convertedRequest.ConvertedRequest != null)
                     {
                         executeMultipleRequest.Requests.Add(convertedRequest.ConvertedRequest);
@@ -321,7 +308,7 @@ namespace Dataverse.Browser.Requests.Converter
             return dataStream;
         }
 
-        private OrganizationRequest ConvertToCreateUpdateRequest(KeySegment keySegment,InterceptedWebApiRequest webApiRequest, string entityLogicalName)
+        private OrganizationRequest ConvertToCreateUpdateRequest(KeySegment keySegment, InterceptedWebApiRequest webApiRequest, string entityLogicalName)
         {
             string body = webApiRequest.SimpleHttpRequest.Body ?? throw new NotSupportedException("A body was expected!");
             webApiRequest.SimpleHttpRequest.Body = body;
