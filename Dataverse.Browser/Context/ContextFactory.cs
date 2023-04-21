@@ -13,6 +13,7 @@ namespace Dataverse.Browser.Context
 {
     internal class ContextFactory
     {
+        //TODO allow ui to stop the process
         public event EventHandler<string> OnNewProgress;
         public event EventHandler<Exception> OnError;
         public event EventHandler OnFinished;

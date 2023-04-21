@@ -33,6 +33,8 @@ namespace Dataverse.Browser.UI
             if (hostName == null)
                 return;
             string assemblyPath = GetValidAssemblyPath();
+            if (assemblyPath == null)
+                return;
             this.SelectedEnvironment = CurrentEnvironment ?? new EnvironnementConfiguration();
             this.SelectedEnvironment.Name = txtName.Text;
 
@@ -50,6 +52,10 @@ namespace Dataverse.Browser.UI
         private string GetValidAssemblyPath()
         {
             string assemblyPath = txtAssemblyPath.Text;
+            if (assemblyPath.StartsWith("\"") && assemblyPath.EndsWith("\""))
+            {
+                assemblyPath = assemblyPath.Substring(1, assemblyPath.Length - 2);
+            }
             if (!File.Exists(assemblyPath))
             {
                 MessageBox.Show("File not found:" + assemblyPath);

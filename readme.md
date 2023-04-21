@@ -38,7 +38,6 @@ The simplest way to test the Dataverse.Browser is to:
   * A name meaningful for you
   * The host name of your instance (without the _https://_)
   * The path to the plugins assembly file (the dll). For a better experience, it should be compiled in debug mode with the pdb file generated.
-Please note that there are no controls for now. If you do a mistake, the app will crash without warning.* Click on the "go" button. 
 * A popup asking you to authenticate is displayed. You need to use a system administrator. If you have a big assembly file and/or a lot of steps, the UI may freeze at this step. Don't worry and please wait few seconds.
 * Then the browser is started. You need to authenticate again. This time, you can choose any user and should take the one that is relevant for your tests.
 * Enjoy! 
