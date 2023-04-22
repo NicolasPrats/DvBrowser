@@ -346,6 +346,7 @@ namespace Dataverse.Browser.Requests.Converter
                     if (key.EndsWith("@OData.Community.Display.V1.FormattedValue"))
                         continue;
 
+                    
                     if (key.EndsWith("@odata.bind"))
                     {
                         key = key.Substring(0, key.Length - "@odata.bind".Length).ToLowerInvariant();
@@ -359,8 +360,21 @@ namespace Dataverse.Browser.Requests.Converter
                     {
                         throw new ApplicationException("Unknow property key:" + key);
                     }
-                    object value = ConvertValueToAttribute(entityLogicalName, key, node.Value);
-                    record.Attributes.Add(key, value);
+
+                    AttributeMetadata attributeMetadata = entityMetadata.Attributes.FirstOrDefault(a => a.LogicalName == key) ?? throw new ApplicationException("attribute not found:" + key);
+                    if (attributeMetadata != null)
+                    {
+                        object value = ConvertValueToAttribute(attributeMetadata, node.Value);
+                        record.Attributes.Add(key, value);
+                    }
+                    else
+                    {
+                        var relation = entityMetadata.OneToManyRelationships.FirstOrDefault(r => r.SchemaName == key);
+                        if (relation == null)
+                        {
+                            throw new ApplicationException("No attribute nor relation found: " + key);
+                        }
+                    }
                 }
             }
 
@@ -382,14 +396,12 @@ namespace Dataverse.Browser.Requests.Converter
             return id;
         }
 
-        private object ConvertValueToAttribute(string entityLogicalName, string key, JsonElement value)
+        private object ConvertValueToAttribute(AttributeMetadata attributeMetadata, JsonElement value)
         {
             if (value.ValueKind == JsonValueKind.Null)
             {
                 return null;
             }
-            var entityMetadata = this.Context.MetadataCache.GetEntityMetadataWithAttributes(entityLogicalName);
-            var attributeMetadata = entityMetadata.Attributes.FirstOrDefault(a => a.LogicalName == key) ?? throw new ApplicationException("attribute not found:" + key);
             switch (attributeMetadata.AttributeType)
             {
                 case AttributeTypeCode.BigInt:
