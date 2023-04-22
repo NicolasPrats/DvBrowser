@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Windows.Forms;
+using AutoUpdaterDotNET;
 using CefSharp;
 using CefSharp.WinForms;
 using Dataverse.Browser.Configuration;
@@ -68,8 +69,10 @@ namespace Dataverse.Browser
         private static DataverseContext CreateContext(EnvironnementConfiguration selectedEnvironment)
         {
             var factory = new ContextFactory(selectedEnvironment);
-            var spinnerForm = new ContextSpinner(factory, selectedEnvironment);
-            Application.Run(spinnerForm);
+            using (var spinnerForm = new ContextSpinner(factory, selectedEnvironment))
+            {
+                Application.Run(spinnerForm);
+            }
             DataverseContext context = factory.GetContext();
             return context;
         }

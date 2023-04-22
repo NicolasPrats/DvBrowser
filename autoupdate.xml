@@ -1,0 +1,8 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<item>
+  <version>0.1.0.0</version>
+  <url>https://github.com/NicolasPrats/DvBrowser/releases/download/V0.1/Dataverse.Browser.V0.1.zip</url>
+  <changelog>https://github.com/NicolasPrats/DvBrowser/releases/tag/V0.1</changelog>
+  <mandatory>false</mandatory>
+  <executable>start.cmd</executable>
+</item>
