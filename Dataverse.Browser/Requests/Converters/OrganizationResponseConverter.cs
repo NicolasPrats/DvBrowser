@@ -20,9 +20,24 @@ namespace Dataverse.Browser.Requests.Converters
                     return ConvertUpdateResponse(context, (UpdateRequest)webApiRequest.ConvertedRequest);
                 case RetrieveResponse _:
                     return ConvertRetrieveResponse(context, webApiRequest);
+                case DeleteResponse _:
+                    return ConvertDeleteResponse();
                 default:
                     throw new NotImplementedException("Message has been executed but response is not implemented:" + response.GetType().Name);
             }
+        }
+
+        private static SimpleHttpResponse ConvertDeleteResponse()
+        {
+            return new SimpleHttpResponse()
+            {
+                Body = new byte[0],
+                Headers = new NameValueCollection
+                {
+                    { "OData-Version", "4.0" }
+                },
+                StatusCode = 204
+            };
         }
 
         private static SimpleHttpResponse ConvertUpdateResponse(DataverseContext context, UpdateRequest updateRequest)

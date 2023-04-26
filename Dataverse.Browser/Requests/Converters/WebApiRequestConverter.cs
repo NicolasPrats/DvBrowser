@@ -127,6 +127,13 @@ namespace Dataverse.Browser.Requests.Converter
                                 throw new NotSupportedException("Unexpected number of segments:" + path.Count);
                         }
                         break;
+                    case "DELETE":
+                        if (path.Count != 2)
+                        {
+                            throw new NotSupportedException("Unexpected number of segments:" + path.Count);
+                        }
+                        ConvertToDeleteRequest(webApiRequest, path);
+                        break;
                     default:
                         webApiRequest.ConvertFailureMessage = "method not implemented";
                         break;
@@ -137,6 +144,24 @@ namespace Dataverse.Browser.Requests.Converter
                 webApiRequest.ConvertFailureMessage = ex.Message;
             }
             return webApiRequest;
+        }
+
+        private void ConvertToDeleteRequest(InterceptedWebApiRequest webApiRequest, ODataPath path)
+        {
+            var entitySegment = path.FirstSegment as EntitySetSegment ?? throw new NotSupportedException("First segment should not be of type: " + path.FirstSegment.EdmType);
+            var keySegment = path.LastSegment as KeySegment ?? throw new NotSupportedException("First segment should not be of type: " + path.FirstSegment.EdmType);
+            var entity = this.Context.MetadataCache.GetEntityFromSetName(entitySegment.Identifier);
+            if (entity == null)
+            {
+                throw new ApplicationException("Entity not found: " + entity);
+            }
+            var id = GetIdFromKeySegment(keySegment);
+
+            DeleteRequest deleteRequest = new DeleteRequest
+            {
+                Target = new EntityReference(entity.LogicalName, id)
+            };
+            webApiRequest.ConvertedRequest = deleteRequest;
         }
 
         private void ConvertToRetrieveRequest(InterceptedWebApiRequest webApiRequest, ODataUriParser parser, ODataPath path)
