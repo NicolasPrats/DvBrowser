@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
+using System.Windows;
 using System.Xml;
 using Dataverse.Browser.Configuration;
 using Dataverse.Plugin.Emulator.Steps;
@@ -157,7 +158,17 @@ namespace Dataverse.Browser.Context
             foreach (var pluginPath in environnementConfiguration.PluginAssemblies)
             {
                 this.NotifyProgress("Loading plugins: " + pluginPath);
-                emulator.AddPluginAssembly(pluginPath);
+               bool allStepsLoaded = emulator.AddPluginAssembly(pluginPath);
+                if (!allStepsLoaded)
+                {
+                    //TODO: let the caller display the message
+                    //TODO: give more details about steps and features
+                    var result =MessageBox.Show("Some steps could not be loaded because they use some not implemented features like impersonation or configuration.\nIf you continue these steps will be ignored and not executed.\nDo you want to continue?", "Steps using not implemented features", MessageBoxButton.YesNo);
+                    if (result == MessageBoxResult.No)
+                    {
+                        throw new NotImplementedException("Some steps could not be loaded!");
+                    }
+                }
             }
             if (environnementConfiguration.StepBehavior == StepBehavior.DisableAsyncSteps)
             {
