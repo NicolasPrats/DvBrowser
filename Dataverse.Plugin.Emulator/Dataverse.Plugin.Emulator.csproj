@@ -106,6 +106,7 @@
     <Compile Include="ExecutionTree\ExecutionTreeNode.cs" />
     <Compile Include="ExecutionTree\TriggeredStep.cs" />
     <Compile Include="ExecutionTree\ExecutionTreeNodeType.cs" />
+    <Compile Include="ResponsePropertyMapping.cs" />
     <Compile Include="Services\EmulatedPluginServiceProvider.cs" />
     <Compile Include="Services\EmulatedPluginsServiceFactory.cs" />
     <Compile Include="Services\EmulatedPluginLogger.cs" />

@@ -47,7 +47,7 @@ namespace Dataverse.Browser.Requests.Converters
             var id = $"{context.WebApiBaseUrl}{setName}({createResponse.id})";
 
             //TODO: convert the response instead of requesting
-            var retrieveResult = HttpGet(context, id);
+            var retrieveResult = HttpGet(context, id, true);
             return new SimpleHttpResponse()
             {
                 Body = retrieveResult.Content.ReadAsByteArrayAsync().Result,
@@ -64,7 +64,7 @@ namespace Dataverse.Browser.Requests.Converters
         {
             //TODO: convert the response instead of requesting
             string url = $"https://{context.Host}{webApiRequest.SimpleHttpRequest.LocalPathWithQuery}";
-            HttpResponseMessage retrieveResult = HttpGet(context, url);
+            HttpResponseMessage retrieveResult = HttpGet(context, url, false);
             NameValueCollection headers = new NameValueCollection();
             foreach (var header in retrieveResult.Headers)
             {
@@ -78,11 +78,14 @@ namespace Dataverse.Browser.Requests.Converters
             };
         }
 
-        private static HttpResponseMessage HttpGet(DataverseContext context, string url)
+        private static HttpResponseMessage HttpGet(DataverseContext context, string url, bool bypassPLugins)
         {
             HttpRequestMessage retrieveMessage = new HttpRequestMessage(HttpMethod.Get, url);
             retrieveMessage.Headers.Add("Authorization", "Bearer " + context.CrmServiceClient.CurrentAccessToken);
-            retrieveMessage.Headers.Add("MSCRM.BypassCustomPluginExecution", "true");
+            if (bypassPLugins)
+            {
+                retrieveMessage.Headers.Add("MSCRM.BypassCustomPluginExecution", "true");
+            }
             var retrieveResult = context.HttpClient.SendAsync(retrieveMessage).Result;
             return retrieveResult;
         }
