@@ -73,10 +73,14 @@ namespace Dataverse.Plugin.Emulator.Steps
             {
 
                 if (step.Contains("configuration")
-                    || (step.Contains("impersonatinguserid") && step.GetAttributeValue<EntityReference>("impersonatinguserid").Id != Guid.Empty)
                     || step.Contains("sdkmessageprocessingstepsecureconfigid"))
                 {
-                    throw new NotImplementedException();
+                    throw new NotImplementedException("configuration in step is not implemented!");
+                }
+
+                if ((step.Contains("impersonatinguserid") && step.GetAttributeValue<EntityReference>("impersonatinguserid").Id != Guid.Empty))
+                {
+                    throw new NotImplementedException("Impersonation in step is not implemented!");
                 }
 
                 var stepDescription = new PluginStepDescription()
@@ -94,7 +98,7 @@ namespace Dataverse.Plugin.Emulator.Steps
                 };
                 if (stepDescription.SecondaryEntity != null && stepDescription.SecondaryEntity != "none")
                 {
-                    throw new NotImplementedException();
+                    throw new NotImplementedException("SecondaryEntity in step is not implemented!");
                 }
 
                 QueryExpression queryImages = new QueryExpression("sdkmessageprocessingstepimage");
