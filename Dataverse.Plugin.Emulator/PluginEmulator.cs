@@ -26,12 +26,15 @@ namespace Dataverse.Plugin.Emulator.Steps
             this.InnerServiceProxy = ProxyFactory(Guid.Empty);
         }
 
-        public void AddPluginAssembly(string pluginPath)
+        public bool AddPluginAssembly(string pluginPath)
         {
+            bool allStepsHaveBeenLoaded = true;
+
             if (pluginPath == null)
             {
                 throw new ArgumentNullException(nameof(pluginPath));
             }
+            
             Assembly assembly = Assembly.LoadFrom(pluginPath);
 
             QueryExpression querySteps = new QueryExpression("sdkmessageprocessingstep")
@@ -75,12 +78,16 @@ namespace Dataverse.Plugin.Emulator.Steps
                 if (step.Contains("configuration")
                     || step.Contains("sdkmessageprocessingstepsecureconfigid"))
                 {
-                    throw new NotImplementedException("configuration in step is not implemented!");
+                    allStepsHaveBeenLoaded = false;
+                    continue;
+                    //throw new NotImplementedException("configuration in step is not implemented!");
                 }
 
                 if ((step.Contains("impersonatinguserid") && step.GetAttributeValue<EntityReference>("impersonatinguserid").Id != Guid.Empty))
                 {
-                    throw new NotImplementedException("Impersonation in step is not implemented!");
+                    allStepsHaveBeenLoaded = false;
+                    continue;
+                    //throw new NotImplementedException("Impersonation in step is not implemented!");
                 }
 
                 var stepDescription = new PluginStepDescription()
@@ -98,7 +105,9 @@ namespace Dataverse.Plugin.Emulator.Steps
                 };
                 if (stepDescription.SecondaryEntity != null && stepDescription.SecondaryEntity != "none")
                 {
-                    throw new NotImplementedException("SecondaryEntity in step is not implemented!");
+                    allStepsHaveBeenLoaded = false;
+                    continue;
+                    //throw new NotImplementedException("SecondaryEntity in step is not implemented!");
                 }
 
                 QueryExpression queryImages = new QueryExpression("sdkmessageprocessingstepimage");
@@ -125,6 +134,7 @@ namespace Dataverse.Plugin.Emulator.Steps
                     this.AsynchronousSteps.Add(stepDescription);
                 }
             }
+            return allStepsHaveBeenLoaded;
         }
 
         public OrganizationServiceWithEmulatedPlugins CreateNewProxy()
