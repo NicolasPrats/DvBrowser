@@ -280,7 +280,7 @@ namespace Dataverse.Plugin.Emulator.Services
                 OrganizationName = this.CurrentOrganization.UniqueName,
                 OperationCreatedOn = DateTime.UtcNow,
                 OrganizationId = this.WhoAmIResponse.OrganizationId,
-                OutputParameters = response?.Results,
+                OutputParameters = MapResponseParameters(response),
                 ParentContext = this.CurrentContext,
                 PostEntityImages = postImages,
                 PreEntityImages = preImages,
@@ -295,6 +295,27 @@ namespace Dataverse.Plugin.Emulator.Services
             };
 
             return newContext;
+        }
+
+        private ParameterCollection MapResponseParameters(OrganizationResponse response)
+        {
+            if (response == null)
+                return null;
+            if (!ResponsePropertyMapping.Mapping.TryGetValue(response.GetType(), out var mapping))
+                return response.Results;
+            var parameters = new ParameterCollection();
+            foreach (var parameter in response.Results)
+            {
+                if (parameter.Key != mapping.Item1)
+                {
+                    parameters.Add(parameter);
+                }
+                else
+                {
+                    parameters.Add(mapping.Item2, parameter.Value);
+                }
+            }
+            return parameters;
         }
 
         public Entity Retrieve(string entityName, Guid id, ColumnSet columnSet)

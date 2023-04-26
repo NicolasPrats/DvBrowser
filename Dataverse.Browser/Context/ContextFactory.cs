@@ -33,10 +33,11 @@ namespace Dataverse.Browser.Context
 
         public DataverseContext GetContext()
         {
-            if (this.Context != null)
-            {
-                return this.Context;
-            }
+            return this.Context;
+        }
+        public void CreateContext()
+        {
+
             this.NotifyProgress("Initializing traces");
             TraceControlSettings.TraceLevel = SourceLevels.All;
             TraceControlSettings.AddTraceListener(new TextWriterTraceListener(Path.Combine(this.SelectedEnvironment.GetWorkingDirectory(), "log.txt")));
@@ -59,7 +60,7 @@ namespace Dataverse.Browser.Context
             {
                 this.NotifyProgress("Unable to establish connection");
                 this.OnError?.Invoke(this, client.LastCrmException);
-                return null;
+                return ;
 
             }
 
@@ -67,7 +68,7 @@ namespace Dataverse.Browser.Context
             {
                 this.NotifyProgress("Unable to establish connection");
                 this.OnError?.Invoke(this, new ApplicationException("Unknown error"));
-                return null;
+                return ;
             }
 
             var emulator = this.InitializePluginEmulator(this.SelectedEnvironment, connectionString);
@@ -98,7 +99,7 @@ namespace Dataverse.Browser.Context
             }
             this.Context = context;
             this.OnFinished?.Invoke(this, EventArgs.Empty);
-            return context;
+            return ;
         }
 
         private void ContextFactory_OnError(object sender, Exception e)

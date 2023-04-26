@@ -73,7 +73,7 @@ namespace Dataverse.Browser.UI
         {
             Task.Run(() =>
             {
-                Factory.GetContext();
+                Factory.CreateContext();
             });
         }
 

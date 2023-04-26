@@ -79,6 +79,7 @@ $@"{{
                 }}{new string(' ', 100000)}");
             //TODO : si le payload est trop petit, il n'est pas chargé en entier quand status code != 200
             //problème de flush ? de header ?
+           
             this.HttpResponse = new SimpleHttpResponse()
             {
                 StatusCode = 400,
@@ -148,6 +149,18 @@ $@"{{
             {
                 OrganizationResponse response = this.ExecuteWithTree();
                 this.HttpResponse = OrganizationResponseConverter.Convert(this.Context, this.WebApiRequest, response);
+                //TODO : si le payload est trop petit, il n'est pas chargé en entier quand status code != 200
+                //problème de flush ? de header ?
+                if (this.HttpResponse.Body != null && this.HttpResponse.Body.Length > 0 && this.HttpResponse.Body.Length < 100000)
+                {
+                    var newBody = new byte[100000];
+                    Array.Copy(this.HttpResponse.Body, newBody, this.HttpResponse.Body.Length);
+                    for (int i = this.HttpResponse.Body.Length; i < newBody.Length; i++)
+                    {
+                        newBody[i] = (byte)' ';
+                    }
+                    this.HttpResponse.Body = newBody;
+                }
             }
             catch (Exception ex)
             {
