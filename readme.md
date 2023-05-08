@@ -10,7 +10,7 @@ It's a browser which allows a Dataverse developer to:
 
 The application embeds a web browser based on Chromium (thanks to [CEFSharp](https://cefsharp.github.io/)). It intercepts all web api requests and translates them to SDK requests. Then it analyzes if some plugin steps are registered on the message. If yes, it loads them and make them run locally. All other requests are sent to the Dataverse, so that the plugins are interacting with the real database.
 
-For now, only create and update requests are properly translated. Other requests (retrieve, delete, custom api, batch, ...) should be implemented in not too distant future.
+For now, only create, retrieve, update and delete requests are translated (sometimes partially). Other requests (custom api, batch, ...) should be implemented in not too distant future.
 Please note that the chosen architecture has some limits which will probably never fixed by this project:
 * There is no support for transactions
 * When plugins are triggered because of a server side operation, they will not be run locally
@@ -33,7 +33,7 @@ You need:
 The simplest way to test the Dataverse.Browser is to:
 * Download [the latest release](https://github.com/NicolasPrats/DvBrowser/releases)
 * Unzip the file in the folder of your choice
-* Run the **start.cmd** file. If you run directly the .exe file, it will work, but you will not be able to edit plugins without restarting the app.
+* Run the "Dataverse.Browser.exe" file. (For early adopters: the start.cmd file is not needed anymore)
 * Enter the settings of your environment:
   * A name meaningful for you
   * The host name of your instance (without the _https://_)
@@ -42,9 +42,11 @@ The simplest way to test the Dataverse.Browser is to:
 * Then the browser is started. You need to authenticate again. This time, you can choose any user and should take the one that is relevant for your tests.
 * Enjoy! 
 
-At the top right of the window, you have 3 icons:
-* First is to open the Developper tools
-* Second is to clear the history of requests
-* Third is to automatically attach a debugger to the browser. Before to use it, it's recommended to open your plugin solution in a Visual Studio instance. When a popup asks you to select a Visual Studio instance, choose this one. 
+At the top right of the window, you have 2 icons and a checkbox:
+* First icon is to open the Developper tools
+* Second icon is to automatically attach a debugger to the browser. Before to use it, it's recommended to open your plugin solution in a Visual Studio instance. When a popup asks you to select a Visual Studio instance, choose this one. 
+* If the checkbox is selected, then plugins are run locally and can be debugged in Visual Studio. If not they are run on server side, as with any other browser.
+
+At the right bottom of the list, the trash icon allows you to clear the history of requests.
 
 
