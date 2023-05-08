@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ContextSpinner));
             this.textBox1 = new System.Windows.Forms.TextBox();
             this.linkLabel1 = new System.Windows.Forms.LinkLabel();
             this.SuspendLayout();
@@ -67,6 +68,7 @@
             this.ClientSize = new System.Drawing.Size(597, 261);
             this.Controls.Add(this.linkLabel1);
             this.Controls.Add(this.textBox1);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "ContextSpinner";
             this.Text = "Select an environment";
             this.Load += new System.EventHandler(this.ContextSpinner_Load);

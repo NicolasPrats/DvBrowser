@@ -1,1 +1,0 @@
-set COMPLUS_ForceENC=1&&start /B Dataverse.Browser.exe

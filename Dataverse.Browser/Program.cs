@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Windows.Forms;
 using AutoUpdaterDotNET;
@@ -19,6 +20,11 @@ namespace Dataverse.Browser
         [STAThread]
         static void Main()
         {
+            if (!IsEditAndContinueAvailable())
+            {
+                return;
+            }
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
@@ -64,6 +70,27 @@ namespace Dataverse.Browser
                     context?.PluginsEmulator.ReenableAsyncSteps();
                 }
             }
+        }
+
+        private static bool IsEditAndContinueAvailable()
+        {
+            string value = Environment.GetEnvironmentVariable("COMPLUS_FORCEENC", EnvironmentVariableTarget.Process);
+            if (value == "1" || Debugger.IsAttached)
+            {
+                return true;
+            }
+            var currentProcess = Process.GetCurrentProcess();
+            ProcessStartInfo psi = new ProcessStartInfo()
+            {
+                ErrorDialog = true,
+                FileName = currentProcess.MainModule.FileName,
+                LoadUserProfile = true,
+                WorkingDirectory = Directory.GetCurrentDirectory(),
+                UseShellExecute = false
+            };
+            psi.EnvironmentVariables.Add("COMPLUS_FORCEENC", "1");
+            Process.Start(psi);
+            return false;
         }
 
         private static DataverseContext CreateContext(EnvironnementConfiguration selectedEnvironment)
