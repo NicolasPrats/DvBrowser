@@ -444,6 +444,16 @@ namespace Dataverse.Browser.Requests.Converter
             //https://learn.microsoft.com/en-us/power-apps/developer/data-platform/activityparty-entity#activity-party-types-available-for-each-activity
             switch ((logicalName, participationTypeMask))
             {
+                case var tuple when tuple.logicalName == "appointment" && ActivityPartyType.OptionalAttendee == tuple.participationTypeMask:
+                    return "optionalattendees";
+                case var tuple when tuple.logicalName == "appointment" && ActivityPartyType.Organizer == tuple.participationTypeMask:
+                    return "organizer";
+                case var tuple when tuple.logicalName == "appointment" && ActivityPartyType.RequiredAttendee == tuple.participationTypeMask:
+                    return "requiredattendees";
+                case var tuple when tuple.logicalName == "campaignactivity" && ActivityPartyType.Sender == tuple.participationTypeMask:
+                    return "from";
+                case var tuple when tuple.logicalName == "campaignresponse" && ActivityPartyType.Customer == tuple.participationTypeMask:
+                    return "from";
                 case var tuple when tuple.logicalName == "email" && ActivityPartyType.BccRecipient == tuple.participationTypeMask:
                     return "bcc";
                 case var tuple when tuple.logicalName == "email" && ActivityPartyType.CCRecipient == tuple.participationTypeMask:
@@ -452,6 +462,30 @@ namespace Dataverse.Browser.Requests.Converter
                     return "from";
                 case var tuple when tuple.logicalName == "email" && ActivityPartyType.ToRecipient == tuple.participationTypeMask:
                     return "to";
+                case var tuple when tuple.logicalName == "fax" && ActivityPartyType.Sender == tuple.participationTypeMask:
+                    return "from";
+                case var tuple when tuple.logicalName == "fax" && ActivityPartyType.ToRecipient == tuple.participationTypeMask:
+                    return "to";
+                case var tuple when tuple.logicalName == "letter" && ActivityPartyType.BccRecipient == tuple.participationTypeMask:
+                    return "bcc";
+                case var tuple when tuple.logicalName == "letter" && ActivityPartyType.Sender == tuple.participationTypeMask:
+                    return "from";
+                case var tuple when tuple.logicalName == "letter" && ActivityPartyType.ToRecipient == tuple.participationTypeMask:
+                    return "to";
+                case var tuple when tuple.logicalName == "phonecall" && ActivityPartyType.Sender == tuple.participationTypeMask:
+                    return "from";
+                case var tuple when tuple.logicalName == "phonecall" && ActivityPartyType.ToRecipient == tuple.participationTypeMask:
+                    return "to";
+                case var tuple when tuple.logicalName == "recurringappointmentmaster" && ActivityPartyType.OptionalAttendee == tuple.participationTypeMask:
+                    return "optionalattendees";
+                case var tuple when tuple.logicalName == "recurringappointmentmaster" && ActivityPartyType.Organizer == tuple.participationTypeMask:
+                    return "organizer";
+                case var tuple when tuple.logicalName == "recurringappointmentmaster" && ActivityPartyType.RequiredAttendee == tuple.participationTypeMask:
+                    return "requiredattendees";
+                case var tuple when tuple.logicalName == "serviceappointment" && ActivityPartyType.Customer == tuple.participationTypeMask:
+                    return "customer";
+                case var tuple when tuple.logicalName == "serviceappointment" && ActivityPartyType.Resource == tuple.participationTypeMask:
+                    return "resource";
             }
             throw new NotImplementedException("Unknow activity party attribute: " + logicalName + "/" + participationTypeMask);
         }
