@@ -126,7 +126,6 @@ namespace Dataverse.Browser.UI
         {
             if (executionTreeNode == null)
                 return;
-            parentNode.Nodes.Clear();
             TreeNode newNode = new TreeNode(executionTreeNode.Title);
             switch (executionTreeNode.Type)
             {

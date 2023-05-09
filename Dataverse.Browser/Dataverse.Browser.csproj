@@ -195,6 +195,7 @@
     <Compile Include="Configuration\DataverseBrowserConfiguration.cs" />
     <Compile Include="Configuration\EnvironnementConfiguration.cs" />
     <Compile Include="Configuration\StepBehavior.cs" />
+    <Compile Include="Constants\ActivityPartyType.cs" />
     <Compile Include="Context\ContextFactory.cs" />
     <Compile Include="Requests\Converters\OrganizationResponseConverter.cs" />
     <Compile Include="Requests\SimpleClasses\SimpleHttpResponse.cs" />
