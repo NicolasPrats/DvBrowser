@@ -120,7 +120,8 @@ namespace Dataverse.Plugin.Emulator.Services
             }
 
             IEnumerable<PluginStepDescription> stepsToExecute = null;
-            EntityReference target = null;
+            EntityReference targetRef = null;
+            Entity target = null;
             string targetLogicalName = null;
             if (this.Emulator.PluginSteps.TryGetValue(messageName, out var steps))
             {
@@ -129,22 +130,22 @@ namespace Dataverse.Plugin.Emulator.Services
             switch (request)
             {
                 case CreateRequest createRequest:
-                    target = createRequest.Target.ToEntityReference();
+                    target = createRequest.Target;
                     break;
                 case UpsertRequest upsertRequest:
-                    target = upsertRequest.Target.ToEntityReference();
+                    target = upsertRequest.Target;
                     //TODO : en cas d'update il faudrait appliquer les filtering attributes
                     break;
                 case RetrieveRequest retrieveRequest:
-                    target = retrieveRequest.Target;
+                    targetRef = retrieveRequest.Target;
                     break;
                 case UpdateRequest updateRequest:
-                    target = updateRequest.Target.ToEntityReference();
+                    target = updateRequest.Target;
                     stepsToExecute = stepsToExecute?.Where(s => s.FilteringAttributes == null || s.FilteringAttributes.Length == 0
                     || s.FilteringAttributes.Intersect(updateRequest.Target.Attributes.Select(a => a.Key)).Any());
                     break;
                 case DeleteRequest deleteRequest:
-                    target = deleteRequest.Target;
+                    targetRef = deleteRequest.Target;
                     break;
                 case RetrieveMultipleRequest retrieveMultipleRequest:
                     if (retrieveMultipleRequest.Query is QueryExpression query)
@@ -158,7 +159,24 @@ namespace Dataverse.Plugin.Emulator.Services
                     }
                     break;
             }
-            targetLogicalName = targetLogicalName ?? target?.LogicalName;
+            if (targetRef == null && target != null)
+            {
+                if (target.Id == Guid.Empty && target.KeyAttributes.Count == 0)
+                {
+                    //TODO find attribute pk name instead of a random column of type guid
+                    foreach (var kvp in target.Attributes) {
+                        if (kvp.Value is Guid id)
+                        {
+                            target.Id = id;
+                        }
+                    }
+
+                }
+                targetRef = target.ToEntityReference();
+            }
+            //TODO pour create and update on suppose que l'id de la target est défini
+            //mais théoriquement il pourrait être à null et l'attribut guid de la target défini
+            targetLogicalName = targetLogicalName ?? targetRef?.LogicalName;
             executionTreeNode.Type = ExecutionTreeNodeType.Message;
             executionTreeNode.Title = request.RequestName;
             if (targetLogicalName != null)
@@ -170,7 +188,7 @@ namespace Dataverse.Plugin.Emulator.Services
             this.CurrentContext?.ExecutionTreeRoot.ChildNodes.Add(executionTreeNode);
             if (stepsToExecute?.Any() == true)
             {
-                return Execute(executionTreeNode, request, target, stepsToExecute);
+                return Execute(executionTreeNode, request, targetRef, stepsToExecute);
             }
             else
             {
@@ -199,7 +217,6 @@ namespace Dataverse.Plugin.Emulator.Services
 
             if (request is CreateRequest createRequest && response is CreateResponse createResponse)
             {
-                //TODO pourquoi ici target != createRequest.Target ?
                 target.Id = createResponse.id;
                 createRequest.Target.Id = createResponse.id;
             }
