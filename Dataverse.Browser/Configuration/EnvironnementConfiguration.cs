@@ -10,7 +10,7 @@ namespace Dataverse.Browser.Configuration
         public string Name { get; set; }
         public string DataverseHost { get; set; }
         public string[] PluginAssemblies { get; set; }
-        public StepBehavior StepBehavior { get; set; }
+        public bool DisableAsyncSteps { get; set; }
         public Guid Id { get; set; }
 
         public string GetWorkingDirectory()
