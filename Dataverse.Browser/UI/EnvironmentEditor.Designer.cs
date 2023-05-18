@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(EnvironmentEditor));
             this.label1 = new System.Windows.Forms.Label();
             this.txtHostName = new System.Windows.Forms.TextBox();
@@ -36,6 +37,8 @@
             this.label3 = new System.Windows.Forms.Label();
             this.txtName = new System.Windows.Forms.TextBox();
             this.btnOk = new System.Windows.Forms.Button();
+            this.cbDisableAsyncSteps = new System.Windows.Forms.CheckBox();
+            this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
             this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
             this.btnSelectAssembly = new System.Windows.Forms.Button();
             this.SuspendLayout();
@@ -105,6 +108,18 @@
             this.btnOk.UseVisualStyleBackColor = true;
             this.btnOk.Click += new System.EventHandler(this.BtnOk_Click);
             // 
+
+            // cbDisableAsyncSteps
+            // 
+            this.cbDisableAsyncSteps.AutoSize = true;
+            this.cbDisableAsyncSteps.Location = new System.Drawing.Point(15, 179);
+            this.cbDisableAsyncSteps.Name = "cbDisableAsyncSteps";
+            this.cbDisableAsyncSteps.Size = new System.Drawing.Size(199, 20);
+            this.cbDisableAsyncSteps.TabIndex = 6;
+            this.cbDisableAsyncSteps.Text = "Disable asynchronous steps";
+            this.toolTip1.SetToolTip(this.cbDisableAsyncSteps, resources.GetString("cbDisableAsyncSteps.ToolTip"));
+            this.cbDisableAsyncSteps.UseVisualStyleBackColor = true;
+
             // openFileDialog
             // 
             this.openFileDialog.FileName = "openFileDialog1";
@@ -118,12 +133,15 @@
             this.btnSelectAssembly.Text = "...";
             this.btnSelectAssembly.UseVisualStyleBackColor = true;
             this.btnSelectAssembly.Click += new System.EventHandler(this.btnSelectAssembly_Click);
+
             // 
             // EnvironmentEditor
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(337, 200);
+
+            this.ClientSize = new System.Drawing.Size(449, 246);
+            this.Controls.Add(this.cbDisableAsyncSteps);
             this.Controls.Add(this.btnSelectAssembly);
             this.Controls.Add(this.btnOk);
             this.Controls.Add(this.txtName);
@@ -134,7 +152,8 @@
             this.Controls.Add(this.label1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+
+            this.MaximizeBox = false;
             this.Name = "EnvironmentEditor";
             this.Text = "Environment Settings";
             this.Load += new System.EventHandler(this.EnvironmentEditor_Load);
@@ -151,6 +170,8 @@
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.TextBox txtName;
         private System.Windows.Forms.Button btnOk;
+        private System.Windows.Forms.CheckBox cbDisableAsyncSteps;
+        private System.Windows.Forms.ToolTip toolTip1;
         private System.Windows.Forms.OpenFileDialog openFileDialog;
         private System.Windows.Forms.Button btnSelectAssembly;
     }

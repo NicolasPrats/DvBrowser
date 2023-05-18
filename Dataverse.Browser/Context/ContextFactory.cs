@@ -170,7 +170,7 @@ namespace Dataverse.Browser.Context
                     }
                 }
             }
-            if (environnementConfiguration.StepBehavior == StepBehavior.DisableAsyncSteps)
+            if (environnementConfiguration.DisableAsyncSteps)
             {
                 this.NotifyProgress("Disabling async steps");
                 emulator.DisableAyncSteps();

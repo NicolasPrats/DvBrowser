@@ -38,6 +38,7 @@ namespace Dataverse.Browser.UI
                 txtName.Text = CurrentEnvironment.Name;
                 txtAssemblyPath.Text = CurrentEnvironment.PluginAssemblies[0];
                 txtHostName.Text = CurrentEnvironment.DataverseHost;
+                cbDisableAsyncSteps.Checked = CurrentEnvironment.DisableAsyncSteps;
             }
         }
 
@@ -51,6 +52,7 @@ namespace Dataverse.Browser.UI
                 return;
             this.SelectedEnvironment = CurrentEnvironment ?? new EnvironnementConfiguration();
             this.SelectedEnvironment.Name = txtName.Text;
+            this.SelectedEnvironment.DisableAsyncSteps = cbDisableAsyncSteps.Checked;
 
 
             this.SelectedEnvironment.PluginAssemblies = new string[] { assemblyPath };

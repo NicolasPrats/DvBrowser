@@ -65,7 +65,7 @@ namespace Dataverse.Browser
             }
             finally
             {
-                if (selectedEnvironment?.StepBehavior == StepBehavior.DisableAsyncSteps)
+                if (selectedEnvironment?.DisableAsyncSteps == true)
                 {
                     context?.PluginsEmulator.ReenableAsyncSteps();
                 }
