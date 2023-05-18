@@ -7,6 +7,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Windows.Shapes;
 using CefSharp;
 using CefSharp.DevTools.DOM;
 using Dataverse.Browser.Constants;
@@ -18,6 +19,7 @@ using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Messages;
 using Microsoft.Xrm.Sdk.Metadata;
 using Microsoft.Xrm.Sdk.Query;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.Tab;
 
 namespace Dataverse.Browser.Requests.Converter
 {
@@ -102,6 +104,19 @@ namespace Dataverse.Browser.Requests.Converter
                             }
                             ConvertToExecuteMultipleRequest(webApiRequest);
                         }
+                        else if (path.FirstSegment.EdmType == null && path.FirstSegment is OperationImportSegment operationImport)
+                        {
+                            string identifier = path.FirstSegment.Identifier;
+                            var operation = this.Context.Model.FindDeclaredOperationImports(identifier).Single();
+                            if (operation.IsActionImport())
+                            {
+                                ConvertToAction((IEdmOperation) operation, webApiRequest);
+                            }
+                            else
+                            {
+                                throw new NotImplementedException("Non action operations are not implemented");
+                            }
+                        }
                         else
                         {
                             throw new NotImplementedException("POST is not implemented for: " + path.FirstSegment.EdmType?.TypeKind);
@@ -147,6 +162,29 @@ namespace Dataverse.Browser.Requests.Converter
                 webApiRequest.ConvertFailureMessage = ex.Message;
             }
             return webApiRequest;
+        }
+
+        private void ConvertToAction(IEdmOperation operation, InterceptedWebApiRequest webApiRequest)
+        {
+            OrganizationRequest request = new OrganizationRequest(operation.Name);
+            using (JsonDocument json = JsonDocument.Parse(webApiRequest.SimpleHttpRequest.Body))
+            {
+                foreach (var node in json.RootElement.EnumerateObject())
+                {
+                    string key = node.Name;
+                    var parameter = operation.FindParameter(key);
+                    if (parameter == null)
+                    {
+                        throw new NotSupportedException($"parameter {key} not found!");
+                    }
+                    request[key] = ConvertValueToAttribute(node.Value, parameter.Type);
+                }
+            }
+        }
+
+        private object ConvertValueToAttribute(JsonElement value, IEdmTypeReference type)
+        {
+            throw new NotImplementedException();
         }
 
         private void ConvertToDeleteRequest(InterceptedWebApiRequest webApiRequest, ODataPath path)
