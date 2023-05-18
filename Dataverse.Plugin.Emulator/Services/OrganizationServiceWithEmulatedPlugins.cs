@@ -203,12 +203,12 @@ namespace Dataverse.Plugin.Emulator.Services
             var preImages = GetImages(target, steps, 0);
             foreach (var step in preValidateSteps.OrderBy(s => s.Rank))
             {
-                ExecuteStep(treeNode, step, request, null, sharedVariables, preImages[step], null);
+                ExecuteStep(treeNode, step, request, null, sharedVariables, preImages[step], null, target?.Id ?? Guid.Empty);
             }
             var preExecuteSteps = steps.Where(s => s.Stage == 20);
             foreach (var step in preExecuteSteps.OrderBy(s => s.Rank))
             {
-                ExecuteStep(treeNode, step, request, null, sharedVariables, preImages[step], null);
+                ExecuteStep(treeNode, step, request, null, sharedVariables, preImages[step], null, target?.Id ?? Guid.Empty);
             }
 
 
@@ -225,7 +225,7 @@ namespace Dataverse.Plugin.Emulator.Services
             var postImages = GetImages(target, postExecuteSteps, 1);
             foreach (var step in postExecuteSteps.OrderBy(s => s.IsAsynchronous ? 1 : 0).ThenBy(s => s.Rank))
             {
-                ExecuteStep(treeNode, step, request, response, sharedVariables, preImages[step], postImages[step]);
+                ExecuteStep(treeNode, step, request, response, sharedVariables, preImages[step], postImages[step], target?.Id ?? Guid.Empty);
             }
             return response;
         }
@@ -260,12 +260,12 @@ namespace Dataverse.Plugin.Emulator.Services
         }
 
         //[DebuggerStepThrough()]
-        private void ExecuteStep(ExecutionTreeNode executionTreeNode, PluginStepDescription step, OrganizationRequest request, OrganizationResponse response, ParameterCollection sharedVariables, EntityImageCollection preImages, EntityImageCollection postImages)
+        private void ExecuteStep(ExecutionTreeNode executionTreeNode, PluginStepDescription step, OrganizationRequest request, OrganizationResponse response, ParameterCollection sharedVariables, EntityImageCollection preImages, EntityImageCollection postImages, Guid targetId)
         {
             string title = step.Stage + " " + step.MessageName + " " + (step.IsAsynchronous ? "Async " : " ") + step.EventHandler;
             var stepExecutionTreeNode = new ExecutionTreeNode(title, ExecutionTreeNodeType.Step);
             executionTreeNode.ChildNodes.Add(stepExecutionTreeNode);
-            var context = GenerateContext(stepExecutionTreeNode, step, request, response, sharedVariables, preImages, postImages);
+            var context = GenerateContext(stepExecutionTreeNode, step, request, response, sharedVariables, preImages, postImages, targetId);
 
             var serviceProvider = new EmulatedPluginServiceProvider();
             serviceProvider.AddService(context);
@@ -283,7 +283,7 @@ namespace Dataverse.Plugin.Emulator.Services
         }
 
 
-        private EmulatedPluginContext GenerateContext(ExecutionTreeNode executionTreeNode, PluginStepDescription step, OrganizationRequest request, OrganizationResponse response, ParameterCollection sharedVariables, EntityImageCollection preImages, EntityImageCollection postImages)
+        private EmulatedPluginContext GenerateContext(ExecutionTreeNode executionTreeNode, PluginStepDescription step, OrganizationRequest request, OrganizationResponse response, ParameterCollection sharedVariables, EntityImageCollection preImages, EntityImageCollection postImages, Guid targetId)
         {
             var newContext = new EmulatedPluginContext
             {
@@ -298,7 +298,9 @@ namespace Dataverse.Plugin.Emulator.Services
                 OperationCreatedOn = DateTime.UtcNow,
                 OrganizationId = this.WhoAmIResponse.OrganizationId,
                 OutputParameters = MapResponseParameters(response),
+                OwningExtension= new EntityReference("sdkmessageprocessingstep", step.Id),
                 ParentContext = this.CurrentContext,
+                PrimaryEntityId = targetId,
                 PostEntityImages = postImages,
                 PreEntityImages = preImages,
                 PrimaryEntityName = step.PrimaryEntity,

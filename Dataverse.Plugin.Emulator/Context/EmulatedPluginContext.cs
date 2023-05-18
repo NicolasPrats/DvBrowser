@@ -55,13 +55,13 @@ namespace Dataverse.Plugin.Emulator.Context
 
         public string OrganizationName { get; internal set; }
 
-        public Guid PrimaryEntityId => throw new NotImplementedException();
+        public Guid PrimaryEntityId  { get; internal set; }
 
         public EntityImageCollection PreEntityImages { get; internal set; }
 
         public EntityImageCollection PostEntityImages { get; internal set; }
 
-        public EntityReference OwningExtension => throw new NotImplementedException();
+        public EntityReference OwningExtension { get; internal set; }
 
         public Guid CorrelationId { get; internal set; }
 
