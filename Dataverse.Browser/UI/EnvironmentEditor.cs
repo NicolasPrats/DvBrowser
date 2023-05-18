@@ -1,5 +1,7 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
+using System.Security;
 using System.Windows.Forms;
 using Dataverse.Browser.Configuration;
 
@@ -15,6 +17,18 @@ namespace Dataverse.Browser.UI
         {
             this.InitializeComponent();
             this.CurrentEnvironment = environment;
+            this.openFileDialog.Filter = "Plugins Files (*.dll)|*.dll|All files (*.*)|*.*";
+            var defaultPath = this.CurrentEnvironment?.PluginAssemblies?.FirstOrDefault();
+            if (defaultPath != null)
+            {
+                this.openFileDialog.InitialDirectory = Path.GetDirectoryName(defaultPath);
+                this.openFileDialog.FileName = Path.GetFileName(defaultPath);
+            }
+            else
+            {
+                this.openFileDialog.InitialDirectory = Environment.CurrentDirectory;
+                this.openFileDialog.FileName = "*.dll";
+            }
         }
 
         private void EnvironmentEditor_Load(object sender, EventArgs e)
@@ -84,6 +98,14 @@ namespace Dataverse.Browser.UI
                 return null;
             }
             return hostName;
+        }
+
+        private void btnSelectAssembly_Click(object sender, EventArgs e)
+        {
+            if (openFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                txtAssemblyPath.Text = openFileDialog.FileName;
+            }
         }
     }
 }
