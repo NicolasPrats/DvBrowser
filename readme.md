@@ -43,7 +43,7 @@ The simplest way to test the Dataverse.Browser is to:
 * Enjoy! 
 
 At the top right of the window, you have 2 icons and a checkbox:
-* First icon is to open the Developper tools
+* First icon is to open the Developer tools
 * Second icon is to automatically attach a debugger to the browser. Before to use it, it's recommended to open your plugin solution in a Visual Studio instance. When a popup asks you to select a Visual Studio instance, choose this one. 
 * If the checkbox is selected, then plugins are run locally and can be debugged in Visual Studio. If not they are run on server side, as with any other browser.
 
