@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -75,10 +76,61 @@ namespace Dataverse.Browser.Requests.Converter
                 case "Edm.SByte":
                     return value.GetSByte();
                 case "Edm.String":
-                    return value.GetString();                
+                    return value.GetString();
+                default:
+                    if (type.TypeKind() == EdmTypeKind.Entity)
+                    {
+                        string typeName = type.FullName();
+                        return ConvertToEntityReference(value, type, typeName);
+                    }
+                    else if (type.TypeKind() == EdmTypeKind.Collection)
+                    {
+                        EntityReferenceCollection collection = new EntityReferenceCollection();
+                        foreach (var item in value.EnumerateArray())
+                        {
+                            collection.Add(ConvertToEntityReference(item, null, null));
+                        }
+                        return collection;
+                    }
+                    else
+                    {
+                        throw new NotImplementedException($"Type {type.TypeKind()} is not implemented!");
+                    }
+
             }
             throw new NotSupportedException("Type is unknown:" + type.FullName());
         }
 
+        private  EntityReference ConvertToEntityReference(JsonElement value, IEdmTypeReference type, string typeName)
+        {
+            if (!value.TryGetProperty("@odata.type", out var dataType))
+            {
+                throw new NotSupportedException("@odata.type property must be set!");
+            }
+            if (typeName != null && dataType.GetString() != typeName)
+            {
+                throw new NotSupportedException($"@odata.type property is of type {dataType.GetString()} whereas {typeName} was expected!");
+            }
+            typeName = dataType.GetString();
+            IEdmEntityType definition;
+            if (type == null)
+            {
+                definition = this.Context.Model.FindType(typeName) as IEdmEntityType;
+            }
+            else
+            {
+                definition = type?.Definition as IEdmEntityType;
+            }
+            if (definition == null)
+            {
+                throw new NotSupportedException($"IEdmEntityType was expected!");
+            }
+            var key = definition.DeclaredKey.FirstOrDefault()?.Name;
+            if (!value.TryGetProperty(key, out var id))
+            {
+                throw new NotSupportedException($"@{key} property must be set!");
+            }
+            return new EntityReference(typeName, id.GetGuid());
+        }
     }
 }
