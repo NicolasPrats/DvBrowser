@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Specialized;
 using System.Net.Http;
+using System.Text;
+using System.Text.Json.Nodes;
 using Dataverse.Browser.Context;
 using Dataverse.Browser.Requests.SimpleClasses;
 using Microsoft.Xrm.Sdk;
@@ -23,8 +25,64 @@ namespace Dataverse.Browser.Requests.Converters
                 case DeleteResponse _:
                     return ConvertDeleteResponse();
                 default:
-                    throw new NotImplementedException("Message has been executed but response is not implemented:" + response.GetType().Name);
+                    if (response.GetType() != typeof(OrganizationResponse))
+                    {
+                        throw new NotImplementedException("Message has been executed but response is not implemented:" + response.GetType().Name);
+                    }
+                    //OrganizationResponse without specialized type are assumed to be CustomApi
+                    return ConvertCustomApiResponse(response);
+
             }
+        }
+
+        private static SimpleHttpResponse ConvertCustomApiResponse(OrganizationResponse organizationResponse)
+        {
+            var body = new JsonObject();
+            foreach (var property in organizationResponse.Results)
+            {
+                switch (property.Value)
+                {
+                    case string strValue:
+                        body[property.Key] = strValue;
+                        break;
+                    case int intValue:
+                        body[property.Key] = intValue;
+                        break;
+                    case byte byteValue:
+                        body[property.Key] = byteValue;
+                        break;
+                    case Guid guidValue:
+                        body[property.Key] = guidValue;
+                        break;
+                    case Single singleValue:
+                        body[property.Key] = singleValue;
+                        break;
+                    case double doubleValue:
+                        body[property.Key] = doubleValue;
+                        break;
+                    case decimal decimalValue:
+                        body[property.Key] = decimalValue;
+                        break;
+                    case DateTime dateTimeValue:
+                        body[property.Key] = dateTimeValue;
+                        break;
+                    case bool boolValue:
+                        body[property.Key] = boolValue;
+                        break;
+                    default:
+                        throw new NotImplementedException($"Message has been executed but response cannot be generated. Parameter:{property.Key}={property.Value}");
+                }
+            }
+            string jsonBody = body.ToJsonString();
+            return new SimpleHttpResponse()
+            {
+                Body = Encoding.UTF8.GetBytes(jsonBody),
+                Headers = new NameValueCollection
+                {
+                    { "OData-Version", "4.0" }
+                },
+                StatusCode = 204
+            };
         }
 
         private static SimpleHttpResponse ConvertDeleteResponse()
