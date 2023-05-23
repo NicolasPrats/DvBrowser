@@ -5,6 +5,7 @@ using System.Windows.Forms;
 using CefSharp;
 using CefSharp.WinForms;
 using Dataverse.Browser.Context;
+using Dataverse.Browser.Misc;
 using Dataverse.Browser.Requests;
 using Dataverse.Plugin.Emulator.ExecutionTree;
 
@@ -37,6 +38,7 @@ namespace Dataverse.Browser.UI
             };
             this.splitContainer1.Panel1.Controls.Add(browser);
             this.CurrentBrowser = browser;
+            this.CurrentBrowser.KeyboardHandler = new KeyboardHandler();
 
             this.DataverseContext = context;
             foreach (var request in context.LastRequests)
@@ -180,5 +182,6 @@ namespace Dataverse.Browser.UI
         {
             this.DataverseContext.IsEnabled = cbEnabled.Checked;
         }
+
     }
 }
