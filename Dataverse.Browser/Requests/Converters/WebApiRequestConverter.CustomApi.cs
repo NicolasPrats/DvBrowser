@@ -130,7 +130,7 @@ namespace Dataverse.Browser.Requests.Converter
             {
                 throw new NotSupportedException($"@{key} property must be set!");
             }
-            return new EntityReference(typeName, id.GetGuid());
+            return new EntityReference(definition.Name,new Guid( id.GetString()));
         }
     }
 }

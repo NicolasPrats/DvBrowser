@@ -104,7 +104,7 @@ namespace Dataverse.Browser.Requests.Converter
                             }
                             ConvertToExecuteMultipleRequest(webApiRequest);
                         }
-                        else if (path.FirstSegment.EdmType == null && path.FirstSegment is OperationImportSegment operationImport)
+                        else if (path.FirstSegment is OperationImportSegment operationImport)
                         {
                             string identifier = path.FirstSegment.Identifier;
                             var declaredOperation = this.Context.Model.FindDeclaredOperationImports(identifier).Single();
