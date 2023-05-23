@@ -30,9 +30,14 @@ namespace Dataverse.Browser.Requests.Converter
 {
     internal partial class WebApiRequestConverter
     {
-        private void ConvertToAction(IEdmOperation operation, InterceptedWebApiRequest webApiRequest)
+        private void ConvertToAction(IEdmOperation operation, InterceptedWebApiRequest webApiRequest, bool isBound)
         {
             OrganizationRequest request = new OrganizationRequest(operation.Name);
+            string boundParameterName = null;
+            if (isBound)
+            {
+                boundParameterName = operation.Parameters.First().Name;
+            }
             using (JsonDocument json = JsonDocument.Parse(webApiRequest.SimpleHttpRequest.Body))
             {
                 foreach (var node in json.RootElement.EnumerateObject())
@@ -42,6 +47,10 @@ namespace Dataverse.Browser.Requests.Converter
                     if (parameter == null)
                     {
                         throw new NotSupportedException($"parameter {key} not found!");
+                    }
+                    if (key == boundParameterName)
+                    {
+                        key = "Target";
                     }
                     request[key] = ConvertValueToAttribute(node.Value, parameter.Type);
                 }

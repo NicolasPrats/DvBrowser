@@ -88,32 +88,18 @@ namespace Dataverse.Browser.Requests.Converter
                 switch (request.Method)
                 {
                     case "POST":
-                        if (path.Count != 1)
+                        switch (path.Count)
                         {
-                            throw new NotImplementedException("POST is not implemented for: " + path.Count + " segments");
+                            case 1:
+                                ManagePost1Segment();
+                                break;
+                            case 3:
+                                ManagePost3Segment();
+                                break;
+                            default:
+                                throw new NotImplementedException("POST is not implemented for: " + path.Count + " segments");
                         }
-                        if (path.FirstSegment.EdmType?.TypeKind == EdmTypeKind.Collection)
-                        {
-                            ConvertToCreateUpdateRequest(webApiRequest, path);
-                        }
-                        else if (path.FirstSegment.Identifier == "$batch")
-                        {
-                            if (request.OriginRequest == null)
-                            {
-                                throw new NotSupportedException("batch requests embedded in another batch request are not supported!");
-                            }
-                            ConvertToExecuteMultipleRequest(webApiRequest);
-                        }
-                        else if (path.FirstSegment is OperationImportSegment operationImport)
-                        {
-                            string identifier = path.FirstSegment.Identifier;
-                            var declaredOperation = this.Context.Model.FindDeclaredOperationImports(identifier).Single();
-                            ConvertToAction(declaredOperation.Operation, webApiRequest);
-                        }
-                        else
-                        {
-                            throw new NotImplementedException("POST is not implemented for: " + path.FirstSegment.EdmType?.TypeKind);
-                        }
+
                         break;
                     case "PATCH":
                         if (path.Count != 2)
@@ -155,6 +141,43 @@ namespace Dataverse.Browser.Requests.Converter
                 webApiRequest.ConvertFailureMessage = ex.Message;
             }
             return webApiRequest;
+
+            void ManagePost3Segment()
+            {
+                if (!(path.LastSegment is OperationSegment operationImport))
+                {
+                    throw new NotImplementedException("Post with 3 segments are implemented only for custom api!");
+                }
+                string identifier = path.LastSegment.Identifier;
+                var declaredOperation = this.Context.Model.FindDeclaredOperations(identifier).Single();
+                ConvertToAction(declaredOperation, webApiRequest, true);
+            }
+
+            void ManagePost1Segment()
+            {
+                if (path.FirstSegment.EdmType?.TypeKind == EdmTypeKind.Collection)
+                {
+                    ConvertToCreateUpdateRequest(webApiRequest, path);
+                }
+                else if (path.FirstSegment.Identifier == "$batch")
+                {
+                    if (request.OriginRequest == null)
+                    {
+                        throw new NotSupportedException("batch requests embedded in another batch request are not supported!");
+                    }
+                    ConvertToExecuteMultipleRequest(webApiRequest);
+                }
+                else if (path.FirstSegment is OperationImportSegment operationImport)
+                {
+                    string identifier = path.FirstSegment.Identifier;
+                    var declaredOperation = this.Context.Model.FindDeclaredOperationImports(identifier).Single();
+                    ConvertToAction(declaredOperation.Operation, webApiRequest, false);
+                }
+                else
+                {
+                    throw new NotImplementedException("POST is not implemented for: " + path.FirstSegment.EdmType?.TypeKind);
+                }
+            }
         }
 
 
