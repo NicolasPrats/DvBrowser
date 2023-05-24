@@ -164,15 +164,13 @@ namespace Dataverse.Plugin.Emulator.Services
             {
                 if (target.Id == Guid.Empty && target.KeyAttributes.Count == 0)
                 {
+                    //TODO: use a metadatacache (and share it with caller ?)
                     RetrieveEntityRequest metadataRequest = new RetrieveEntityRequest { EntityFilters = EntityFilters.Attributes, LogicalName = target.LogicalName };
                     RetrieveEntityResponse metadataResponse = (RetrieveEntityResponse)Execute(metadataRequest);
                     AttributeMetadata pkAttribute = metadataResponse.EntityMetadata.Attributes.FirstOrDefault(x => x.IsPrimaryId == true);
-                    target.Id = (Guid)target[pkAttribute.LogicalName];
+                    target.Id = target.GetAttributeValue<Guid>(pkAttribute.LogicalName);
 
-                    if (target.Id == null || target.Id == Guid.Empty)
-                    {
-                        target.Id = (Guid)target.Attributes.FirstOrDefault(x => x.Value is Guid).Value;
-                    }
+                    //TODO: check alternate keys
                 }
 
                 targetRef = target.ToEntityReference();
