@@ -5,7 +5,7 @@ using System.Windows.Forms;
 using CefSharp;
 using CefSharp.WinForms;
 using Dataverse.Browser.Context;
-using Dataverse.Browser.Misc;
+using Dataverse.UI.BrowserHandlers;
 using Dataverse.Browser.Requests;
 using Dataverse.Plugin.Emulator.ExecutionTree;
 

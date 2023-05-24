@@ -196,7 +196,7 @@
     <Compile Include="Configuration\EnvironnementConfiguration.cs" />
     <Compile Include="Constants\ActivityPartyType.cs" />
     <Compile Include="Context\ContextFactory.cs" />
-    <Compile Include="Misc\KeyboardHandler.cs" />
+    <Compile Include="UI\BrowserHandlers\KeyboardHandler.cs" />
     <Compile Include="Requests\Converters\OrganizationResponseConverter.cs" />
     <Compile Include="Requests\SimpleClasses\SimpleHttpResponse.cs" />
     <Compile Include="Requests\SimpleClasses\SimpleHttpRequest.cs" />
