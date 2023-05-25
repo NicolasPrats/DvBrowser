@@ -198,6 +198,9 @@
     <Compile Include="Context\ContextFactory.cs" />
     <Compile Include="UI\BrowserHandlers\KeyboardHandler.cs" />
     <Compile Include="Requests\Converters\OrganizationResponseConverter.cs" />
+    <Compile Include="Requests\Converters\WebApiRequestConverter.CustomApi.cs" />
+    <Compile Include="Requests\Converters\WebApiRequestConverter.Batch.cs" />
+    <Compile Include="Requests\Converters\WebApiRequestConverter.CRUD.cs" />
     <Compile Include="Requests\SimpleClasses\SimpleHttpResponse.cs" />
     <Compile Include="Requests\SimpleClasses\SimpleHttpRequest.cs" />
     <Compile Include="UI\ContextSpinner.cs">
@@ -234,7 +237,7 @@
     <Compile Include="Requests\BrowserRequestHandler.cs" />
     <Compile Include="Requests\InterceptedWebApiRequest.cs" />
     <Compile Include="Requests\WebApiResourceRequestHandler.cs" />
-    <Compile Include="Requests\Converters\WebApiRequestConverter.cs" />
+    <Compile Include="Requests\Converters\WebApiRequestConverter.Base.cs" />
     <EmbeddedResource Include="UI\ContextSpinner.resx">
       <DependentUpon>ContextSpinner.cs</DependentUpon>
     </EmbeddedResource>
