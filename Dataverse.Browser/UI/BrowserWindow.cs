@@ -13,7 +13,7 @@ using Dataverse.Plugin.Emulator.ExecutionTree;
 
 namespace Dataverse.Browser.UI
 {
-    internal partial class Browser : Form
+    internal partial class BrowserWindow : Form
     {
         private ChromiumWebBrowser CurrentBrowser { get; set; }
         public DataverseContext DataverseContext { get; }
@@ -22,7 +22,7 @@ namespace Dataverse.Browser.UI
         private delegate void ClearRequestsDelegate();
         private readonly Dictionary<InterceptedWebApiRequest, TreeNode> Nodes = new Dictionary<InterceptedWebApiRequest, TreeNode>();
 
-        public Browser(DataverseContext context)
+        public BrowserWindow(DataverseContext context)
         {
             if (context is null)
             {
@@ -38,7 +38,6 @@ namespace Dataverse.Browser.UI
             };
             this.splitContainer1.Panel1.Controls.Add(browser);
             this.CurrentBrowser = browser;
-            this.CurrentBrowser.KeyboardHandler = new KeyboardHandler();
 
             this.DataverseContext = context;
             foreach (var request in context.LastRequests)

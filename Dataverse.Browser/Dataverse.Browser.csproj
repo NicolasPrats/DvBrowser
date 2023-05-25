@@ -218,11 +218,11 @@
     <Compile Include="UI\EnvironmentEditor.Designer.cs">
       <DependentUpon>EnvironmentEditor.cs</DependentUpon>
     </Compile>
-    <Compile Include="UI\Browser.cs">
+    <Compile Include="UI\BrowserWindow.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="UI\Browser.Designer.cs">
-      <DependentUpon>Browser.cs</DependentUpon>
+    <Compile Include="UI\BrowserWindow.Designer.cs">
+      <DependentUpon>BrowserWindow.cs</DependentUpon>
     </Compile>
     <Compile Include="Context\DataverseContext.cs" />
     <Compile Include="Context\LastRequestsList.cs" />
@@ -244,8 +244,8 @@
     <EmbeddedResource Include="UI\EnvironmentEditor.resx">
       <DependentUpon>EnvironmentEditor.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="UI\Browser.resx">
-      <DependentUpon>Browser.cs</DependentUpon>
+    <EmbeddedResource Include="UI\BrowserWindow.resx">
+      <DependentUpon>BrowserWindow.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>

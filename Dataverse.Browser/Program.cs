@@ -144,7 +144,7 @@ namespace Dataverse.Browser
             Cef.Initialize(settings, performDependencyCheck: true, browserProcessHandler: null);
 
 
-            Application.Run(new UI.Browser(context));
+            Application.Run(new UI.BrowserWindow(context));
         }
     }
 }
