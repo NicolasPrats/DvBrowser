@@ -15,13 +15,16 @@ namespace Dataverse.BrowserLibs.Tests
     [TestClass]
     public class UnitTest1
     {
+
+        public TestContext TestContext {get; set; }
+
         [TestMethod]
         public void TestMethod1()
         {
-            string login = "admin@CRM183216.onmicrosoft.com";
-            string password = "";
-            string host = "org4171ccdd.crm4.dynamics.com";
-            string connectionString = $"AuthType=OAuth;Url=https://{host};AppId=51f81489-12ee-4a9e-aaae-a2591f45987d;RedirectUri=app://58145B91-0C36-4500-8554-080854F2AC97;UserName={login};Password={password};RequireNewInstance=true;";
+            string login = (string) TestContext.Properties["login"];
+            string password = (string)TestContext.Properties["password"];
+            string host = (string)TestContext.Properties["hostname"];
+            string connectionString = $"AuthType=OAuth;Url=https://{host};AppId=51f81489-12ee-4a9e-aaae-a2591f45987d;RedirectUri=app://58145B91-0C36-4500-8554-080854F2AC97;UserName={login};Password='{password.Replace("'", "''")}';RequireNewInstance=true;";
 
             var client = new CrmServiceClient(connectionString);
             var emulator = new PluginEmulator((callerId) =>
