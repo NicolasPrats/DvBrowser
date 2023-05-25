@@ -220,7 +220,7 @@
     <Compile Include="UI\BrowserWindow.Designer.cs">
       <DependentUpon>BrowserWindow.cs</DependentUpon>
     </Compile>
-    <Compile Include="Context\DataverseContext.cs" />
+    <Compile Include="Context\BrowserContext.cs" />
     <Compile Include="Context\LastRequestsList.cs" />
     <Compile Include="UI\Icons.cs" />
     <Compile Include="Program.cs" />

@@ -9,9 +9,9 @@ namespace Dataverse.Plugin.Emulator.Steps
         private readonly Dictionary<ValueTuple<string, string, string>, IPlugin> Cache = new Dictionary<ValueTuple<string, string, string>, IPlugin>();
         public IPlugin GetPlugin(PluginStepDescription step)
         {
-            ValueTuple<string, string, string> key = (step.EventHandler, (string)step.Configuration, (string)step.SecureConfiguration);
+            ValueTuple<string, string, string> key = (step.EventHandler, step.Configuration, step.SecureConfiguration);
 
-            if (!Cache.TryGetValue(key, out var plugin))
+            if (!this.Cache.TryGetValue(key, out var plugin))
             {
                 var type = step.Assembly.GetType(step.EventHandler);
                 if (type.GetConstructor(new Type[] { }) != null)
@@ -20,13 +20,13 @@ namespace Dataverse.Plugin.Emulator.Steps
                 }
                 else if (type.GetConstructor(new Type[] { typeof(string), typeof(string) }) != null)
                 {
-                    plugin = (IPlugin)Activator.CreateInstance(type, (string)null, (string)null);
+                    plugin = (IPlugin)Activator.CreateInstance(type, null, (string)null);
                 }
                 else
                 {
                     throw new NotSupportedException("No constructor found for plugin: " + step.EventHandler);
                 }
-                Cache[key] = plugin;
+                this.Cache[key] = plugin;
             }
             return plugin;
         }

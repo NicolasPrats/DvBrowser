@@ -3,25 +3,64 @@ using System.Collections.Specialized;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json.Nodes;
-using Dataverse.Browser.Context;
-using Dataverse.Browser.Requests.SimpleClasses;
+using Dataverse.WebApi2IOrganizationService.Model;
+using Dataverse.Utils;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Messages;
+using System.Text.Encodings.Web;
 
-namespace Dataverse.Browser.Requests.Converters
+namespace Dataverse.WebApi2IOrganizationService.Converterss
 {
-    internal static class OrganizationResponseConverter
+    public class ResponseConverter
     {
-        internal static SimpleHttpResponse Convert(DataverseContext context, InterceptedWebApiRequest webApiRequest, OrganizationResponse response)
+        internal DataverseContext Context { get; }
+
+        public ResponseConverter(DataverseContext context)
+        {
+            this.Context = context ?? throw new ArgumentNullException(nameof(context));
+        }
+
+        public WebApiResponse Convert(Exception ex)
+        {
+
+            var errorText = JavaScriptEncoder.UnsafeRelaxedJsonEscaping.Encode(ex.Message);
+            var errorDetails = JavaScriptEncoder.UnsafeRelaxedJsonEscaping.Encode(ex.ToString());
+
+            byte[] body = Encoding.UTF8.GetBytes(
+$@"{{
+                ""error"":
+                    {{
+                    ""code"":""0x80040265"",
+                    ""message"":""{errorText}"",
+                    ""@Microsoft.PowerApps.CDS.ErrorDetails.HttpStatusCode"":""400"",
+                    ""@Microsoft.PowerApps.CDS.InnerError"":""{errorText}"",
+                    ""@Microsoft.PowerApps.CDS.TraceText"":""{errorDetails}""
+                    }}
+                }}");
+
+            return new WebApiResponse()
+            {
+                StatusCode = 400,
+                Body = body,
+                Headers = new NameValueCollection()
+                {
+                    { "OData-Version", "4.0" },
+                    { "Content-Type", "application/json; odata.metadata = minimal" },
+                    { "Content-Length", body.Length.ToString() }
+                }
+            };
+        }
+
+        public WebApiResponse Convert(RequestConversionResult conversionResult, OrganizationResponse response)
         {
             switch (response)
             {
                 case CreateResponse createResponse:
-                    return ConvertCreateResponse(context, (CreateRequest)webApiRequest.ConvertedRequest, createResponse);
+                    return ConvertCreateResponse((CreateRequest)conversionResult.ConvertedRequest, createResponse);
                 case UpdateResponse _:
-                    return ConvertUpdateResponse(context, (UpdateRequest)webApiRequest.ConvertedRequest);
+                    return ConvertUpdateResponse((UpdateRequest)conversionResult.ConvertedRequest);
                 case RetrieveResponse _:
-                    return ConvertRetrieveResponse(context, webApiRequest);
+                    return ConvertRetrieveResponse(conversionResult);
                 case DeleteResponse _:
                     return ConvertDeleteResponse();
                 default:
@@ -35,7 +74,7 @@ namespace Dataverse.Browser.Requests.Converters
             }
         }
 
-        private static SimpleHttpResponse ConvertCustomApiResponse(OrganizationResponse organizationResponse)
+        private WebApiResponse ConvertCustomApiResponse(OrganizationResponse organizationResponse)
         {
             var body = new JsonObject();
             foreach (var property in organizationResponse.Results)
@@ -54,8 +93,8 @@ namespace Dataverse.Browser.Requests.Converters
                     case Guid guidValue:
                         body[property.Key] = guidValue;
                         break;
-                    case Single singleValue:
-                        body[property.Key] = singleValue;
+                    case float floatValue:
+                        body[property.Key] = floatValue;
                         break;
                     case double doubleValue:
                         body[property.Key] = doubleValue;
@@ -74,7 +113,7 @@ namespace Dataverse.Browser.Requests.Converters
                 }
             }
             string jsonBody = body.ToJsonString();
-            return new SimpleHttpResponse()
+            return new WebApiResponse()
             {
                 Body = Encoding.UTF8.GetBytes(jsonBody),
                 Headers = new NameValueCollection
@@ -85,9 +124,9 @@ namespace Dataverse.Browser.Requests.Converters
             };
         }
 
-        private static SimpleHttpResponse ConvertDeleteResponse()
+        private WebApiResponse ConvertDeleteResponse()
         {
-            return new SimpleHttpResponse()
+            return new WebApiResponse()
             {
                 Body = new byte[0],
                 Headers = new NameValueCollection
@@ -98,11 +137,11 @@ namespace Dataverse.Browser.Requests.Converters
             };
         }
 
-        private static SimpleHttpResponse ConvertUpdateResponse(DataverseContext context, UpdateRequest updateRequest)
+        private WebApiResponse ConvertUpdateResponse(UpdateRequest updateRequest)
         {
-            string setName = context.MetadataCache.GetEntityFromLogicalName(updateRequest.Target.LogicalName).EntitySetName;
-            var id = $"{context.WebApiBaseUrl}{setName}({updateRequest.Target.Id})";
-            return new SimpleHttpResponse()
+            string setName = this.Context.MetadataCache.GetEntityFromLogicalName(updateRequest.Target.LogicalName).EntitySetName;
+            var id = $"{this.Context.WebApiBaseUrl}{setName}({updateRequest.Target.Id})";
+            return new WebApiResponse()
             {
                 Body = new byte[0],
                 Headers = new NameValueCollection
@@ -114,14 +153,14 @@ namespace Dataverse.Browser.Requests.Converters
             };
         }
 
-        private static SimpleHttpResponse ConvertCreateResponse(DataverseContext context, CreateRequest createRequest, CreateResponse createResponse)
+        private WebApiResponse ConvertCreateResponse(CreateRequest createRequest, CreateResponse createResponse)
         {
-            string setName = context.MetadataCache.GetEntityFromLogicalName(createRequest.Target.LogicalName).EntitySetName;
-            var id = $"{context.WebApiBaseUrl}{setName}({createResponse.id})";
+            string setName = this.Context.MetadataCache.GetEntityFromLogicalName(createRequest.Target.LogicalName).EntitySetName;
+            var id = $"{this.Context.WebApiBaseUrl}{setName}({createResponse.id})";
 
             //TODO: convert the response instead of requesting
-            var retrieveResult = HttpGet(context, id, true);
-            return new SimpleHttpResponse()
+            var retrieveResult = HttpGet(id, true);
+            return new WebApiResponse()
             {
                 Body = retrieveResult.Content.ReadAsByteArrayAsync().Result,
                 Headers = new NameValueCollection
@@ -133,17 +172,17 @@ namespace Dataverse.Browser.Requests.Converters
             };
         }
 
-        private static SimpleHttpResponse ConvertRetrieveResponse(DataverseContext context, InterceptedWebApiRequest webApiRequest)
+        private WebApiResponse ConvertRetrieveResponse(RequestConversionResult conversionResult)
         {
             //TODO: convert the response instead of requesting
-            string url = $"https://{context.Host}{webApiRequest.SimpleHttpRequest.LocalPathWithQuery}";
-            HttpResponseMessage retrieveResult = HttpGet(context, url, false);
+            string url = $"https://{this.Context.Host}{conversionResult.SrcRequest.LocalPathWithQuery}";
+            HttpResponseMessage retrieveResult = HttpGet(url, false);
             NameValueCollection headers = new NameValueCollection();
             foreach (var header in retrieveResult.Headers)
             {
                 headers.Add(header.Key, String.Concat(header.Value, ","));
             }
-            return new SimpleHttpResponse()
+            return new WebApiResponse()
             {
                 Body = retrieveResult.Content.ReadAsByteArrayAsync().Result,
                 Headers = headers,
@@ -151,15 +190,15 @@ namespace Dataverse.Browser.Requests.Converters
             };
         }
 
-        private static HttpResponseMessage HttpGet(DataverseContext context, string url, bool bypassPLugins)
+        private HttpResponseMessage HttpGet(string url, bool bypassPLugins)
         {
             HttpRequestMessage retrieveMessage = new HttpRequestMessage(HttpMethod.Get, url);
-            retrieveMessage.Headers.Add("Authorization", "Bearer " + context.CrmServiceClient.CurrentAccessToken);
+            retrieveMessage.Headers.Add("Authorization", "Bearer " + this.Context.CrmServiceClient.CurrentAccessToken);
             if (bypassPLugins)
             {
                 retrieveMessage.Headers.Add("MSCRM.BypassCustomPluginExecution", "true");
             }
-            var retrieveResult = context.HttpClient.SendAsync(retrieveMessage).Result;
+            var retrieveResult = this.Context.HttpClient.SendAsync(retrieveMessage).Result;
             return retrieveResult;
         }
     }

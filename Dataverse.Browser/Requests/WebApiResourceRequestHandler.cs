@@ -7,9 +7,9 @@ namespace Dataverse.Browser.Requests
     internal class WebApiResourceRequestHandler
         : CefSharp.Handler.ResourceRequestHandler
     {
-        protected DataverseContext Context { get; }
+        protected BrowserContext Context { get; }
         public InterceptedWebApiRequest WebApiRequest { get; }
-        public WebApiResourceRequestHandler(DataverseContext context, InterceptedWebApiRequest webApiRequest)
+        public WebApiResourceRequestHandler(BrowserContext context, InterceptedWebApiRequest webApiRequest)
         {
             this.Context = context ?? throw new ArgumentNullException(nameof(context));
             this.WebApiRequest = webApiRequest ?? throw new ArgumentNullException(nameof(webApiRequest));

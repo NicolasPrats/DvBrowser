@@ -1,12 +1,4 @@
 ﻿using CefSharp;
-using Dataverse.Browser.UI;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace Dataverse.UI.BrowserHandlers
 {
@@ -26,7 +18,7 @@ namespace Dataverse.UI.BrowserHandlers
         {
             if (type != KeyType.RawKeyDown)
             {
-                return false; 
+                return false;
             }
             switch (windowsKeyCode)
             {

@@ -21,7 +21,7 @@ namespace Dataverse.Plugin.Emulator.Context
         {
             get
             {
-                return ParentContext;
+                return this.ParentContext;
             }
         }
 
@@ -55,7 +55,7 @@ namespace Dataverse.Plugin.Emulator.Context
 
         public string OrganizationName { get; internal set; }
 
-        public Guid PrimaryEntityId  { get; internal set; }
+        public Guid PrimaryEntityId { get; internal set; }
 
         public EntityImageCollection PreEntityImages { get; internal set; }
 
@@ -71,7 +71,7 @@ namespace Dataverse.Plugin.Emulator.Context
 
         public bool IsInTransaction { get; internal set; }
 
-        public Guid OperationId => CorrelationId; //TODO
+        public Guid OperationId => this.CorrelationId; //TODO
 
         public DateTime OperationCreatedOn { get; internal set; }
     }

@@ -19,14 +19,14 @@ namespace Dataverse.Browser.Context
         {
             lock (this.Locker)
             {
-                InnerList.Add(request);
-                this.OnNewRequestIntercepted?.Invoke(this, request);
+                this.InnerList.Add(request);
+                OnNewRequestIntercepted?.Invoke(this, request);
             }
         }
 
         public void TriggerUpdateRequest(InterceptedWebApiRequest request)
         {
-            this.OnRequestUpdated?.Invoke(this, request);
+            OnRequestUpdated?.Invoke(this, request);
         }
 
         public void Clear()
@@ -37,7 +37,7 @@ namespace Dataverse.Browser.Context
             lock (this.Locker)
             {
                 this.InnerList.Clear();
-                this.OnHistoryCleared.Invoke(this, EventArgs.Empty);
+                OnHistoryCleared.Invoke(this, EventArgs.Empty);
             }
         }
 

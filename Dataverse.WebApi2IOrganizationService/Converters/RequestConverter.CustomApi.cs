@@ -1,36 +1,15 @@
 ﻿using System;
-using System.Activities;
-using System.Activities.DurableInstancing;
-using System.IO;
 using System.Linq;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Runtime.CompilerServices;
-using System.Text;
 using System.Text.Json;
-using System.Text.RegularExpressions;
-using System.Windows.Shapes;
-using System.Xml;
-using CefSharp;
-using CefSharp.DevTools.DOM;
-using Dataverse.Browser.Constants;
-using Dataverse.Browser.Context;
-using Dataverse.Browser.Requests.SimpleClasses;
-using Microsoft.Crm.Sdk.Messages;
+using Dataverse.WebApi2IOrganizationService.Model;
 using Microsoft.OData.Edm;
-using Microsoft.OData.UriParser;
 using Microsoft.Xrm.Sdk;
-using Microsoft.Xrm.Sdk.Messages;
-using Microsoft.Xrm.Sdk.Metadata;
-using Microsoft.Xrm.Sdk.Query;
-using static System.Net.WebRequestMethods;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.Tab;
 
-namespace Dataverse.Browser.Requests.Converter
+namespace Dataverse.WebApi2IOrganizationService.Converters
 {
-    internal partial class WebApiRequestConverter
+    public partial class RequestConverter
     {
-        private void ConvertToAction(IEdmOperation operation, InterceptedWebApiRequest webApiRequest, bool isBound)
+        private void ConvertToAction(IEdmOperation operation, RequestConversionResult conversionResult, bool isBound)
         {
             OrganizationRequest request = new OrganizationRequest(operation.Name);
             string boundParameterName = null;
@@ -38,16 +17,12 @@ namespace Dataverse.Browser.Requests.Converter
             {
                 boundParameterName = operation.Parameters.First().Name;
             }
-            using (JsonDocument json = JsonDocument.Parse(webApiRequest.SimpleHttpRequest.Body))
+            using (JsonDocument json = JsonDocument.Parse(conversionResult.SrcRequest.Body))
             {
                 foreach (var node in json.RootElement.EnumerateObject())
                 {
                     string key = node.Name;
-                    var parameter = operation.FindParameter(key);
-                    if (parameter == null)
-                    {
-                        throw new NotSupportedException($"parameter {key} not found!");
-                    }
+                    var parameter = operation.FindParameter(key) ?? throw new NotSupportedException($"parameter {key} not found!");
                     if (key == boundParameterName)
                     {
                         key = "Target";
@@ -55,7 +30,7 @@ namespace Dataverse.Browser.Requests.Converter
                     request[key] = ConvertValueToAttribute(node.Value, parameter.Type);
                 }
             }
-            webApiRequest.ConvertedRequest = request;
+            conversionResult.ConvertedRequest = request;
         }
 
         private object ConvertValueToAttribute(JsonElement value, IEdmTypeReference type)
@@ -110,7 +85,7 @@ namespace Dataverse.Browser.Requests.Converter
             throw new NotSupportedException("Type is unknown:" + type.FullName());
         }
 
-        private  EntityReference ConvertToEntityReference(JsonElement value, IEdmTypeReference type, string typeName)
+        private EntityReference ConvertToEntityReference(JsonElement value, IEdmTypeReference type, string typeName)
         {
             if (!value.TryGetProperty("@odata.type", out var dataType))
             {
@@ -139,7 +114,7 @@ namespace Dataverse.Browser.Requests.Converter
             {
                 throw new NotSupportedException($"@{key} property must be set!");
             }
-            return new EntityReference(definition.Name,new Guid( id.GetString()));
+            return new EntityReference(definition.Name, new Guid(id.GetString()));
         }
     }
 }

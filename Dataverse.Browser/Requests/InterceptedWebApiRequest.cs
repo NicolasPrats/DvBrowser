@@ -1,7 +1,6 @@
 ﻿using System;
-using Dataverse.Browser.Requests.Model;
+using Dataverse.WebApi2IOrganizationService.Model;
 using Dataverse.Plugin.Emulator.ExecutionTree;
-using Microsoft.Xrm.Sdk;
 
 namespace Dataverse.Browser.Requests
 {
@@ -9,6 +8,12 @@ namespace Dataverse.Browser.Requests
     {
         public ExecutionTreeNode ExecutionTreeRoot { get; internal set; }
         public RequestConversionResult ConversionResult { get; internal set; }
-        
+        public Exception ExecuteException { get; internal set; }
+
+
+        public InterceptedWebApiRequest(RequestConversionResult conversionResult)
+        {
+            this.ConversionResult = conversionResult;
+        }
     }
 }

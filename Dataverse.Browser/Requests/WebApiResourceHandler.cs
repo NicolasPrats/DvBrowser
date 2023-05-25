@@ -6,9 +6,9 @@ using System.Text.Encodings.Web;
 using CefSharp;
 using CefSharp.Callback;
 using Dataverse.Browser.Context;
-using Dataverse.Browser.Requests.Model;
+using Dataverse.WebApi2IOrganizationService.Converterss;
+using Dataverse.WebApi2IOrganizationService.Model;
 using Dataverse.Plugin.Emulator.ExecutionTree;
-using Dataverse.Utils;
 using Microsoft.Xrm.Sdk;
 
 namespace Dataverse.Browser.Requests
@@ -23,13 +23,15 @@ namespace Dataverse.Browser.Requests
 
         private int TotalBytesRead { get; set; }
 
-        private DataverseContext Context { set; get; }
-        private InterceptedWebApiRequest WebApiRequest { set; get; }
+        private BrowserContext Context { set; get; }
+        private InterceptedWebApiRequest InterceptedWebApiRequest { set; get; }
+        public ResponseConverter ResponseConverter { get; }
 
-        public WebApiResourceHandler(DataverseContext context, InterceptedWebApiRequest webApiRequest = null)
+        public WebApiResourceHandler(BrowserContext context, InterceptedWebApiRequest webApiRequest = null)
         {
             this.Context = context;
-            this.WebApiRequest = webApiRequest;
+            this.InterceptedWebApiRequest = webApiRequest;
+            this.ResponseConverter = new ResponseConverter(this.Context);
         }
 
         public void Cancel()
@@ -46,7 +48,7 @@ namespace Dataverse.Browser.Requests
         {
             if (this.ExecuteException != null)
             {
-                GenerateHttpResponseError();
+                this.HttpResponse = this.ResponseConverter.Convert(this.ExecuteException);
             }
             var headers = this.HttpResponse.Headers;
             if (headers == null)
@@ -61,38 +63,6 @@ namespace Dataverse.Browser.Requests
             redirectUrl = null;
         }
 
-        private void GenerateHttpResponseError()
-        {
-            var errorText = JavaScriptEncoder.UnsafeRelaxedJsonEscaping.Encode(this.ExecuteException.Message);
-            var errorDetails = JavaScriptEncoder.UnsafeRelaxedJsonEscaping.Encode(this.ExecuteException.ToString());
-
-            byte[] body = Encoding.UTF8.GetBytes(
-$@"{{
-                ""error"":
-                    {{
-                    ""code"":""0x80040265"",
-                    ""message"":""{errorText}"",
-                    ""@Microsoft.PowerApps.CDS.ErrorDetails.HttpStatusCode"":""400"",
-                    ""@Microsoft.PowerApps.CDS.InnerError"":""{errorText}"",
-                    ""@Microsoft.PowerApps.CDS.TraceText"":""{errorDetails}""
-                    }}
-                }}{new string(' ', 100000)}");
-            //TODO : si le payload est trop petit, il n'est pas chargé en entier quand status code != 200
-            //problème de flush ? de header ?
-           
-            this.HttpResponse = new WebApiResponse()
-            {
-                StatusCode = 400,
-                Body = body,
-                Headers = new NameValueCollection()
-                {
-                    { "OData-Version", "4.0" },
-                    { "Content-Type", "application/json; odata.metadata = minimal" },
-                    { "Content-Length", body.Length.ToString() }
-                }
-            };
-            //response.StatusText = "Error";
-        }
 
         public bool Open(IRequest request, out bool handleRequest, ICallback callback)
         {
@@ -112,12 +82,12 @@ $@"{{
         {
             callback?.Dispose();
             InnerExecute();
-            int bytesToRead = this.HttpResponse.Body.Length - TotalBytesRead;
+            int bytesToRead = this.HttpResponse.Body.Length - this.TotalBytesRead;
             if (bytesToRead > dataOut.Length)
                 bytesToRead = (int)dataOut.Length;
-            dataOut.Write(this.HttpResponse.Body, TotalBytesRead, bytesToRead);
-            TotalBytesRead += bytesToRead;
-            if (TotalBytesRead == this.HttpResponse.Body.Length)
+            dataOut.Write(this.HttpResponse.Body, this.TotalBytesRead, bytesToRead);
+            this.TotalBytesRead += bytesToRead;
+            if (this.TotalBytesRead == this.HttpResponse.Body.Length)
             {
                 dataOut.Flush();
                 bytesRead = 0;
@@ -147,10 +117,11 @@ $@"{{
             this.IsAlreadyExecuted = true;
             try
             {
-                OrganizationResponse response = this.ExecuteWithTree();
-                this.HttpResponse = OrganizationResponseConverter.Convert(this.Context, this.WebApiRequest, response);
+                OrganizationResponse response = ExecuteWithTree();
+                this.HttpResponse = this.ResponseConverter.Convert(this.InterceptedWebApiRequest.ConversionResult, response);
                 //TODO : si le payload est trop petit, il n'est pas chargé en entier quand status code != 200
                 //problème de flush ? de header ?
+                // quand le souci sera réglé, penser à repasser le set Body en internal
                 if (this.HttpResponse.Body != null && this.HttpResponse.Body.Length > 0 && this.HttpResponse.Body.Length < 100000)
                 {
                     var newBody = new byte[100000];
@@ -165,17 +136,17 @@ $@"{{
             catch (Exception ex)
             {
                 this.ExecuteException = ex;
-                this.WebApiRequest.ExecuteException = ex;
-                this.Context.LastRequests.TriggerUpdateRequest(this.WebApiRequest);
+                this.InterceptedWebApiRequest.ExecuteException = ex;
+                this.Context.LastRequests.TriggerUpdateRequest(this.InterceptedWebApiRequest);
             }
 
         }
 
         protected OrganizationResponse ExecuteWithTree()
         {
-            this.WebApiRequest.ExecutionTreeRoot = new ExecutionTreeNode();
-            var response = this.Context.ProxyForWeb.ExecuteWithTree(this.WebApiRequest.ConvertedRequest, this.WebApiRequest.ExecutionTreeRoot);
-            this.Context.LastRequests.TriggerUpdateRequest(this.WebApiRequest);
+            this.InterceptedWebApiRequest.ExecutionTreeRoot = new ExecutionTreeNode();
+            var response = this.Context.ProxyForWeb.ExecuteWithTree(this.InterceptedWebApiRequest.ConversionResult.ConvertedRequest, this.InterceptedWebApiRequest.ExecutionTreeRoot);
+            this.Context.LastRequests.TriggerUpdateRequest(this.InterceptedWebApiRequest);
             return response;
         }
 

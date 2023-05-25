@@ -88,7 +88,7 @@ namespace Dataverse.Plugin.Emulator.Services
 
         public OrganizationResponse Execute(OrganizationRequest request)
         {
-            return this.ExecuteWithTree(request, new ExecutionTreeNode());
+            return ExecuteWithTree(request, new ExecutionTreeNode());
         }
 
         public OrganizationResponse ExecuteWithTree(OrganizationRequest request, ExecutionTreeNode executionTreeNode)
@@ -193,7 +193,7 @@ namespace Dataverse.Plugin.Emulator.Services
             }
             else
             {
-                return this.InnerExecute(request);
+                return InnerExecute(request);
             }
         }
 
@@ -214,7 +214,7 @@ namespace Dataverse.Plugin.Emulator.Services
 
 
             treeNode.ChildNodes.Add(new ExecutionTreeNode("30 Execute Operation", ExecutionTreeNodeType.InnerOperation));
-            var response = this.InnerExecute(request);
+            var response = InnerExecute(request);
 
             if (request is CreateRequest createRequest && response is CreateResponse createResponse)
             {
@@ -299,7 +299,7 @@ namespace Dataverse.Plugin.Emulator.Services
                 OperationCreatedOn = DateTime.UtcNow,
                 OrganizationId = this.WhoAmIResponse.OrganizationId,
                 OutputParameters = MapResponseParameters(response),
-                OwningExtension= new EntityReference("sdkmessageprocessingstep", step.Id),
+                OwningExtension = new EntityReference("sdkmessageprocessingstep", step.Id),
                 ParentContext = this.CurrentContext,
                 PrimaryEntityId = targetId,
                 PostEntityImages = postImages,
@@ -310,7 +310,7 @@ namespace Dataverse.Plugin.Emulator.Services
                 SharedVariables = sharedVariables,
                 Stage = step.Stage,
                 UserId = this.WhoAmIResponse.UserId,
-                IsInTransaction = this.CurrentContext != null && this.CurrentContext.IsInTransaction || step.Stage != 10,
+                IsInTransaction = (this.CurrentContext != null && this.CurrentContext.IsInTransaction) || step.Stage != 10,
                 ExecutionTreeRoot = executionTreeNode
             };
 

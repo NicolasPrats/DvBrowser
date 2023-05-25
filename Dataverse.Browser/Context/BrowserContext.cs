@@ -1,9 +1,6 @@
-﻿using System.Net.Http;
-using Dataverse.Plugin.Emulator.Services;
+﻿using Dataverse.Plugin.Emulator.Services;
 using Dataverse.Plugin.Emulator.Steps;
 using Dataverse.Utils;
-using Microsoft.OData.Edm;
-using Microsoft.Xrm.Tooling.Connector;
 
 
 namespace Dataverse.Browser.Context
