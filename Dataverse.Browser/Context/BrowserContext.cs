@@ -14,7 +14,7 @@ namespace Dataverse.Browser.Context
 
 
         public OrganizationServiceWithEmulatedPlugins ProxyForWeb { get; set; }
-
+        public bool IsEnabled { get; set; } = true;
 
 
         public LastRequestsList LastRequests { get; } = new LastRequestsList();
