@@ -13,7 +13,7 @@ namespace Dataverse.Browser.Context
         public PluginEmulator PluginsEmulator { get; set; }
 
 
-        public OrganizationServiceWithEmulatedPlugins ProxyForWeb { get; set; }
+        public OrganizationServiceWithEmulatedPlugins ProxyWithEmulator { get; set; }
         public bool IsEnabled { get; set; } = true;
 
 

@@ -88,7 +88,7 @@ namespace Dataverse.Browser.Context
                     HttpClient = new HttpClient(),
                     MetadataCache = metadataCache,
                     PluginsEmulator = emulator,
-                    ProxyForWeb = emulator.CreateNewProxy()
+                    ProxyWithEmulator = emulator.CreateNewProxy()
                 };
 
                 NotifyProgress("Downloading CSDL...");

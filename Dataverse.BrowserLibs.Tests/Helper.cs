@@ -13,6 +13,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.Xrm.Tooling.Connector;
 using System.Xml;
 using Microsoft.Xrm.Sdk;
+using Dataverse.Plugin.Emulator.Services;
 
 namespace Dataverse.BrowserLibs.Tests
 {
@@ -20,8 +21,10 @@ namespace Dataverse.BrowserLibs.Tests
     {
         internal class Converters
         {
+            public DataverseContext DataverseContext{get; set;}
             public RequestConverter RequestConverter { get; set; }
             public ResponseConverter ResponseConverter { get; set; }
+            public OrganizationServiceWithEmulatedPlugins ProxyWithEmulator { get; internal set; }
         }
 
         private static Converters Instance;
@@ -69,8 +72,10 @@ namespace Dataverse.BrowserLibs.Tests
             var requestConverter = new RequestConverter(context);
             var responseConverter = new ResponseConverter(context);
             Instance =  new Converters() {
+                DataverseContext = context,
                 RequestConverter = requestConverter,
-                ResponseConverter = responseConverter
+                ResponseConverter = responseConverter,
+                ProxyWithEmulator = emulator.CreateNewProxy()
             };
             return Instance;
         }

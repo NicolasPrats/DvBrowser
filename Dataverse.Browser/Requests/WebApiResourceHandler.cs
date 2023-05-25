@@ -145,7 +145,7 @@ namespace Dataverse.Browser.Requests
         protected OrganizationResponse ExecuteWithTree()
         {
             this.InterceptedWebApiRequest.ExecutionTreeRoot = new ExecutionTreeNode();
-            var response = this.Context.ProxyForWeb.ExecuteWithTree(this.InterceptedWebApiRequest.ConversionResult.ConvertedRequest, this.InterceptedWebApiRequest.ExecutionTreeRoot);
+            var response = this.Context.ProxyWithEmulator.ExecuteWithTree(this.InterceptedWebApiRequest.ConversionResult.ConvertedRequest, this.InterceptedWebApiRequest.ExecutionTreeRoot);
             this.Context.LastRequests.TriggerUpdateRequest(this.InterceptedWebApiRequest);
             return response;
         }

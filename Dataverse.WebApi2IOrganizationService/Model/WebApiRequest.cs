@@ -14,6 +14,11 @@ namespace Dataverse.WebApi2IOrganizationService.Model
         {
             var uri = new Uri(url);
             var localPathWithQuery = uri.LocalPath + uri.Query;
+            return CreateFromLocalPathWithQuery(method, localPathWithQuery, headers, body);
+        }
+
+        public static WebApiRequest CreateFromLocalPathWithQuery(string method, string localPathWithQuery, NameValueCollection headers, string body = null)
+        {
             if (!localPathWithQuery.StartsWith("/api/data/v9."))
                 return null;
             return new WebApiRequest(method, localPathWithQuery, headers, body);
