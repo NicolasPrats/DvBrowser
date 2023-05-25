@@ -6,9 +6,9 @@ using System.Text.Encodings.Web;
 using CefSharp;
 using CefSharp.Callback;
 using Dataverse.Browser.Context;
-using Dataverse.Browser.Requests.Converters;
-using Dataverse.Browser.Requests.SimpleClasses;
+using Dataverse.Browser.Requests.Model;
 using Dataverse.Plugin.Emulator.ExecutionTree;
+using Dataverse.Utils;
 using Microsoft.Xrm.Sdk;
 
 namespace Dataverse.Browser.Requests
@@ -19,7 +19,7 @@ namespace Dataverse.Browser.Requests
 
         private bool IsAlreadyExecuted { get; set; }
         private Exception ExecuteException { get; set; }
-        private SimpleHttpResponse HttpResponse { get; set; }
+        private WebApiResponse HttpResponse { get; set; }
 
         private int TotalBytesRead { get; set; }
 
@@ -80,7 +80,7 @@ $@"{{
             //TODO : si le payload est trop petit, il n'est pas chargé en entier quand status code != 200
             //problème de flush ? de header ?
            
-            this.HttpResponse = new SimpleHttpResponse()
+            this.HttpResponse = new WebApiResponse()
             {
                 StatusCode = 400,
                 Body = body,

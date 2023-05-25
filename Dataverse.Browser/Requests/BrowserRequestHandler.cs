@@ -2,6 +2,7 @@
 using CefSharp;
 using Dataverse.Browser.Context;
 using Dataverse.Browser.Requests.Converter;
+using Dataverse.Utils;
 
 namespace Dataverse.Browser.Requests
 {

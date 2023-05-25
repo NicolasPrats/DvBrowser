@@ -194,15 +194,8 @@
     <Compile Include="Configuration\ConfigurationManager.cs" />
     <Compile Include="Configuration\DataverseBrowserConfiguration.cs" />
     <Compile Include="Configuration\EnvironnementConfiguration.cs" />
-    <Compile Include="Constants\ActivityPartyType.cs" />
     <Compile Include="Context\ContextFactory.cs" />
     <Compile Include="UI\BrowserHandlers\KeyboardHandler.cs" />
-    <Compile Include="Requests\Converters\OrganizationResponseConverter.cs" />
-    <Compile Include="Requests\Converters\WebApiRequestConverter.CustomApi.cs" />
-    <Compile Include="Requests\Converters\WebApiRequestConverter.Batch.cs" />
-    <Compile Include="Requests\Converters\WebApiRequestConverter.CRUD.cs" />
-    <Compile Include="Requests\SimpleClasses\SimpleHttpResponse.cs" />
-    <Compile Include="Requests\SimpleClasses\SimpleHttpRequest.cs" />
     <Compile Include="UI\ContextSpinner.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -229,7 +222,6 @@
     </Compile>
     <Compile Include="Context\DataverseContext.cs" />
     <Compile Include="Context\LastRequestsList.cs" />
-    <Compile Include="Context\MetadataCache.cs" />
     <Compile Include="UI\Icons.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -237,7 +229,6 @@
     <Compile Include="Requests\BrowserRequestHandler.cs" />
     <Compile Include="Requests\InterceptedWebApiRequest.cs" />
     <Compile Include="Requests\WebApiResourceRequestHandler.cs" />
-    <Compile Include="Requests\Converters\WebApiRequestConverter.Base.cs" />
     <EmbeddedResource Include="UI\ContextSpinner.resx">
       <DependentUpon>ContextSpinner.cs</DependentUpon>
     </EmbeddedResource>
@@ -293,6 +284,14 @@
     <ProjectReference Include="..\Dataverse.Plugin.Emulator\Dataverse.Plugin.Emulator.csproj">
       <Project>{b4c68a77-61d1-4cae-accf-bef999aa026e}</Project>
       <Name>Dataverse.Plugin.Emulator</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Dataverse.Utils\Dataverse.Utils.csproj">
+      <Project>{ab88ad17-2598-4ed6-8039-2d0f4a90bff0}</Project>
+      <Name>Dataverse.Utils</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Dataverse.WebApi2IOrganizationService\Dataverse.WebApi2IOrganizationService.csproj">
+      <Project>{291cd8ce-0ed9-43eb-9494-9af114e1a44d}</Project>
+      <Name>Dataverse.WebApi2IOrganizationService</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
