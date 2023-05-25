@@ -7,6 +7,7 @@ using Dataverse.Plugin.Emulator.Steps;
 using Microsoft.Crm.Sdk.Messages;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Messages;
+using Microsoft.Xrm.Sdk.Metadata;
 using Microsoft.Xrm.Sdk.Organization;
 using Microsoft.Xrm.Sdk.Query;
 
@@ -163,15 +164,15 @@ namespace Dataverse.Plugin.Emulator.Services
             {
                 if (target.Id == Guid.Empty && target.KeyAttributes.Count == 0)
                 {
-                    //TODO find attribute pk name instead of a random column of type guid
-                    foreach (var kvp in target.Attributes) {
-                        if (kvp.Value is Guid id)
-                        {
-                            target.Id = id;
-                        }
-                    }
+                    //TODO: use a metadatacache (and share it with caller ?)
+                    RetrieveEntityRequest metadataRequest = new RetrieveEntityRequest { EntityFilters = EntityFilters.Attributes, LogicalName = target.LogicalName };
+                    RetrieveEntityResponse metadataResponse = (RetrieveEntityResponse)Execute(metadataRequest);
+                    AttributeMetadata pkAttribute = metadataResponse.EntityMetadata.Attributes.FirstOrDefault(x => x.IsPrimaryId == true);
+                    target.Id = target.GetAttributeValue<Guid>(pkAttribute.LogicalName);
 
+                    //TODO: check alternate keys
                 }
+
                 targetRef = target.ToEntityReference();
             }
             //TODO pour create and update on suppose que l'id de la target est défini

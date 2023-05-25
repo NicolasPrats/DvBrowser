@@ -1,6 +1,6 @@
 ﻿namespace Dataverse.Browser.UI
 {
-    partial class Browser
+    partial class BrowserWindow
     {
         /// <summary>
         /// Required designer variable.
@@ -29,7 +29,7 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Browser));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(BrowserWindow));
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.cbEnabled = new System.Windows.Forms.CheckBox();
             this.btnDebugger = new System.Windows.Forms.Button();

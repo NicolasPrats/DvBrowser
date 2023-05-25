@@ -5,6 +5,7 @@ using System.Windows.Forms;
 using CefSharp;
 using CefSharp.WinForms;
 using Dataverse.Browser.Context;
+using Dataverse.UI.BrowserHandlers;
 using Dataverse.Browser.Requests;
 using Dataverse.Plugin.Emulator.ExecutionTree;
 
@@ -12,7 +13,7 @@ using Dataverse.Plugin.Emulator.ExecutionTree;
 
 namespace Dataverse.Browser.UI
 {
-    internal partial class Browser : Form
+    internal partial class BrowserWindow : Form
     {
         private ChromiumWebBrowser CurrentBrowser { get; set; }
         public DataverseContext DataverseContext { get; }
@@ -21,7 +22,7 @@ namespace Dataverse.Browser.UI
         private delegate void ClearRequestsDelegate();
         private readonly Dictionary<InterceptedWebApiRequest, TreeNode> Nodes = new Dictionary<InterceptedWebApiRequest, TreeNode>();
 
-        public Browser(DataverseContext context)
+        public BrowserWindow(DataverseContext context)
         {
             if (context is null)
             {
@@ -180,5 +181,6 @@ namespace Dataverse.Browser.UI
         {
             this.DataverseContext.IsEnabled = cbEnabled.Checked;
         }
+
     }
 }
