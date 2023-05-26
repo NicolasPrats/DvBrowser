@@ -2,7 +2,7 @@
 
 It's a browser which allows a Dataverse developer to:
 * Debug plugins in live (while navigating on a Model Driven App)
-* Test plugins without having to deploy them. This speed ups developments and enable coauthoring on plugin assemblies.
+* Test plugins without having to deploy them. This speeds up developments and enable coauthoring on plugin assemblies.
 * Analyze in real time what plugins are triggerred. This is particularly useful when you have plugins triggerring other plugins.
 
 
@@ -19,8 +19,8 @@ Please note that the chosen architecture has some limits which will probably nev
 # How to start?
 
 ## Warning
-Keep in mind that it is a very first version. They are a lot of known bugs and probably more waiting to be discovered. There is little to no error management. If the application crashes, you will have to check the event viewer to know why. 
-Moreover the UI is very minimalist and not very beautiful. 
+Keep in mind that it is a very first version. There are a lot of known bugs and probably more waiting to be discovered. There is little to no error management. If the application crashes, you will have to check the event viewer to know why. 
+Moreover the UI is very minimalistic and not very beautiful. 
 That said, it still runs quite well on my laptop and it's already a real time saving application. I hope it will be the same for you.
 
 ## Prerequistes
@@ -38,7 +38,7 @@ The simplest way to test the Dataverse.Browser is to:
   * A name meaningful for you
   * The host name of your instance (without the _https://_)
   * The path to the plugins assembly file (the dll). For a better experience, it should be compiled in debug mode with the pdb file generated.
-* A popup asking you to authenticate is displayed. You need to use a system administrator. If you have a big assembly file and/or a lot of steps, the UI may freeze at this step. Don't worry and please wait few seconds.
+* A popup asking you to authenticate is displayed. You need to use a system administrator. If you have a big assembly file and/or a lot of steps, the UI may freeze at this step. Don't worry and please wait a few seconds.
 * Then the browser is started. You need to authenticate again. This time, you can choose any user and should take the one that is relevant for your tests.
 * Enjoy! 
 
