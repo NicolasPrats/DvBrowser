@@ -31,10 +31,10 @@ $@"{{
                 ""error"":
                     {{
                     ""code"":""0x80040265"",
-                    ""message"":""{errorText}"",
-                    ""@Microsoft.PowerApps.CDS.ErrorDetails.HttpStatusCode"":""400"",
-                    ""@Microsoft.PowerApps.CDS.InnerError"":""{errorText}"",
-                    ""@Microsoft.PowerApps.CDS.TraceText"":""{errorDetails}""
+                    ""message"":""{errorText}""
+                    //""@Microsoft.PowerApps.CDS.ErrorDetails.HttpStatusCode"":""400"",
+                    //""@Microsoft.PowerApps.CDS.InnerError"":""{errorText}"",
+                    //""@Microsoft.PowerApps.CDS.TraceText"":""{errorDetails}""
                     }}
                 }}");
 

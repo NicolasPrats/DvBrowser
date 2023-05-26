@@ -51,12 +51,13 @@ namespace Dataverse.BrowserLibs.Tests
                 return (IOrganizationService)svc.OrganizationWebProxyClient ?? svc.OrganizationServiceProxy;
             }
             );
+            emulator.AddPluginAssembly(@"data\PowerPlatform.Demo.Plugins.dll");
             MetadataCache metadataCache = new MetadataCache(client);
             var context = new DataverseContext()
             {
                 CrmServiceClient = client,
                 Host = host,
-                HttpClient = new System.Net.Http.HttpClient(),
+                HttpClient = new HttpClient(),
                 MetadataCache = metadataCache
             };
             HttpRequestMessage downloadCsdlMessage = new HttpRequestMessage(HttpMethod.Get, $"{context.WebApiBaseUrl}$metadata");
@@ -87,7 +88,15 @@ namespace Dataverse.BrowserLibs.Tests
             Assert.IsNotNull(result);
             Assert.IsNull(result.ConvertFailureMessage, result.ConvertFailureMessage);
             Assert.IsNotNull(result.ConvertedRequest);
-            var orgResponse = converters.ProxyWithEmulator.Execute(result.ConvertedRequest);
+            OrganizationResponse orgResponse;
+            try
+            {
+                orgResponse = converters.ProxyWithEmulator.Execute(result.ConvertedRequest);
+            }
+            catch (Exception ex)
+            {
+                return converters.ResponseConverter.Convert(ex);
+            }
             Assert.IsNotNull(orgResponse);
             var webApiResponse = converters.ResponseConverter.Convert(result, orgResponse);
             return webApiResponse;
