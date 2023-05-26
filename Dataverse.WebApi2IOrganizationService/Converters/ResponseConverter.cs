@@ -9,7 +9,7 @@ using Dataverse.WebApi2IOrganizationService.Model;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Messages;
 
-namespace Dataverse.WebApi2IOrganizationService.Converterss
+namespace Dataverse.WebApi2IOrganizationService.Converters
 {
     public class ResponseConverter
     {

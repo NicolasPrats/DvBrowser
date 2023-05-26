@@ -2,8 +2,8 @@
 using System.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using Dataverse.WebApi2IOrganizationService.Model;
 using Dataverse.Utils.Constants;
+using Dataverse.WebApi2IOrganizationService.Model;
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
 using Microsoft.Xrm.Sdk;
@@ -16,7 +16,6 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
     public partial class RequestConverter
 
     {
-
 
         private void ConvertToDeleteRequest(RequestConversionResult conversionResult, ODataPath path)
         {
@@ -110,8 +109,6 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
             string body = conversionResult.SrcRequest.Body ?? throw new NotSupportedException("A body was expected!");
             return ConvertToCreateUpdateRequest(keySegment, body, entityLogicalName);
         }
-
-
 
         private OrganizationRequest ConvertToCreateUpdateRequest(KeySegment keySegment, string body, string entityLogicalName)
         {

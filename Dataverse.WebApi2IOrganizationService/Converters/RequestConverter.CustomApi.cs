@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using Dataverse.WebApi2IOrganizationService.Model;
@@ -42,6 +43,7 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                 case "Edm.Byte":
                     return value.GetByte();
                 case "Edm.DateTime":
+                case "Edm.DateTimeOffset":
                     return value.GetDateTime();
                 case "Edm.Decimal":
                     return value.GetDecimal();
@@ -64,21 +66,41 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                 default:
                     if (type.TypeKind() == EdmTypeKind.Entity)
                     {
+                        //TODO: model doesn't allow to differenciate entity and entityreference types
+                        // query dataverse to be sure ?
                         string typeName = type.FullName();
                         return ConvertToEntityReference(value, type, typeName);
                     }
                     else if (type.TypeKind() == EdmTypeKind.Collection)
                     {
-                        EntityReferenceCollection collection = new EntityReferenceCollection();
-                        foreach (var item in value.EnumerateArray())
+                        IEdmType collectionInnerType = ((IEdmCollectionType)type.Definition).ElementType.Definition;
+                        var collectionInnerTypeKind = collectionInnerType.TypeKind;
+                        if (collectionInnerTypeKind == EdmTypeKind.Entity)
                         {
-                            collection.Add(ConvertToEntityReference(item, null, null));
+                            EntityReferenceCollection collection = new EntityReferenceCollection();
+                            foreach (var item in value.EnumerateArray())
+                            {
+                                collection.Add(ConvertToEntityReference(item, null, null));
+                            }
+                            return collection;
                         }
-                        return collection;
+                        else if (collectionInnerType.FullTypeName() == "Edm.String")
+                        {
+                            List<string> list = new List<string>();
+                            foreach (var item in value.EnumerateArray())
+                            {
+                                list.Add(item.GetString());
+                            }
+                            return list.ToArray();
+                        }
+                        else
+                        {
+                            throw new NotImplementedException($"Type {collectionInnerType.FullTypeName()} is unknown.");
+                        }
                     }
                     else
                     {
-                        throw new NotImplementedException($"Type {type.TypeKind()} is not implemented!");
+                        throw new NotImplementedException($"Type {type.FullName()} is not implemented!");
                     }
 
             }

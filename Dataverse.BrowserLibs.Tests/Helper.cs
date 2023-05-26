@@ -7,7 +7,6 @@ using Dataverse.Plugin.Emulator.Services;
 using Dataverse.Plugin.Emulator.Steps;
 using Dataverse.Utils;
 using Dataverse.WebApi2IOrganizationService.Converters;
-using Dataverse.WebApi2IOrganizationService.Converterss;
 using Dataverse.WebApi2IOrganizationService.Model;
 using Microsoft.OData.Edm.Csdl;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
