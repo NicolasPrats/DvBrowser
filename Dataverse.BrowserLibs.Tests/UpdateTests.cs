@@ -1,8 +1,5 @@
-﻿using System;
-using System.Linq;
-using Dataverse.WebApi2IOrganizationService.Model;
+﻿using Dataverse.WebApi2IOrganizationService.Model;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.Xrm.Sdk.Query;
 
 namespace Dataverse.BrowserLibs.Tests
 {
@@ -11,17 +8,7 @@ namespace Dataverse.BrowserLibs.Tests
     {
         public TestContext TestContext { get; set; }
 
-        public Guid GetContactId()
-        {
-            var converters = Helper.GetConverters(this.TestContext);
-            QueryExpression query = new QueryExpression("contact")
-            {
-                TopCount = 1
-            };
-            query.Orders.Add(new OrderExpression("modifiedon", OrderType.Ascending));
-            var result = converters.DataverseContext.CrmServiceClient.RetrieveMultiple(query);
-            return result.Entities.FirstOrDefault().Id;
-        }
+
 
 
         [TestMethod]
@@ -29,7 +16,7 @@ namespace Dataverse.BrowserLibs.Tests
         {
             WebApiRequest webApiRequest = WebApiRequest.CreateFromLocalPathWithQuery(
                 "PATCH",
-                $"/api/data/v9.2/contacts({GetContactId()})",
+                $"/api/data/v9.2/contacts({Helper.GetId(this.TestContext, "contact")})",
                 new System.Collections.Specialized.NameValueCollection()
                 {
                     {"Content-Type", "application/json" }

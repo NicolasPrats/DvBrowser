@@ -23,12 +23,9 @@ namespace Dataverse.BrowserLibs.Tests
                 },
                 "{\"name\":\"test\"}"
                 );
-            WebApiResponse webApiResponseToTest = Helper.GetResponseUsingConversionAndPlugins(this.TestContext, webApiRequest);
-            WebApiResponse webApiResponseExpected = Helper.GetDirectResponse(this.TestContext, webApiRequest);
-
-            AssertExtensions.AreEquals(webApiResponseToTest, webApiResponseExpected);
-
+            Helper.TestAgainstExpected(this.TestContext, webApiRequest);
         }
+
 
         [TestMethod]
         public void CreateSimpleContact_Plugin()
@@ -47,10 +44,7 @@ namespace Dataverse.BrowserLibs.Tests
                     lastname = "test",
                 })
                 );
-            WebApiResponse webApiResponseToTest = Helper.GetResponseUsingConversionAndPlugins(this.TestContext, webApiRequest);
-            WebApiResponse webApiResponseExpected = Helper.GetDirectResponse(this.TestContext, webApiRequest);
-
-            AssertExtensions.AreEquals(webApiResponseToTest, webApiResponseExpected);
+            Helper.TestAgainstExpected(this.TestContext, webApiRequest);
 
         }
 
@@ -70,12 +64,37 @@ namespace Dataverse.BrowserLibs.Tests
                     firstname = "test"
                 })
                 );
-            WebApiResponse webApiResponseToTest = Helper.GetResponseUsingConversionAndPlugins(this.TestContext, webApiRequest);
-            WebApiResponse webApiResponseExpected = Helper.GetDirectResponse(this.TestContext, webApiRequest);
-
-            AssertExtensions.AreEquals(webApiResponseToTest, webApiResponseExpected);
+            Helper.TestAgainstExpected(this.TestContext, webApiRequest);
 
         }
 
+        [TestMethod]
+        public void CreateEmailWithActivitiesParty()
+        {
+            WebApiRequest webApiRequest = WebApiRequest.CreateFromLocalPathWithQuery(
+               "POST",
+               "/api/data/v9.2/emails",
+               new System.Collections.Specialized.NameValueCollection()
+               {
+                    {"Content-Type", "application/json" },
+                    {"Prefer" ,"return=representation"},
+               },
+              @"{
+""description"": ""something"", 
+        ""subject"": ""Email"",
+        ""email_activity_parties"": [
+            {
+                ""partyid_contact@odata.bind"": ""/contacts(" + Helper.GetId(this.TestContext, "contact") + @")"",
+                ""participationtypemask"": 1
+            },
+            {
+                ""partyid_account@odata.bind"": ""/accounts(" + Helper.GetId(this.TestContext, "account") + @")"",
+                ""participationtypemask"": 2 
+            }
+        ]
+}"
+               );
+            Helper.TestAgainstExpected(this.TestContext, webApiRequest);
+        }
     }
 }

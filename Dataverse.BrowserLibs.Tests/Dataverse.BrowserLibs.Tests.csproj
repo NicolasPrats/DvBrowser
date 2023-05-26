@@ -150,6 +150,7 @@
   <ItemGroup>
     <Compile Include="AssertExtensions.cs" />
     <Compile Include="CustomApiTests.cs" />
+    <Compile Include="ErrorTests.cs" />
     <Compile Include="UpdateTests.cs" />
     <Compile Include="Helper.cs" />
     <Compile Include="CreateTests.cs" />

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Specialized;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Xml;
@@ -11,6 +12,7 @@ using Dataverse.WebApi2IOrganizationService.Model;
 using Microsoft.OData.Edm.Csdl;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.Xrm.Sdk;
+using Microsoft.Xrm.Sdk.Query;
 using Microsoft.Xrm.Tooling.Connector;
 
 namespace Dataverse.BrowserLibs.Tests
@@ -101,6 +103,14 @@ namespace Dataverse.BrowserLibs.Tests
             return webApiResponse;
         }
 
+        internal static void TestAgainstExpected(TestContext testContext, WebApiRequest webApiRequest)
+        {
+            WebApiResponse webApiResponseToTest = Helper.GetResponseUsingConversionAndPlugins(testContext, webApiRequest);
+            WebApiResponse webApiResponseExpected = Helper.GetDirectResponse(testContext, webApiRequest);
+
+            AssertExtensions.AreEquals(webApiResponseToTest, webApiResponseExpected);
+        }
+
         internal static WebApiResponse GetDirectResponse(TestContext testContext, WebApiRequest webApiRequest)
         {
             var method = new HttpMethod(webApiRequest.Method);
@@ -147,6 +157,18 @@ namespace Dataverse.BrowserLibs.Tests
             }
             response.Body = result.Content.ReadAsByteArrayAsync().Result;
             return response;
+        }
+
+        public static Guid GetId(TestContext context, string entityName)
+        {
+            var converters = Helper.GetConverters(context);
+            QueryExpression query = new QueryExpression(entityName)
+            {
+                TopCount = 1
+            };
+            query.Orders.Add(new OrderExpression("modifiedon", OrderType.Ascending));
+            var result = converters.DataverseContext.CrmServiceClient.RetrieveMultiple(query);
+            return result.Entities.FirstOrDefault().Id;
         }
     }
 }
