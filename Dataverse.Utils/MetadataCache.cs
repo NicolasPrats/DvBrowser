@@ -3,6 +3,7 @@ using System.Linq;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Messages;
 using Microsoft.Xrm.Sdk.Metadata;
+using Microsoft.Xrm.Sdk.Query;
 
 namespace Dataverse.Utils
 {
@@ -11,6 +12,8 @@ namespace Dataverse.Utils
         private IOrganizationService Service { get; }
         private EntityMetadata[] EntityMetadata { get; }
         private Dictionary<string, EntityMetadata> EntityMetadataWithAttributes { get; }
+        private Dictionary<string, Entity> CustomApiRequestParameters { get; }
+
 
         public MetadataCache(IOrganizationService Service)
         {
@@ -19,6 +22,24 @@ namespace Dataverse.Utils
             var result = (RetrieveAllEntitiesResponse)this.Service.Execute(request);
             this.EntityMetadata = result.EntityMetadata;
             this.EntityMetadataWithAttributes = new Dictionary<string, EntityMetadata>();
+            this.CustomApiRequestParameters = new Dictionary<string, Entity>();
+        }
+
+        public Entity GetCustomApiRequestParameter(string name)
+        {
+            lock (this.CustomApiRequestParameters)
+            {
+                if (this.CustomApiRequestParameters.TryGetValue(name, out Entity entity))
+                {
+                    return entity;
+                }
+                QueryExpression query = new QueryExpression("customapirequestparameter");
+                query.Criteria.AddCondition("name", ConditionOperator.Equal, name);
+                query.ColumnSet = new ColumnSet("type", "logicalentityname");
+                entity = this.Service.RetrieveMultiple(query).Entities.Single();
+                this.CustomApiRequestParameters[name] = entity;
+                return entity;
+            }
         }
 
         public EntityMetadata GetEntityFromLogicalName(string logicalName)

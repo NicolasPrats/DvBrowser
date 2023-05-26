@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using Dataverse.Utils.Constants;
 using Dataverse.WebApi2IOrganizationService.Model;
 using Microsoft.OData.Edm;
 using Microsoft.Xrm.Sdk;
@@ -24,90 +25,72 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                 {
                     string key = node.Name;
                     var parameter = operation.FindParameter(key) ?? throw new NotSupportedException($"parameter {key} not found!");
+                    var customApiRequestParameter = this.Context.MetadataCache.GetCustomApiRequestParameter(key);
                     if (key == boundParameterName)
                     {
                         key = "Target";
                     }
-                    request[key] = ConvertValueToAttribute(node.Value, parameter.Type);
+                    request[key] = ConvertValueToAttribute(node.Value, customApiRequestParameter, parameter.Type);
                 }
             }
             conversionResult.ConvertedRequest = request;
         }
 
-        private object ConvertValueToAttribute(JsonElement value, IEdmTypeReference type)
+        private object ConvertValueToAttribute(JsonElement value, Entity customApiRequestParameter, IEdmTypeReference edmType)
         {
-            switch (type.FullName())
+            int type = customApiRequestParameter.GetAttributeValue<OptionSetValue>("type").Value;
+            if (value.ValueKind == JsonValueKind.Null)
+                return null;
+            string typeName = edmType.FullName();
+            switch (type)
             {
-                case "Edm.Boolean":
+                case CustomApiRequestParameterType.Boolean:
                     return value.GetBoolean();
-                case "Edm.Byte":
-                    return value.GetByte();
-                case "Edm.DateTime":
-                case "Edm.DateTimeOffset":
+                case CustomApiRequestParameterType.DateTime:
                     return value.GetDateTime();
-                case "Edm.Decimal":
+                case CustomApiRequestParameterType.Decimal:
                     return value.GetDecimal();
-                case "Edm.Double":
+                case CustomApiRequestParameterType.Entity:
+                    return ConvertToEntity(value, edmType, typeName);
+                case CustomApiRequestParameterType.EntityCollection:
+                    var collection = new EntityCollection();
+                    foreach (var item in value.EnumerateArray())
+                    {
+                        collection.Entities.Add(ConvertToEntity(item, null, null));
+                    }
+                    collection.EntityName = collection.Entities.FirstOrDefault()?.LogicalName;
+                    if (collection.EntityName == null)
+                    {
+                        collection.EntityName = customApiRequestParameter.GetAttributeValue<string>("entitylogicalname") ?? "contact";
+                    }
+                    return collection;
+                case CustomApiRequestParameterType.EntityReference:
+                    return ConvertToEntity(value, edmType, typeName).ToEntityReference();
+                case CustomApiRequestParameterType.Float:
                     return value.GetDouble();
-                case "Edm.Single":
-                    return value.GetSingle();
-                case "Edm.Guid":
-                    return value.GetGuid();
-                case "Edm.Int16":
-                    return value.GetInt16();
-                case "Edm.Int32":
+                case CustomApiRequestParameterType.Integer:
                     return value.GetInt32();
-                case "Edm.Int64":
-                    return value.GetInt64();
-                case "Edm.SByte":
-                    return value.GetSByte();
-                case "Edm.String":
+                case CustomApiRequestParameterType.Money:
+                    return new Money(value.GetInt32());
+                case CustomApiRequestParameterType.Picklist:
+                    return new OptionSetValue(value.GetInt32());
+                case CustomApiRequestParameterType.String:
                     return value.GetString();
+                case CustomApiRequestParameterType.StringArray:
+                    List<string> list = new List<string>();
+                    foreach (var item in value.EnumerateArray())
+                    {
+                        list.Add(item.GetString());
+                    }
+                    return list.ToArray();
+                case CustomApiRequestParameterType.Guid:
+                    return value.GetGuid();
                 default:
-                    if (type.TypeKind() == EdmTypeKind.Entity)
-                    {
-                        //TODO: model doesn't allow to differenciate entity and entityreference types
-                        // query dataverse to be sure ?
-                        string typeName = type.FullName();
-                        return ConvertToEntityReference(value, type, typeName);
-                    }
-                    else if (type.TypeKind() == EdmTypeKind.Collection)
-                    {
-                        IEdmType collectionInnerType = ((IEdmCollectionType)type.Definition).ElementType.Definition;
-                        var collectionInnerTypeKind = collectionInnerType.TypeKind;
-                        if (collectionInnerTypeKind == EdmTypeKind.Entity)
-                        {
-                            EntityReferenceCollection collection = new EntityReferenceCollection();
-                            foreach (var item in value.EnumerateArray())
-                            {
-                                collection.Add(ConvertToEntityReference(item, null, null));
-                            }
-                            return collection;
-                        }
-                        else if (collectionInnerType.FullTypeName() == "Edm.String")
-                        {
-                            List<string> list = new List<string>();
-                            foreach (var item in value.EnumerateArray())
-                            {
-                                list.Add(item.GetString());
-                            }
-                            return list.ToArray();
-                        }
-                        else
-                        {
-                            throw new NotImplementedException($"Type {collectionInnerType.FullTypeName()} is unknown.");
-                        }
-                    }
-                    else
-                    {
-                        throw new NotImplementedException($"Type {type.FullName()} is not implemented!");
-                    }
-
+                    throw new NotImplementedException($"Type {typeName}({type}) is not implemented!");
             }
-            throw new NotSupportedException("Type is unknown:" + type.FullName());
         }
 
-        private EntityReference ConvertToEntityReference(JsonElement value, IEdmTypeReference type, string typeName)
+        private Entity ConvertToEntity(JsonElement value, IEdmTypeReference type, string typeName)
         {
             if (!value.TryGetProperty("@odata.type", out var dataType))
             {
@@ -136,7 +119,7 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
             {
                 throw new NotSupportedException($"@{key} property must be set!");
             }
-            return new EntityReference(definition.Name, new Guid(id.GetString()));
+            return new Entity(definition.Name, new Guid(id.GetString()));
         }
     }
 }

@@ -9,6 +9,7 @@ using Dataverse.Plugin.Emulator.Steps;
 using Dataverse.Utils;
 using Dataverse.WebApi2IOrganizationService.Converters;
 using Dataverse.WebApi2IOrganizationService.Model;
+using FluentAssertions;
 using Microsoft.OData.Edm.Csdl;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.Xrm.Sdk;
@@ -103,12 +104,16 @@ namespace Dataverse.BrowserLibs.Tests
             return webApiResponse;
         }
 
-        internal static void TestAgainstExpected(TestContext testContext, WebApiRequest webApiRequest)
+        internal static void TestAgainstExpected(TestContext testContext, WebApiRequest webApiRequest, bool noErrorExpected = true)
         {
             WebApiResponse webApiResponseToTest = Helper.GetResponseUsingConversionAndPlugins(testContext, webApiRequest);
             WebApiResponse webApiResponseExpected = Helper.GetDirectResponse(testContext, webApiRequest);
 
             AssertExtensions.AreEquals(webApiResponseToTest, webApiResponseExpected);
+            if (noErrorExpected)
+            {
+                webApiResponseExpected.StatusCode.Should().BeLessThan(300);
+            }
         }
 
         internal static WebApiResponse GetDirectResponse(TestContext testContext, WebApiRequest webApiRequest)
