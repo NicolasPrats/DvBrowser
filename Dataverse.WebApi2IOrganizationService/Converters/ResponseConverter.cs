@@ -2,12 +2,12 @@
 using System.Collections.Specialized;
 using System.Net.Http;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json.Nodes;
-using Dataverse.WebApi2IOrganizationService.Model;
 using Dataverse.Utils;
+using Dataverse.WebApi2IOrganizationService.Model;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Messages;
-using System.Text.Encodings.Web;
 
 namespace Dataverse.WebApi2IOrganizationService.Converterss
 {
@@ -159,6 +159,7 @@ $@"{{
             var id = $"{this.Context.WebApiBaseUrl}{setName}({createResponse.id})";
 
             //TODO: convert the response instead of requesting
+            //TODO : returns result only if return representation was requested
             var retrieveResult = HttpGet(id, true);
             return new WebApiResponse()
             {
@@ -168,7 +169,7 @@ $@"{{
                     { "OData-Version", "4.0" },
                     { "OData-EntityId", id }
                 },
-                StatusCode = 204
+                StatusCode = 201
             };
         }
 

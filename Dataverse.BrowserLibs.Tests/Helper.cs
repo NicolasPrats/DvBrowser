@@ -1,19 +1,18 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Collections.Specialized;
 using System.Net.Http;
-using System.Text;
-using System.Threading.Tasks;
+using System.Net.Http.Headers;
+using System.Xml;
+using Dataverse.Plugin.Emulator.Services;
 using Dataverse.Plugin.Emulator.Steps;
 using Dataverse.Utils;
 using Dataverse.WebApi2IOrganizationService.Converters;
 using Dataverse.WebApi2IOrganizationService.Converterss;
+using Dataverse.WebApi2IOrganizationService.Model;
 using Microsoft.OData.Edm.Csdl;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.Xrm.Tooling.Connector;
-using System.Xml;
 using Microsoft.Xrm.Sdk;
-using Dataverse.Plugin.Emulator.Services;
+using Microsoft.Xrm.Tooling.Connector;
 
 namespace Dataverse.BrowserLibs.Tests
 {
@@ -21,7 +20,7 @@ namespace Dataverse.BrowserLibs.Tests
     {
         internal class Converters
         {
-            public DataverseContext DataverseContext{get; set;}
+            public DataverseContext DataverseContext { get; set; }
             public RequestConverter RequestConverter { get; set; }
             public ResponseConverter ResponseConverter { get; set; }
             public OrganizationServiceWithEmulatedPlugins ProxyWithEmulator { get; internal set; }
@@ -71,13 +70,75 @@ namespace Dataverse.BrowserLibs.Tests
 
             var requestConverter = new RequestConverter(context);
             var responseConverter = new ResponseConverter(context);
-            Instance =  new Converters() {
+            Instance = new Converters()
+            {
                 DataverseContext = context,
                 RequestConverter = requestConverter,
                 ResponseConverter = responseConverter,
                 ProxyWithEmulator = emulator.CreateNewProxy()
             };
             return Instance;
+        }
+
+        public static WebApiResponse GetResponseUsingConversionAndPlugins(TestContext testContext, WebApiRequest webApiRequest)
+        {
+            var converters = Helper.GetConverters(testContext);
+            var result = converters.RequestConverter.Convert(webApiRequest);
+            Assert.IsNotNull(result);
+            Assert.IsNull(result.ConvertFailureMessage, result.ConvertFailureMessage);
+            Assert.IsNotNull(result.ConvertedRequest);
+            var orgResponse = converters.ProxyWithEmulator.Execute(result.ConvertedRequest);
+            Assert.IsNotNull(orgResponse);
+            var webApiResponse = converters.ResponseConverter.Convert(result, orgResponse);
+            return webApiResponse;
+        }
+
+        internal static WebApiResponse GetDirectResponse(TestContext testContext, WebApiRequest webApiRequest)
+        {
+            var method = new HttpMethod(webApiRequest.Method);
+            var url = $"https://{testContext.Properties["hostname"]}/{webApiRequest.LocalPathWithQuery}";
+            HttpRequestMessage httpRequest = new HttpRequestMessage(method, url);
+            string contentType = null;
+            foreach (string header in webApiRequest.Headers)
+            {
+                if (header.ToLowerInvariant() == "content-type")
+                {
+                    contentType = webApiRequest.Headers[header];
+                }
+                else
+                {
+                    httpRequest.Headers.Add(header, webApiRequest.Headers[header]);
+                }
+
+
+            }
+            if (webApiRequest.Body != null)
+            {
+                httpRequest.Content = new StringContent(webApiRequest.Body);
+                if (contentType != null)
+                {
+                    httpRequest.Content.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+                }
+            }
+            var converters = Helper.GetConverters(testContext);
+            httpRequest.Headers.Add("Authorization", "Bearer " + converters.DataverseContext.CrmServiceClient.CurrentAccessToken);
+
+            var result = converters.DataverseContext.HttpClient.SendAsync(httpRequest).Result;
+
+            var response = new WebApiResponse
+            {
+                StatusCode = (int)result.StatusCode,
+                Headers = new NameValueCollection()
+            };
+            foreach (var header in result.Headers)
+            {
+                foreach (var value in header.Value)
+                {
+                    response.Headers.Add(header.Key, value);
+                }
+            }
+            response.Body = result.Content.ReadAsByteArrayAsync().Result;
+            return response;
         }
     }
 }

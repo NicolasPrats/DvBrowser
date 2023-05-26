@@ -5,11 +5,11 @@ namespace Dataverse.WebApi2IOrganizationService.Model
     public class WebApiResponse
     {
 
-        public byte[] Body { get;  set; }
-        public NameValueCollection Headers { get; internal set; }
-        public int StatusCode { get; internal set; }
+        public byte[] Body { get; set; }
+        public NameValueCollection Headers { get; set; }
+        public int StatusCode { get; set; }
 
-        internal WebApiResponse()
+        public WebApiResponse()
         {
         }
 
