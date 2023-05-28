@@ -21,8 +21,8 @@ namespace Dataverse.BrowserLibs.Tests
             bool bodyExpectedIsEmpty = webApiResponseExpected.Body == null || webApiResponseExpected.Body.Length == 0;
             if (bodyToTestIsEmpty && bodyExpectedIsEmpty)
                 return;
-            Assert.IsNotNull(bodyToTestIsEmpty, "Body was expected");
-            Assert.IsNotNull(bodyExpectedIsEmpty, "Body was not expected");
+            Assert.IsFalse(bodyToTestIsEmpty, "Body was expected");
+            Assert.IsFalse(bodyExpectedIsEmpty, "Body was not expected");
 
             JToken bodyExpected = JToken.Parse(Encoding.UTF8.GetString(webApiResponseExpected.Body));
             JToken bodyToTest = JToken.Parse(Encoding.UTF8.GetString(webApiResponseToTest.Body));

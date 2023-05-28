@@ -94,14 +94,12 @@ namespace Dataverse.BrowserLibs.Tests
             try
             {
                 orgResponse = converters.ProxyWithEmulator.Execute(result.ConvertedRequest);
+                return converters.ResponseConverter.Convert(result, orgResponse);
             }
             catch (Exception ex)
             {
                 return converters.ResponseConverter.Convert(ex);
             }
-            Assert.IsNotNull(orgResponse);
-            var webApiResponse = converters.ResponseConverter.Convert(result, orgResponse);
-            return webApiResponse;
         }
 
         internal static void TestAgainstExpected(TestContext testContext, WebApiRequest webApiRequest, bool noErrorExpected = true)
