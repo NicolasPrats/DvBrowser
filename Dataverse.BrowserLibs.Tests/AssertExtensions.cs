@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using Dataverse.WebApi2IOrganizationService.Model;
+//TODO use using FluentAssertions.Json to have better error message
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json.Linq;
@@ -28,6 +29,7 @@ namespace Dataverse.BrowserLibs.Tests
             JToken bodyToTest = JToken.Parse(Encoding.UTF8.GetString(webApiResponseToTest.Body));
 
             bodyToTest.Should().BeEquivalentTo(bodyExpected);
+
 
         }
     }
