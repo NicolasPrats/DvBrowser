@@ -38,7 +38,7 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
 
         private object ConvertValueToAttribute(JsonElement value, Entity customApiRequestParameter, IEdmTypeReference edmType)
         {
-            int type = customApiRequestParameter.GetAttributeValue<OptionSetValue>("type").Value;
+            int type = customApiRequestParameter?.GetAttributeValue<OptionSetValue>("type")?.Value ?? GetRequestParameterTypeFromEdmType(edmType); ;
             if (value.ValueKind == JsonValueKind.Null)
                 return null;
             string typeName = edmType.FullName();
@@ -59,10 +59,11 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                         collection.Entities.Add(ConvertToEntity(item, null, null));
                     }
                     collection.EntityName = collection.Entities.FirstOrDefault()?.LogicalName;
-                    if (collection.EntityName == null)
+                    if (collection.EntityName == null && customApiRequestParameter != null)
                     {
-                        collection.EntityName = customApiRequestParameter.GetAttributeValue<string>("entitylogicalname") ?? "contact";
+                        collection.EntityName = customApiRequestParameter.GetAttributeValue<string>("entitylogicalname");
                     }
+                    //TODO if collection.EntityName == null, check type of items in collection ?
                     return collection;
                 case CustomApiRequestParameterType.EntityReference:
                     return ConvertToEntity(value, edmType, typeName).ToEntityReference();
@@ -87,6 +88,51 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                     return value.GetGuid();
                 default:
                     throw new NotImplementedException($"Type {typeName}({type}) is not implemented!");
+            }
+        }
+
+        private int GetRequestParameterTypeFromEdmType(IEdmTypeReference edmType)
+        {
+            switch (edmType.FullName())
+            {
+                case "Edm.Boolean":
+                    return CustomApiRequestParameterType.Boolean;
+                case "Edm.Byte":
+                    return CustomApiRequestParameterType.Integer;
+                case "Edm.DateTime":
+                    return CustomApiRequestParameterType.DateTime;
+                case "Edm.Decimal":
+                    return CustomApiRequestParameterType.Decimal;
+                case "Edm.Double":
+                    return CustomApiRequestParameterType.Float;
+                case "Edm.Single":
+                    return CustomApiRequestParameterType.Float;
+                case "Edm.Guid":
+                    return CustomApiRequestParameterType.Guid;
+                case "Edm.Int16":
+                    return CustomApiRequestParameterType.Integer;
+                case "Edm.Int32":
+                    return CustomApiRequestParameterType.Integer;
+                case "Edm.Int64":
+                    return CustomApiRequestParameterType.Integer;
+                case "Edm.SByte":
+                    return CustomApiRequestParameterType.Integer;
+                case "Edm.String":
+                    return CustomApiRequestParameterType.String;
+                default:
+                    if (edmType.TypeKind() == EdmTypeKind.Entity)
+                    {
+                        return CustomApiRequestParameterType.EntityReference;
+                    }
+                    else if (edmType.TypeKind() == EdmTypeKind.Collection)
+                    {
+                        return CustomApiRequestParameterType.EntityCollection;
+                    }
+                    else
+                    {
+                        throw new NotImplementedException($"Type {edmType.TypeKind()} is not implemented!");
+                    }
+
             }
         }
 

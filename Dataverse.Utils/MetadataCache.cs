@@ -36,7 +36,7 @@ namespace Dataverse.Utils
                 QueryExpression query = new QueryExpression("customapirequestparameter");
                 query.Criteria.AddCondition("name", ConditionOperator.Equal, name);
                 query.ColumnSet = new ColumnSet("type", "logicalentityname");
-                entity = this.Service.RetrieveMultiple(query).Entities.Single();
+                entity = this.Service.RetrieveMultiple(query).Entities.FirstOrDefault();
                 this.CustomApiRequestParameters[name] = entity;
                 return entity;
             }
