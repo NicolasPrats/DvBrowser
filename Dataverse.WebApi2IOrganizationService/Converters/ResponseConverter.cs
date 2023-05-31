@@ -93,11 +93,17 @@ $@"{{
                 };
             }
 
-            var body = new JsonObject();
-            body["@odata.context"] = $"https://{this.Context.Host}/api/data/v9.2/$metadata#Microsoft.Dynamics.CRM.{organizationResponse.ResponseName}Response";
+            var body = new JsonObject
+            {
+                ["@odata.context"] = $"https://{this.Context.Host}/api/data/v9.2/$metadata#Microsoft.Dynamics.CRM.{organizationResponse.ResponseName}Response"
+            };
+            var operation = this.Context.Model.FindDeclaredOperations("Microsoft.Dynamics.CRM." + organizationResponse.ResponseName).Single();
+            var returnTypeDefinition = operation.ReturnType.Definition as IEdmStructuredType;
+
             foreach (var property in organizationResponse.Results)
             {
-                AddValueToJsonObject(body, property, null);
+                var parameter = returnTypeDefinition.DeclaredProperties.FirstOrDefault(p => p.Name == property.Key);
+                AddValueToJsonObject(body, property, null, parameter);
             }
             string jsonBody = body.ToJsonString();
             return new WebApiResponse()
@@ -111,7 +117,7 @@ $@"{{
             };
         }
 
-        private void AddValueToJsonObject(JsonObject body, KeyValuePair<string, object> property, string currentEntityLogicalName)
+        private void AddValueToJsonObject(JsonObject body, KeyValuePair<string, object> property, string currentEntityLogicalName, IEdmProperty parameter)
         {
             switch (property.Value)
             {
@@ -148,38 +154,98 @@ $@"{{
                 case OptionSetValue optionSetValue:
                     body[property.Key] = optionSetValue.Value;
                     break;
+                case Money moneyValue:
+                    body[property.Key] = moneyValue.Value;
+                    break;
                 case EntityReference entityReferenceValue:
-                    if (currentEntityLogicalName == null)
-                        throw new Exception("TODO response property");
-                    var entityTypeDefinition = (IEdmStructuredType)this.Context.Model.FindDeclaredType("Microsoft.Dynamics.CRM." + currentEntityLogicalName);
-                    var declaredProperty = entityTypeDefinition.DeclaredProperties.Where(p => p.Name == property.Key).Single();
-                    if (declaredProperty.PropertyKind == EdmPropertyKind.Navigation)
                     {
-                        body["_" + property.Key + "_value"] = entityReferenceValue.Id;
-                    }
-                    else
-                    {
-                        body[property.Key] = entityReferenceValue.Id;
+                        if (currentEntityLogicalName == null)
+                        {
+                            // Here it's directly a property response
+                            //The format is not the same if it's the only one property or if there are other properties
+                            string typeName = "Microsoft.Dynamics.CRM." + entityReferenceValue.LogicalName;
+                            var definition = this.Context.Model.FindType(typeName) as IEdmEntityType;
+                            if (parameter == null)
+                            {
+                                body["@odata.type"] = "#" + typeName;
+                                body[property.Key] = entityReferenceValue.Id;
+                            }
+                            else
+                            {
+                                var value = new JsonObject
+                                {
+                                    [definition.DeclaredKey.Single().Name] = entityReferenceValue.Id
+                                };
+                                body[property.Key] = value;
+                            }
+                        }
+                        else
+                        {
+                            // Here it's a property of an entity record included in a property response
+                            var entityTypeDefinition = (IEdmStructuredType)this.Context.Model.FindDeclaredType("Microsoft.Dynamics.CRM." + currentEntityLogicalName);
+                            var declaredProperty = entityTypeDefinition.DeclaredProperties.Where(p => p.Name == property.Key).Single();
+                            if (declaredProperty.PropertyKind == EdmPropertyKind.Navigation)
+                            {
+                                body["_" + property.Key + "_value"] = entityReferenceValue.Id;
+                            }
+                            else
+                            {
+                                body[property.Key] = entityReferenceValue.Id;
+                            }
+
+                        }
                     }
                     break;
                 case Entity record:
-                    var recordJson = new JsonObject();
-                    body[property.Key] = recordJson;
-                    //recordJson["@odata.type"] = "Microsoft.Dynamics.CRM." + record.LogicalName;
-                    recordJson["@odata.etag"] = "DvbError: NotImplemented";
-                    //dataverse seems to always add the column ownerid
-                    if (!record.Contains("ownerid"))
                     {
-                        recordJson["ownerid"] = this.Context.CrmServiceClient.GetMyCrmUserId();
+                        var parameterDefinition = parameter.Type.Definition;
+                        //var recordType = this.Context.Model.FindDeclaredType("Microsoft.Dynamics.CRM." + record.LogicalName);
+                        JsonObject recordJson = ConvertEntityToJson(record, parameterDefinition.FullTypeName() == "Microsoft.Dynamics.CRM.crmbaseentity");
+                        body[property.Key] = recordJson;
+
                     }
-                    foreach (var kvp in record.Attributes)
+                    break;
+                case EntityCollection collection:
                     {
-                        AddValueToJsonObject(recordJson, kvp, record.LogicalName);
+                        var arrayJson = new JsonArray();
+                        body[property.Key] = arrayJson;
+                        foreach (var record in collection.Entities)
+                        {
+                            JsonObject recordJson = ConvertEntityToJson(record, true);
+                            arrayJson.Add(recordJson);
+                        }
                     }
                     break;
                 default:
                     throw new NotImplementedException($"Message has been executed but response cannot be generated. Parameter:{property.Key}={property.Value}");
             }
+        }
+
+        private JsonObject ConvertEntityToJson(Entity record, bool addType)
+        {
+            var recordJson = new JsonObject
+            {
+                ["@odata.etag"] = "DvbError: NotImplemented"
+            };
+            if (addType)
+            {
+                recordJson["@odata.type"] = "#Microsoft.Dynamics.CRM." + record.LogicalName;
+            }
+
+            string typeName = "Microsoft.Dynamics.CRM." + record.LogicalName;
+            var definition = this.Context.Model.FindType(typeName) as IEdmEntityType;
+            var key = definition.DeclaredKey.FirstOrDefault()?.Name;
+            if (key != null && !record.Contains(key))
+            {
+                record[key] = record.Id;
+            }
+
+            foreach (var kvp in record.Attributes)
+            {
+                AddValueToJsonObject(recordJson, kvp, record.LogicalName, null);
+            }
+
+            return recordJson;
         }
 
         private WebApiResponse ConvertDeleteResponse()

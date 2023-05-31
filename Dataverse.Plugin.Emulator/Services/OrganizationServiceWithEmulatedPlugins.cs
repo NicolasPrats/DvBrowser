@@ -214,7 +214,25 @@ namespace Dataverse.Plugin.Emulator.Services
 
 
             treeNode.ChildNodes.Add(new ExecutionTreeNode("30 Execute Operation", ExecutionTreeNodeType.InnerOperation));
-            var response = InnerExecute(request);
+            OrganizationResponse response;
+            var operationSteps = steps.Where(s => s.Stage == 30);
+            if (operationSteps.Any())
+            {
+                response = new OrganizationResponse
+                {
+                    ResponseName = request.RequestName,
+                    Results = new ParameterCollection()
+                };
+                foreach (var step in operationSteps.OrderBy(s => s.Rank))
+                {
+                    ExecuteStep(treeNode, step, request, response, sharedVariables, preImages[step], null, target?.Id ?? Guid.Empty);
+                }
+            }
+            else
+            {
+                response = InnerExecute(request);
+            }
+
 
             if (request is CreateRequest createRequest && response is CreateResponse createResponse)
             {

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
-using Dataverse.WebApi2IOrganizationService.Model;
 using Dataverse.Utils;
+using Dataverse.WebApi2IOrganizationService.Model;
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
 
@@ -115,7 +115,18 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
             {
                 if (path.FirstSegment.EdmType?.TypeKind == EdmTypeKind.Collection)
                 {
-                    ConvertToCreateUpdateRequest(result, path);
+                    string identifier = path.FirstSegment.Identifier;
+                    var entity = this.Context.MetadataCache.GetEntityFromSetName(path.FirstSegment.Identifier);
+                    if (entity != null)
+                    {
+                        ConvertToCreateUpdateRequest(result, path);
+                    }
+                    else
+                    {
+                        //Custom api returning only one collection have a first segment of type collection
+                        var declaredOperation = this.Context.Model.FindDeclaredOperationImports(identifier).FirstOrDefault() ?? throw new NotImplementedException("Identifier unknown:" + identifier);
+                        ConvertToAction(declaredOperation.Operation, result, false);
+                    }
                 }
                 else if (path.FirstSegment.Identifier == "$batch")
                 {

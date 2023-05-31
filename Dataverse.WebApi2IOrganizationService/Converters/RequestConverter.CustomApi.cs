@@ -71,7 +71,7 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                 case CustomApiRequestParameterType.Integer:
                     return value.GetInt32();
                 case CustomApiRequestParameterType.Money:
-                    return new Money(value.GetInt32());
+                    return new Money(value.GetDecimal());
                 case CustomApiRequestParameterType.Picklist:
                     return new OptionSetValue(value.GetInt32());
                 case CustomApiRequestParameterType.String:
@@ -112,7 +112,7 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
             }
             if (definition == null)
             {
-                throw new NotSupportedException($"IEdmEntityType was expected!");
+                throw new NotSupportedException($"IEdmEntityType was expected but not found for type {typeName}!");
             }
             var key = definition.DeclaredKey.FirstOrDefault()?.Name;
             if (!value.TryGetProperty(key, out var id))

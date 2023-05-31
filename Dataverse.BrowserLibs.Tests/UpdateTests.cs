@@ -23,10 +23,7 @@ namespace Dataverse.BrowserLibs.Tests
                 },
                 "{\"firstname\":\"test\"}"
                 );
-            WebApiResponse webApiResponseToTest = Helper.GetResponseUsingConversionAndPlugins(this.TestContext, webApiRequest);
-            WebApiResponse webApiResponseExpected = Helper.GetDirectResponse(this.TestContext, webApiRequest);
-
-            AssertExtensions.AreEquals(webApiResponseToTest, webApiResponseExpected);
+            Helper.TestAgainstExpected(this.TestContext, webApiRequest);
 
         }
 

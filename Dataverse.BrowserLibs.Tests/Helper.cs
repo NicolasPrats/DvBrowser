@@ -9,7 +9,6 @@ using Dataverse.Plugin.Emulator.Steps;
 using Dataverse.Utils;
 using Dataverse.WebApi2IOrganizationService.Converters;
 using Dataverse.WebApi2IOrganizationService.Model;
-using FluentAssertions;
 using Microsoft.OData.Edm.Csdl;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.Xrm.Sdk;
@@ -53,7 +52,7 @@ namespace Dataverse.BrowserLibs.Tests
                 return (IOrganizationService)svc.OrganizationWebProxyClient ?? svc.OrganizationServiceProxy;
             }
             );
-            emulator.AddPluginAssembly(@"data\PowerPlatform.Demo.Plugins.dll");
+            emulator.AddPluginAssembly(@"../../../PowerPlatform.Demo/Plugins/bin/debug/PowerPlatform.Demo.Plugins.dll");
             MetadataCache metadataCache = new MetadataCache(client);
             var context = new DataverseContext()
             {
@@ -104,13 +103,14 @@ namespace Dataverse.BrowserLibs.Tests
 
         internal static void TestAgainstExpected(TestContext testContext, WebApiRequest webApiRequest, bool noErrorExpected = true)
         {
-            WebApiResponse webApiResponseToTest = Helper.GetResponseUsingConversionAndPlugins(testContext, webApiRequest);
             WebApiResponse webApiResponseExpected = Helper.GetDirectResponse(testContext, webApiRequest);
+            WebApiResponse webApiResponseToTest = Helper.GetResponseUsingConversionAndPlugins(testContext, webApiRequest);
+
 
             AssertExtensions.AreEquals(webApiResponseToTest, webApiResponseExpected);
             if (noErrorExpected)
             {
-                webApiResponseExpected.StatusCode.Should().BeLessThan(300);
+                Assert.IsTrue(webApiResponseExpected.StatusCode < 300, "Both methods have returned an unexpected error:" + webApiResponseExpected.StatusCode);
             }
         }
 

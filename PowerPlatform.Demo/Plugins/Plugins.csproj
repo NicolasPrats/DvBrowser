@@ -1,0 +1,90 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{50D4EDE0-9FC3-454C-9930-35F571707EA2}</ProjectGuid>
+    <ProjectTypeGuids>{4C25E9B5-9FA6-436c-8E19-B395D2A65FAF};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>PowerPlatform.Demo.Plugins</RootNamespace>
+    <AssemblyName>PowerPlatform.Demo.Plugins</AssemblyName>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <!--<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>-->
+    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);GetTfmPublishedFiles</TargetsForTfmSpecificBuildOutput>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PackageId>PowerPlatform.Demo.Plugins</PackageId>
+    <IsPackable>True</IsPackable>
+    <PackageVersion>1.0.0</PackageVersion>
+    <PackageOutputPath>bin\outputPackages</PackageOutputPath>
+    <PackageTags>plugin</PackageTags>
+    <Authors>Placeholder</Authors>
+    <Description>
+			Placeholder
+		</Description>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>MyPlugins.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.ServiceModel" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="Microsoft.Xrm.Sdk">
+      <HintPath>..\..\..\..\..\..\program files\microsoft visual studio\2022\enterprise\common7\ide\extensions\wjvtinjj.hoc\Resources\CoreTools\Microsoft.Xrm.Sdk.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Crm.Sdk.Proxy">
+      <HintPath>..\..\..\..\..\..\program files\microsoft visual studio\2022\enterprise\common7\ide\extensions\wjvtinjj.hoc\Resources\CoreTools\Microsoft.Crm.Sdk.Proxy.dll</HintPath>
+    </Reference>
+    <PackageReference Include="NuGet.Build.Tasks.Pack" Version="5.2.0" />
+    <PackageReference Include="Microsoft.CrmSdk.CoreAssemblies" Version="9.0.2.*" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" PrivateAssets="All" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="PostOperationnonedvb_TestUnbound.cs" />
+    <Compile Include="PreValidationcontactCreate.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="PluginBase.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="MyPlugins.snk" />
+  </ItemGroup>
+  <Target Name="GetTfmPublishedFiles">
+    <Message Text="GetTfmPublishedFiles from: $(OutputPath)" />
+    <ItemGroup>
+      <BuildOutputInPackage Include="$(OutputPath)\*.*" Exclude="$(OutputPath)\microsoft.xrm.sdk*" />
+    </ItemGroup>
+  </Target>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

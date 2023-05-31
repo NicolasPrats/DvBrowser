@@ -90,11 +90,7 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
 
         private void ConvertToCreateUpdateRequest(RequestConversionResult conversionResult, ODataPath path)
         {
-            var entity = this.Context.MetadataCache.GetEntityFromSetName(path.FirstSegment.Identifier);
-            if (entity == null)
-            {
-                throw new ApplicationException("Entity not found: " + entity);
-            }
+            var entity = this.Context.MetadataCache.GetEntityFromSetName(path.FirstSegment.Identifier) ?? throw new ApplicationException("Entity not found: " + path.FirstSegment.Identifier);
             KeySegment keySegment = null;
             if (conversionResult.SrcRequest.Method == "PATCH")
             {

@@ -94,7 +94,7 @@ namespace Dataverse.BrowserLibs.Tests
         ]
 }"
                );
-            Helper.TestAgainstExpected(this.TestContext, webApiRequest);
+            Helper.TestAgainstExpected(this.TestContext, webApiRequest, false);
         }
     }
 }
