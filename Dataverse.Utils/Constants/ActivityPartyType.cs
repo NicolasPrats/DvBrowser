@@ -1,15 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IdentityModel.Protocols.WSTrust;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Dataverse.Browser.Properties;
-
-namespace Dataverse.Browser.Constants
+﻿
+namespace Dataverse.Utils.Constants
 {
     //https://learn.microsoft.com/en-us/power-apps/developer/data-platform/activityparty-entity#activity-party-types
-    internal static class ActivityPartyType
+    public static class ActivityPartyType
     {
         public const int Sender = 1;// Specifies the sender.
         public const int ToRecipient = 2;// Specifies the recipient in the To field.

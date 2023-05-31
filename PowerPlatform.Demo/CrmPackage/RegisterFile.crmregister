@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Register xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://schemas.microsoft.com/crm/2011/tools/pluginregistration">
+  <Solutions>
+    <Solution Assembly="PowerPlatform.Demo.Plugins.dll" Id="3592ba1f-21a9-4db1-bce5-4de47e4595a6" IsolationMode="Sandbox" SourceType="Database">
+      <PluginTypes>
+        <clear />
+        <Plugin Description="Plug-in to Create of contact" FriendlyName="Create of contact" Name="PowerPlatform.Demo.Plugins.PreValidationcontactCreate" Id="b6eeca99-7d6a-47b1-8949-030addaefcd5" TypeName="PowerPlatform.Demo.Plugins.PreValidationcontactCreate">
+          <Steps>
+            <clear />
+            <Step AsyncAutoDelete="false" Name="Create of contact" Description="Create of contact" Id="56cc2770-08cf-ed11-b597-000d3ade9e3a" ImpersonatingUserId="00000000-0000-0000-0000-000000000000" MessageName="Create" Mode="Synchronous" PrimaryEntityName="contact" Rank="1" Stage="PreOutsideTransaction" SupportedDeployment="ServerOnly" MessageEntityId="00000000-0000-0000-0000-000000000000">
+              <Images />
+            </Step>
+          </Steps>
+        </Plugin>
+        <Plugin Description="Plug-in to new_TestUnbound of any Entity" FriendlyName="new_TestUnbound of any Entity" Name="PowerPlatform.Demo.Plugins.PostOperationnonedvb_TestUnbound" Id="00000000-0000-0000-0000-000000000000" TypeName="PowerPlatform.Demo.Plugins.PostOperationnonedvb_TestUnbound">
+          <Steps>
+            <clear />
+            <Step AsyncAutoDelete="true" Name="new_TestUnbound of any Entity" Description="new_TestUnbound of any Entity" Id="00000000-0000-0000-0000-000000000000" ImpersonatingUserId="00000000-0000-0000-0000-000000000000" MessageName="new_TestUnbound" Mode="Asynchronous" PrimaryEntityName="none" Rank="1" Stage="PostOutsideTransaction" SupportedDeployment="ServerOnly" MessageEntityId="00000000-0000-0000-0000-000000000000">
+              <Images />
+            </Step>
+          </Steps>
+        </Plugin>
+      </PluginTypes>
+    </Solution>
+  </Solutions>
+  <XamlWorkflows />
+  <DataProviders />
+</Register>

@@ -23,7 +23,7 @@ namespace Dataverse.Plugin.Emulator.Steps
         public PluginEmulator(Func<Guid, IOrganizationService> proxyFactory)
         {
             this.ProxyFactory = proxyFactory ?? throw new ArgumentNullException(nameof(proxyFactory));
-            this.InnerServiceProxy = ProxyFactory(Guid.Empty);
+            this.InnerServiceProxy = this.ProxyFactory(Guid.Empty);
         }
 
         public bool AddPluginAssembly(string pluginPath)
@@ -34,7 +34,7 @@ namespace Dataverse.Plugin.Emulator.Steps
             {
                 throw new ArgumentNullException(nameof(pluginPath));
             }
-            
+
             Assembly assembly = Assembly.LoadFrom(pluginPath);
 
             QueryExpression querySteps = new QueryExpression("sdkmessageprocessingstep")
@@ -70,7 +70,7 @@ namespace Dataverse.Plugin.Emulator.Steps
             querySteps.LinkEntities.Add(linkToFilter);
 
 
-            var result = InnerServiceProxy.RetrieveMultiple(querySteps);
+            var result = this.InnerServiceProxy.RetrieveMultiple(querySteps);
 
             foreach (var step in result.Entities)
             {
@@ -83,7 +83,7 @@ namespace Dataverse.Plugin.Emulator.Steps
                     //throw new NotImplementedException("configuration in step is not implemented!");
                 }
 
-                if ((step.Contains("impersonatinguserid") && step.GetAttributeValue<EntityReference>("impersonatinguserid").Id != Guid.Empty))
+                if (step.Contains("impersonatinguserid") && step.GetAttributeValue<EntityReference>("impersonatinguserid").Id != Guid.Empty)
                 {
                     allStepsHaveBeenLoaded = false;
                     continue;
@@ -113,7 +113,7 @@ namespace Dataverse.Plugin.Emulator.Steps
                 QueryExpression queryImages = new QueryExpression("sdkmessageprocessingstepimage");
                 queryImages.Criteria.AddCondition("sdkmessageprocessingstepid", ConditionOperator.Equal, step.Id);
                 queryImages.ColumnSet = new ColumnSet("attributes", "entityalias", "imagetype");
-                var images = InnerServiceProxy.RetrieveMultiple(queryImages).Entities;
+                var images = this.InnerServiceProxy.RetrieveMultiple(queryImages).Entities;
                 foreach (var image in images)
                 {
                     stepDescription.Images.Add(new PluginStepImage()
@@ -149,7 +149,7 @@ namespace Dataverse.Plugin.Emulator.Steps
 
         internal OrganizationServiceWithEmulatedPlugins CreateNewProxy(Guid userId, EmulatedPluginContext context)
         {
-            var service = ProxyFactory(userId);
+            var service = this.ProxyFactory(userId);
             return new OrganizationServiceWithEmulatedPlugins(service, this, context);
         }
 

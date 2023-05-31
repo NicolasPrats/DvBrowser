@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.IO;
 using System.Windows.Forms;
-using AutoUpdaterDotNET;
 using CefSharp;
 using CefSharp.WinForms;
 using Dataverse.Browser.Configuration;
@@ -30,7 +29,7 @@ namespace Dataverse.Browser
 
 
             EnvironnementConfiguration selectedEnvironment = null;
-            DataverseContext context = null;
+            BrowserContext context = null;
             try
             {
                 EnsureApplicationPathExists();
@@ -93,15 +92,14 @@ namespace Dataverse.Browser
             return false;
         }
 
-        private static DataverseContext CreateContext(EnvironnementConfiguration selectedEnvironment)
+        private static BrowserContext CreateContext(EnvironnementConfiguration selectedEnvironment)
         {
             var factory = new ContextFactory(selectedEnvironment);
             using (var spinnerForm = new ContextSpinner(factory, selectedEnvironment))
             {
                 Application.Run(spinnerForm);
             }
-            DataverseContext context = factory.GetContext();
-            return context;
+            return factory.GetContext();
         }
 
         private static EnvironnementConfiguration SelectEnvironment()
@@ -127,7 +125,7 @@ namespace Dataverse.Browser
         }
 
 
-        private static void StartBrowser(DataverseContext context)
+        private static void StartBrowser(BrowserContext context)
         {
 #if ANYCPU
             CefRuntime.SubscribeAnyCpuAssemblyResolver();

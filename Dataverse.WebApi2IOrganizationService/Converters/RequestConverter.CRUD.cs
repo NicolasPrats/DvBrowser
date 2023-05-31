@@ -1,34 +1,23 @@
 ﻿using System;
-using System.Activities.DurableInstancing;
-using System.IO;
 using System.Linq;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using System.Windows.Shapes;
-using CefSharp;
-using CefSharp.DevTools.DOM;
-using Dataverse.Browser.Constants;
-using Dataverse.Browser.Context;
-using Dataverse.Browser.Requests.SimpleClasses;
+using Dataverse.Utils.Constants;
+using Dataverse.WebApi2IOrganizationService.Model;
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Messages;
 using Microsoft.Xrm.Sdk.Metadata;
 using Microsoft.Xrm.Sdk.Query;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.Tab;
 
-namespace Dataverse.Browser.Requests.Converter
+namespace Dataverse.WebApi2IOrganizationService.Converters
 {
-    internal partial class WebApiRequestConverter
+    public partial class RequestConverter
 
     {
-       
 
-        private void ConvertToDeleteRequest(InterceptedWebApiRequest webApiRequest, ODataPath path)
+        private void ConvertToDeleteRequest(RequestConversionResult conversionResult, ODataPath path)
         {
             var entitySegment = path.FirstSegment as EntitySetSegment ?? throw new NotSupportedException("First segment should not be of type: " + path.FirstSegment.EdmType);
             var keySegment = path.LastSegment as KeySegment ?? throw new NotSupportedException("First segment should not be of type: " + path.FirstSegment.EdmType);
@@ -43,10 +32,10 @@ namespace Dataverse.Browser.Requests.Converter
             {
                 Target = new EntityReference(entity.LogicalName, id)
             };
-            webApiRequest.ConvertedRequest = deleteRequest;
+            conversionResult.ConvertedRequest = deleteRequest;
         }
 
-        private void ConvertToRetrieveRequest(InterceptedWebApiRequest webApiRequest, ODataUriParser parser, ODataPath path)
+        private void ConvertToRetrieveRequest(RequestConversionResult conversionResult, ODataUriParser parser, ODataPath path)
         {
             var entitySegment = path.FirstSegment as EntitySetSegment ?? throw new NotSupportedException("First segment should not be of type: " + path.FirstSegment.EdmType);
             var keySegment = path.LastSegment as KeySegment ?? throw new NotSupportedException("First segment should not be of type: " + path.FirstSegment.EdmType);
@@ -62,7 +51,7 @@ namespace Dataverse.Browser.Requests.Converter
                 Target = new EntityReference(entity.LogicalName, id),
                 ColumnSet = GetColumnSet(parser)
             };
-            webApiRequest.ConvertedRequest = retrieveRequest;
+            conversionResult.ConvertedRequest = retrieveRequest;
         }
 
         private ColumnSet GetColumnSet(ODataUriParser parser)
@@ -99,30 +88,23 @@ namespace Dataverse.Browser.Requests.Converter
         }
 
 
-        private void ConvertToCreateUpdateRequest(InterceptedWebApiRequest webApiRequest, ODataPath path)
+        private void ConvertToCreateUpdateRequest(RequestConversionResult conversionResult, ODataPath path)
         {
-            var entity = this.Context.MetadataCache.GetEntityFromSetName(path.FirstSegment.Identifier);
-            if (entity == null)
-            {
-                throw new ApplicationException("Entity not found: " + entity);
-            }
+            var entity = this.Context.MetadataCache.GetEntityFromSetName(path.FirstSegment.Identifier) ?? throw new ApplicationException("Entity not found: " + path.FirstSegment.Identifier);
             KeySegment keySegment = null;
-            if (webApiRequest.SimpleHttpRequest.Method == "PATCH")
+            if (conversionResult.SrcRequest.Method == "PATCH")
             {
                 keySegment = path.LastSegment as KeySegment;
 
             }
-            webApiRequest.ConvertedRequest = ConvertToCreateUpdateRequest(keySegment, webApiRequest, entity.LogicalName);
+            conversionResult.ConvertedRequest = ConvertToCreateUpdateRequest(keySegment, conversionResult, entity.LogicalName);
         }
 
-       private OrganizationRequest ConvertToCreateUpdateRequest(KeySegment keySegment, InterceptedWebApiRequest webApiRequest, string entityLogicalName)
+        private OrganizationRequest ConvertToCreateUpdateRequest(KeySegment keySegment, RequestConversionResult conversionResult, string entityLogicalName)
         {
-            string body = webApiRequest.SimpleHttpRequest.Body ?? throw new NotSupportedException("A body was expected!");
-            webApiRequest.SimpleHttpRequest.Body = body;
+            string body = conversionResult.SrcRequest.Body ?? throw new NotSupportedException("A body was expected!");
             return ConvertToCreateUpdateRequest(keySegment, body, entityLogicalName);
         }
-
-
 
         private OrganizationRequest ConvertToCreateUpdateRequest(KeySegment keySegment, string body, string entityLogicalName)
         {
@@ -153,7 +135,7 @@ namespace Dataverse.Browser.Requests.Converter
                     if (key.EndsWith("@OData.Community.Display.V1.FormattedValue"))
                         continue;
 
-                    
+
                     if (key.EndsWith("@odata.bind"))
                     {
                         key = ExtractAttributeNameFromodatabind(entityMetadata, key);
@@ -171,11 +153,7 @@ namespace Dataverse.Browser.Requests.Converter
                     }
                     else
                     {
-                        var relation = entityMetadata.OneToManyRelationships.FirstOrDefault(r => r.SchemaName == key);
-                        if (relation == null)
-                        {
-                            throw new NotSupportedException("No attribute nor relation found: " + key);
-                        }
+                        var relation = entityMetadata.OneToManyRelationships.FirstOrDefault(r => r.SchemaName == key) ?? throw new NotSupportedException("No attribute nor relation found: " + key);
                         if (relation.ReferencingEntity != "activityparty")
                         {
                             throw new NotSupportedException("Unsupported relation found: " + key);
@@ -202,7 +180,8 @@ namespace Dataverse.Browser.Requests.Converter
         private void AddActivityParties(Entity record, JsonElement values)
         {
             var entityMetadata = this.Context.MetadataCache.GetEntityMetadataWithAttributes("activityparty");
-            foreach (var value in values.EnumerateArray()) {
+            foreach (var value in values.EnumerateArray())
+            {
                 int participationTypeMask = -1;
                 EntityReference entityReference = null;
                 foreach (var attribute in value.EnumerateObject())
@@ -221,12 +200,11 @@ namespace Dataverse.Browser.Requests.Converter
                         }
                     }
                 }
-                if (participationTypeMask == -1) {
+                if (participationTypeMask == -1)
+                {
                     throw new NotSupportedException("ParticipationTypeMask not found!");
                 }
-                if (entityReference == null) {
-                    throw new NotSupportedException("Target record in activity party list not found!");
-                }
+
                 var targetAttributeName = GetActivityPartyAttributeName(record.LogicalName, participationTypeMask);
                 EntityCollection collection = record.GetAttributeValue<EntityCollection>(targetAttributeName); ;
                 if (collection == null)
@@ -236,11 +214,11 @@ namespace Dataverse.Browser.Requests.Converter
                 }
                 var party = new Entity("activityparty");
                 //todo:other columns necessary ?
-                party["partyid"] = entityReference;
+                party["partyid"] = entityReference ?? throw new NotSupportedException("Target record in activity party list not found!");
 
                 collection.Entities.Add(party);
             }
-            
+
         }
 
         private string GetActivityPartyAttributeName(string logicalName, int participationTypeMask)

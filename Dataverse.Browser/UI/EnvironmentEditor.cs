@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using System.Security;
 using System.Windows.Forms;
 using Dataverse.Browser.Configuration;
 
@@ -15,7 +14,7 @@ namespace Dataverse.Browser.UI
 
         public EnvironmentEditor(EnvironnementConfiguration environment)
         {
-            this.InitializeComponent();
+            InitializeComponent();
             this.CurrentEnvironment = environment;
             this.openFileDialog.Filter = "Plugins Files (*.dll)|*.dll|All files (*.*)|*.*";
             var defaultPath = this.CurrentEnvironment?.PluginAssemblies?.FirstOrDefault();
@@ -33,12 +32,12 @@ namespace Dataverse.Browser.UI
 
         private void EnvironmentEditor_Load(object sender, EventArgs e)
         {
-            if (CurrentEnvironment != null)
+            if (this.CurrentEnvironment != null)
             {
-                txtName.Text = CurrentEnvironment.Name;
-                txtAssemblyPath.Text = CurrentEnvironment.PluginAssemblies[0];
-                txtHostName.Text = CurrentEnvironment.DataverseHost;
-                cbDisableAsyncSteps.Checked = CurrentEnvironment.DisableAsyncSteps;
+                this.txtName.Text = this.CurrentEnvironment.Name;
+                this.txtAssemblyPath.Text = this.CurrentEnvironment.PluginAssemblies[0];
+                this.txtHostName.Text = this.CurrentEnvironment.DataverseHost;
+                this.cbDisableAsyncSteps.Checked = this.CurrentEnvironment.DisableAsyncSteps;
             }
         }
 
@@ -50,9 +49,9 @@ namespace Dataverse.Browser.UI
             string assemblyPath = GetValidAssemblyPath();
             if (assemblyPath == null)
                 return;
-            this.SelectedEnvironment = CurrentEnvironment ?? new EnvironnementConfiguration();
-            this.SelectedEnvironment.Name = txtName.Text;
-            this.SelectedEnvironment.DisableAsyncSteps = cbDisableAsyncSteps.Checked;
+            this.SelectedEnvironment = this.CurrentEnvironment ?? new EnvironnementConfiguration();
+            this.SelectedEnvironment.Name = this.txtName.Text;
+            this.SelectedEnvironment.DisableAsyncSteps = this.cbDisableAsyncSteps.Checked;
 
 
             this.SelectedEnvironment.PluginAssemblies = new string[] { assemblyPath };
@@ -62,12 +61,12 @@ namespace Dataverse.Browser.UI
             {
                 this.SelectedEnvironment.Id = Guid.NewGuid();
             }
-            this.Close();
+            Close();
         }
 
         private string GetValidAssemblyPath()
         {
-            string assemblyPath = txtAssemblyPath.Text;
+            string assemblyPath = this.txtAssemblyPath.Text;
             if (assemblyPath.StartsWith("\"") && assemblyPath.EndsWith("\""))
             {
                 assemblyPath = assemblyPath.Substring(1, assemblyPath.Length - 2);
@@ -82,7 +81,7 @@ namespace Dataverse.Browser.UI
 
         private string GetValidHostName()
         {
-            string hostName = txtHostName.Text;
+            string hostName = this.txtHostName.Text;
             if (hostName.ToLowerInvariant().StartsWith("https://"))
             {
                 hostName = hostName.Substring("https://".Length);
@@ -102,9 +101,9 @@ namespace Dataverse.Browser.UI
 
         private void btnSelectAssembly_Click(object sender, EventArgs e)
         {
-            if (openFileDialog.ShowDialog() == DialogResult.OK)
+            if (this.openFileDialog.ShowDialog() == DialogResult.OK)
             {
-                txtAssemblyPath.Text = openFileDialog.FileName;
+                this.txtAssemblyPath.Text = this.openFileDialog.FileName;
             }
         }
     }

@@ -20,7 +20,7 @@ namespace Dataverse.Plugin.Emulator.Services
 
         public IOrganizationService CreateOrganizationService(Guid? userId)
         {
-            return Emulator.CreateNewProxy(userId ?? Guid.Empty, ParentContext);
+            return this.Emulator.CreateNewProxy(userId ?? Guid.Empty, this.ParentContext);
         }
     }
 }

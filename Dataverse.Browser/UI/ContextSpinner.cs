@@ -23,26 +23,26 @@ namespace Dataverse.Browser.UI
             factory.OnFinished += Factory_OnFinished;
             this.Factory = factory;
             this.SelectedEnvironment = selectedEnvironment;
-            this.FormClosing += ContextSpinner_FormClosing;
+            FormClosing += ContextSpinner_FormClosing;
         }
 
         private void ContextSpinner_FormClosing(object sender, FormClosingEventArgs e)
         {
-            Factory.OnFinished -= Factory_OnFinished;
-            Factory.OnError -= Factory_OnError;
-            Factory.OnNewProgress -= Factory_OnNewProgress;
+            this.Factory.OnFinished -= Factory_OnFinished;
+            this.Factory.OnError -= Factory_OnError;
+            this.Factory.OnNewProgress -= Factory_OnNewProgress;
         }
 
         private void Factory_OnFinished(object sender, EventArgs e)
         {
             if (this.InvokeRequired)
             {
-                CloseDelegate closeDelegate = this.Close;
-                this.Invoke(closeDelegate);
+                CloseDelegate closeDelegate = Close;
+                Invoke(closeDelegate);
             }
             else
             {
-                this.Close();
+                Close();
             }
         }
 
@@ -58,22 +58,22 @@ namespace Dataverse.Browser.UI
 
         private void AddText(string text)
         {
-            if (textBox1.InvokeRequired)
+            if (this.textBox1.InvokeRequired)
             {
                 var d = new AddTextDelegate(AddText);
-                textBox1.Invoke(d, text);
+                this.textBox1.Invoke(d, text);
                 return;
             }
-            if (textBox1.Text.Length != 0)
-                textBox1.Text += Environment.NewLine;
-            textBox1.Text += text.Replace("\r\n", "\n").Replace("\r", "").Replace("\n", Environment.NewLine);
+            if (this.textBox1.Text.Length != 0)
+                this.textBox1.Text += Environment.NewLine;
+            this.textBox1.Text += text.Replace("\r\n", "\n").Replace("\r", "").Replace("\n", Environment.NewLine);
         }
 
         private void ContextSpinner_Load(object sender, EventArgs e)
         {
             Task.Run(() =>
             {
-                Factory.CreateContext();
+                this.Factory.CreateContext();
             });
         }
 

@@ -5,7 +5,6 @@ using System.Windows.Forms;
 using CefSharp;
 using CefSharp.WinForms;
 using Dataverse.Browser.Context;
-using Dataverse.UI.BrowserHandlers;
 using Dataverse.Browser.Requests;
 using Dataverse.Plugin.Emulator.ExecutionTree;
 
@@ -16,13 +15,13 @@ namespace Dataverse.Browser.UI
     internal partial class BrowserWindow : Form
     {
         private ChromiumWebBrowser CurrentBrowser { get; set; }
-        public DataverseContext DataverseContext { get; }
+        public BrowserContext DataverseContext { get; }
 
         private delegate void RequestEventDelegate(InterceptedWebApiRequest request);
         private delegate void ClearRequestsDelegate();
         private readonly Dictionary<InterceptedWebApiRequest, TreeNode> Nodes = new Dictionary<InterceptedWebApiRequest, TreeNode>();
 
-        public BrowserWindow(DataverseContext context)
+        public BrowserWindow(BrowserContext context)
         {
             if (context is null)
             {
@@ -58,10 +57,10 @@ namespace Dataverse.Browser.UI
 
         private void UpdateRequest(InterceptedWebApiRequest request)
         {
-            if (treeView1.InvokeRequired)
+            if (this.treeView1.InvokeRequired)
             {
                 var d = new RequestEventDelegate(UpdateRequest);
-                treeView1.Invoke(d, request);
+                this.treeView1.Invoke(d, request);
                 return;
             }
             if (this.Nodes.TryGetValue(request, out var node))
@@ -85,13 +84,13 @@ namespace Dataverse.Browser.UI
 
         private void ClearRequests()
         {
-            if (treeView1.InvokeRequired)
+            if (this.treeView1.InvokeRequired)
             {
                 var d = new ClearRequestsDelegate(ClearRequests);
-                treeView1.Invoke(d);
+                this.treeView1.Invoke(d);
                 return;
             }
-            treeView1.Nodes.Clear();
+            this.treeView1.Nodes.Clear();
             this.Nodes.Clear();
         }
 
@@ -102,25 +101,25 @@ namespace Dataverse.Browser.UI
 
         private void AddNewRequest(InterceptedWebApiRequest request)
         {
-            if (treeView1.InvokeRequired)
+            if (this.treeView1.InvokeRequired)
             {
                 var d = new RequestEventDelegate(AddNewRequest);
-                treeView1.Invoke(d, request);
+                this.treeView1.Invoke(d, request);
                 return;
             }
             var index = Icons.RequestNotAnalyzed;
-            if (request.ConvertedRequest != null)
+            if (request.ConversionResult.ConvertedRequest != null)
             {
                 index = request.ExecuteException == null ? Icons.RequestAnalyzed : Icons.RequestNotAnalyzed;
             }
-            TreeNode node = new TreeNode(request.SimpleHttpRequest.Method?.ToUpperInvariant() + " " + request.SimpleHttpRequest.LocalPathWithQuery, (int)index, (int)index);
-            if (request.ConvertFailureMessage != null)
+            TreeNode node = new TreeNode(request.ConversionResult.SrcRequest.Method?.ToUpperInvariant() + " " + request.ConversionResult.SrcRequest.LocalPathWithQuery, (int)index, (int)index);
+            if (request.ConversionResult.ConvertFailureMessage != null)
             {
-                node.ToolTipText = request.ConvertFailureMessage;
+                node.ToolTipText = request.ConversionResult.ConvertFailureMessage;
             }
             this.Nodes[request] = node;
 
-            treeView1.Nodes.Add(node);
+            this.treeView1.Nodes.Add(node);
         }
 
         private void BuildTree(TreeNode parentNode, ExecutionTreeNode executionTreeNode)
@@ -177,9 +176,9 @@ namespace Dataverse.Browser.UI
 
         }
 
-        private void cbEnabled_CheckedChanged(object sender, EventArgs e)
+        private void CbEnabled_CheckedChanged(object sender, EventArgs e)
         {
-            this.DataverseContext.IsEnabled = cbEnabled.Checked;
+            this.DataverseContext.IsEnabled = this.CbEnabled.Checked;
         }
 
     }

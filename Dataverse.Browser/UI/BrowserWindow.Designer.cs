@@ -31,7 +31,7 @@
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(BrowserWindow));
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
-            this.cbEnabled = new System.Windows.Forms.CheckBox();
+            this.CbEnabled = new System.Windows.Forms.CheckBox();
             this.btnDebugger = new System.Windows.Forms.Button();
             this.btnClear = new System.Windows.Forms.Button();
             this.treeView1 = new System.Windows.Forms.TreeView();
@@ -51,7 +51,7 @@
             // 
             // splitContainer1.Panel2
             // 
-            this.splitContainer1.Panel2.Controls.Add(this.cbEnabled);
+            this.splitContainer1.Panel2.Controls.Add(this.CbEnabled);
             this.splitContainer1.Panel2.Controls.Add(this.btnDebugger);
             this.splitContainer1.Panel2.Controls.Add(this.btnClear);
             this.splitContainer1.Panel2.Controls.Add(this.treeView1);
@@ -60,19 +60,19 @@
             this.splitContainer1.SplitterDistance = 531;
             this.splitContainer1.TabIndex = 1;
             // 
-            // cbEnabled
+            // CbEnabled
             // 
-            this.cbEnabled.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.cbEnabled.AutoSize = true;
-            this.cbEnabled.Checked = true;
-            this.cbEnabled.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cbEnabled.Location = new System.Drawing.Point(244, 12);
-            this.cbEnabled.Name = "cbEnabled";
-            this.cbEnabled.Size = new System.Drawing.Size(18, 17);
-            this.cbEnabled.TabIndex = 5;
-            this.toolTipButtons.SetToolTip(this.cbEnabled, "Are plugin run locally ?");
-            this.cbEnabled.UseVisualStyleBackColor = true;
-            this.cbEnabled.CheckedChanged += new System.EventHandler(this.cbEnabled_CheckedChanged);
+            this.CbEnabled.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.CbEnabled.AutoSize = true;
+            this.CbEnabled.Checked = true;
+            this.CbEnabled.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.CbEnabled.Location = new System.Drawing.Point(244, 12);
+            this.CbEnabled.Name = "CbEnabled";
+            this.CbEnabled.Size = new System.Drawing.Size(18, 17);
+            this.CbEnabled.TabIndex = 5;
+            this.toolTipButtons.SetToolTip(this.CbEnabled, "Are plugin run locally ?");
+            this.CbEnabled.UseVisualStyleBackColor = true;
+            this.CbEnabled.CheckedChanged += new System.EventHandler(this.CbEnabled_CheckedChanged);
             // 
             // btnDebugger
             // 
@@ -134,14 +134,14 @@
             this.btnDevTools.UseVisualStyleBackColor = true;
             this.btnDevTools.Click += new System.EventHandler(this.BtnDevTools_Click);
             // 
-            // Browser
+            // BrowserWindow
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
             this.Controls.Add(this.splitContainer1);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.Name = "Browser";
+            this.Name = "BrowserWindow";
             this.Text = "Browser";
             this.splitContainer1.Panel2.ResumeLayout(false);
             this.splitContainer1.Panel2.PerformLayout();
@@ -160,7 +160,7 @@
         private System.Windows.Forms.Button btnClear;
         private System.Windows.Forms.Button btnDebugger;
         private System.Windows.Forms.ToolTip toolTipButtons;
-        private System.Windows.Forms.CheckBox cbEnabled;
+        private System.Windows.Forms.CheckBox CbEnabled;
     }
 }
 

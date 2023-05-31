@@ -1,15 +1,15 @@
 ﻿using System.Collections.Specialized;
 
-namespace Dataverse.Browser.Requests.SimpleClasses
+namespace Dataverse.WebApi2IOrganizationService.Model
 {
-    internal class SimpleHttpResponse
+    public class WebApiResponse
     {
 
         public byte[] Body { get; set; }
         public NameValueCollection Headers { get; set; }
         public int StatusCode { get; set; }
 
-        public SimpleHttpResponse()
+        public WebApiResponse()
         {
         }
 

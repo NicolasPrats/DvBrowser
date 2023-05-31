@@ -16,13 +16,13 @@ namespace Dataverse.Plugin.Emulator.Services
         /// <param name="service"></param>
         internal void AddService<T>(T service)
         {
-            Services[typeof(T)] = service;
+            this.Services[typeof(T)] = service;
         }
 
 
         public object GetService(Type serviceType)
         {
-            if (Services.TryGetValue(serviceType, out var service))
+            if (this.Services.TryGetValue(serviceType, out var service))
             {
                 return service;
             }

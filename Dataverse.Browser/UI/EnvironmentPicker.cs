@@ -1,8 +1,8 @@
 ﻿using System;
-using System.Windows.Forms;
-using Dataverse.Browser.Configuration;
-using AutoUpdaterDotNET;
 using System.IO;
+using System.Windows.Forms;
+using AutoUpdaterDotNET;
+using Dataverse.Browser.Configuration;
 
 namespace Dataverse.Browser.UI
 {
@@ -59,13 +59,13 @@ namespace Dataverse.Browser.UI
             {
                 if (environment == null)
                 {
-                    var environments = Configuration.Environnements;
+                    var environments = this.Configuration.Environnements;
                     Array.Resize(ref environments, environments.Length + 1);
                     environments[environments.Length - 1] = this.SelectedEnvironment;
-                    Configuration.Environnements = environments;
+                    this.Configuration.Environnements = environments;
                 }
-                ConfigurationManager.SaveConfiguration(Configuration);
-                this.Close();
+                ConfigurationManager.SaveConfiguration(this.Configuration);
+                Close();
             }
         }
     }

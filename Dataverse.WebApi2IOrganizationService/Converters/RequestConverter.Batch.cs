@@ -1,36 +1,20 @@
 ﻿using System;
-using System.Activities.DurableInstancing;
+using System.Collections.Specialized;
 using System.IO;
-using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
-using System.Text.Json;
-using System.Text.RegularExpressions;
-using System.Windows.Shapes;
-using CefSharp;
-using CefSharp.DevTools.DOM;
-using Dataverse.Browser.Constants;
-using Dataverse.Browser.Context;
-using Dataverse.Browser.Requests.SimpleClasses;
-using Microsoft.OData.Edm;
-using Microsoft.OData.UriParser;
+using Dataverse.WebApi2IOrganizationService.Model;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Messages;
-using Microsoft.Xrm.Sdk.Metadata;
-using Microsoft.Xrm.Sdk.Query;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.Tab;
 
-namespace Dataverse.Browser.Requests.Converter
+namespace Dataverse.WebApi2IOrganizationService.Converters
 {
-    internal partial class WebApiRequestConverter
-
+    public partial class RequestConverter
     {
-       
-
-        private OrganizationRequest ConvertToExecuteMultipleRequest(InterceptedWebApiRequest webApiRequest)
+        private OrganizationRequest ConvertToExecuteMultipleRequest(RequestConversionResult conversionResult)
         {
-            var originRequest = webApiRequest.SimpleHttpRequest.OriginRequest;
+            var originRequest = conversionResult.SrcRequest;
             string contentType = originRequest.Headers["Content-Type"];
             if (!contentType.StartsWith("multipart/mixed;"))
             {
@@ -56,7 +40,7 @@ namespace Dataverse.Browser.Requests.Converter
                 {
                     var data = httpContent.ReadAsByteArrayAsync().Result;
                     var innerRequest = CreateSimplifiedRequestFromMimeMessage(data);
-                    var convertedRequest = this.ConvertUnknowSimplifiedRequestToOrganizationRequest(innerRequest);
+                    var convertedRequest = Convert(innerRequest);
                     if (convertedRequest == null)
                     {
                         throw new NotSupportedException("Only web api requests are supported!");
@@ -76,9 +60,8 @@ namespace Dataverse.Browser.Requests.Converter
             return executeMultipleRequest;
         }
 
-        private SimpleHttpRequest CreateSimplifiedRequestFromMimeMessage(byte[] data)
+        private WebApiRequest CreateSimplifiedRequestFromMimeMessage(byte[] data)
         {
-            var request = new SimpleHttpRequest();
             int index = Array.FindIndex(data, b => b == (byte)'\r');
             if (index == -1)
             {
@@ -95,16 +78,15 @@ namespace Dataverse.Browser.Requests.Converter
             {
                 url = url.Substring(0, url.Length - 8);
             }
-            request.Method = "GET";
-            request.LocalPathWithQuery = url;
+            var request = new WebApiRequest("GET", url, new NameValueCollection(), null);
             //TODO : body and headers
             return request;
         }
 
-        private static MemoryStream AddMissingLF(IRequest request)
+        private static MemoryStream AddMissingLF(WebApiRequest request)
         {
             // Les requêtes batch de CRM contiennent uniquement des LF en séparateurs de lignes et pas de CR
-            var data = request.PostData.Elements.FirstOrDefault().Bytes;
+            var data = Encoding.UTF8.GetBytes(request.Body);
             MemoryStream dataStream = new MemoryStream();
             bool previousIsCr = false;
             for (int i = 0; i < data.Length; i++)

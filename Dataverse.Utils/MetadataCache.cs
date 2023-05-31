@@ -1,34 +1,55 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Messages;
 using Microsoft.Xrm.Sdk.Metadata;
-using Microsoft.Xrm.Tooling.Connector;
+using Microsoft.Xrm.Sdk.Query;
 
-namespace Dataverse.Browser.Context
+namespace Dataverse.Utils
 {
-    internal class MetadataCache
+    public class MetadataCache
     {
-        private CrmServiceClient Service { get; }
+        private IOrganizationService Service { get; }
         private EntityMetadata[] EntityMetadata { get; }
         private Dictionary<string, EntityMetadata> EntityMetadataWithAttributes { get; }
+        private Dictionary<string, Entity> CustomApiRequestParameters { get; }
 
-        public MetadataCache(CrmServiceClient Service)
+
+        public MetadataCache(IOrganizationService Service)
         {
             this.Service = Service;
             RetrieveAllEntitiesRequest request = new RetrieveAllEntitiesRequest();
             var result = (RetrieveAllEntitiesResponse)this.Service.Execute(request);
             this.EntityMetadata = result.EntityMetadata;
             this.EntityMetadataWithAttributes = new Dictionary<string, EntityMetadata>();
+            this.CustomApiRequestParameters = new Dictionary<string, Entity>();
+        }
+
+        public Entity GetCustomApiRequestParameter(string name)
+        {
+            lock (this.CustomApiRequestParameters)
+            {
+                if (this.CustomApiRequestParameters.TryGetValue(name, out Entity entity))
+                {
+                    return entity;
+                }
+                QueryExpression query = new QueryExpression("customapirequestparameter");
+                query.Criteria.AddCondition("name", ConditionOperator.Equal, name);
+                query.ColumnSet = new ColumnSet("type", "logicalentityname");
+                entity = this.Service.RetrieveMultiple(query).Entities.FirstOrDefault();
+                this.CustomApiRequestParameters[name] = entity;
+                return entity;
+            }
         }
 
         public EntityMetadata GetEntityFromLogicalName(string logicalName)
         {
-            return EntityMetadata.FirstOrDefault(e => e.LogicalName == logicalName);
+            return this.EntityMetadata.FirstOrDefault(e => e.LogicalName == logicalName);
         }
 
         public EntityMetadata GetEntityFromSetName(string setName)
         {
-            return EntityMetadata.FirstOrDefault(e => e.EntitySetName == setName);
+            return this.EntityMetadata.FirstOrDefault(e => e.EntitySetName == setName);
         }
 
         public EntityMetadata GetEntityMetadataWithAttributes(string entityLogicalName)
