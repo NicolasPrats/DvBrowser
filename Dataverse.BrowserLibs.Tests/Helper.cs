@@ -62,7 +62,7 @@ namespace Dataverse.BrowserLibs.Tests
                 MetadataCache = metadataCache
             };
             HttpRequestMessage downloadCsdlMessage = new HttpRequestMessage(HttpMethod.Get, $"{context.WebApiBaseUrl}$metadata");
-            downloadCsdlMessage.Headers.Add("Authorization", "Bearer " + context.CrmServiceClient.CurrentAccessToken);
+            context.AddAuthorizationHeaders(downloadCsdlMessage);
 
             var result = context.HttpClient.SendAsync(downloadCsdlMessage).Result;
             using (var stream = result.Content.ReadAsStreamAsync().Result)

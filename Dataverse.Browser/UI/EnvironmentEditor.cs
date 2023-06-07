@@ -99,7 +99,7 @@ namespace Dataverse.Browser.UI
             return hostName;
         }
 
-        private void btnSelectAssembly_Click(object sender, EventArgs e)
+        private void BtnSelectAssembly_Click(object sender, EventArgs e)
         {
             if (this.openFileDialog.ShowDialog() == DialogResult.OK)
             {

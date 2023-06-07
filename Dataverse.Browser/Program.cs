@@ -33,10 +33,12 @@ namespace Dataverse.Browser
             try
             {
                 EnsureApplicationPathExists();
-                selectedEnvironment = SelectEnvironment();
+                var configuration = ConfigurationManager.LoadConfiguration();
+                selectedEnvironment = SelectEnvironment(configuration);
                 if (selectedEnvironment == null)
                     return;
                 context = CreateContext(selectedEnvironment);
+                ConfigurationManager.SaveConfiguration(configuration);
                 if (context == null)
                     return;
 
@@ -102,9 +104,8 @@ namespace Dataverse.Browser
             return factory.GetContext();
         }
 
-        private static EnvironnementConfiguration SelectEnvironment()
+        private static EnvironnementConfiguration SelectEnvironment(DataverseBrowserConfiguration configuration)
         {
-            var configuration = ConfigurationManager.LoadConfiguration();
             EnvironnementConfiguration selectedEnvironment;
             using (var picker = new UI.EnvironmentPicker(configuration))
             {

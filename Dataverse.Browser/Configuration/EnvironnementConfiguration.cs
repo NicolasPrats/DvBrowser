@@ -12,6 +12,7 @@ namespace Dataverse.Browser.Configuration
         public string[] PluginAssemblies { get; set; }
         public bool DisableAsyncSteps { get; set; }
         public Guid Id { get; set; }
+        public string LogoPath { get; set; }
 
         public string GetWorkingDirectory()
         {
@@ -35,5 +36,7 @@ namespace Dataverse.Browser.Configuration
                 Directory.CreateDirectory(workingDirectory);
             return workingDirectory;
         }
+
+
     }
 }

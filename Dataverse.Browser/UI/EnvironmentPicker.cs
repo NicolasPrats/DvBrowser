@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
 using AutoUpdaterDotNET;
@@ -10,6 +12,7 @@ namespace Dataverse.Browser.UI
     {
 
         public EnvironnementConfiguration SelectedEnvironment { get; private set; }
+        private List<Bitmap> LoadedBitmaps { get; } = new List<Bitmap>();
 
         public EnvironmentPicker(DataverseBrowserConfiguration configuration)
         {
@@ -21,22 +24,63 @@ namespace Dataverse.Browser.UI
             InitializeComponent();
             this.Configuration = configuration;
 
-            this.listView1.Activation = ItemActivation.Standard;
             this.listView1.ItemActivate += ListView1_ItemActivate;
+            FormClosing += EnvironmentPicker_FormClosing;
+        }
+
+        private void EnvironmentPicker_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            foreach (var bitmap in this.LoadedBitmaps)
+            {
+                bitmap.Dispose();
+            }
         }
 
         public DataverseBrowserConfiguration Configuration { get; }
 
+        private Bitmap GetLogoBitmap(EnvironnementConfiguration environment)
+        {
+
+            if (environment.LogoPath == null)
+                return null;
+            try
+            {
+                var bitmap = new Bitmap(environment.LogoPath);
+                this.LoadedBitmaps.Add(bitmap);
+                return bitmap;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
         private void EnvironmentPicker_Load(object sender, EventArgs e)
         {
-            this.listView1.Items.Add("New ...");
+
+            this.listView1.Items.Add(new ListViewItem
+            {
+                Text = "New ...",
+                ImageIndex = 0
+            });
             foreach (var env in this.Configuration.Environnements)
             {
                 ListViewItem item = new ListViewItem
                 {
                     Tag = env,
-                    Text = env.Name
+                    Text = env.Name,
+                    ImageIndex = 2
                 };
+                var bitmap = GetLogoBitmap(env);
+                if (GetLogoBitmap(env) == null)
+                {
+                    item.ImageIndex = 1;
+                }
+                else
+                {
+                    item.ImageIndex = this.imageListFixed.Images.Count;
+                    this.imageListFixed.Images.Add(bitmap);
+                }
                 this.listView1.Items.Add(item);
             }
             if (this.Configuration.Environnements.Length == 0)

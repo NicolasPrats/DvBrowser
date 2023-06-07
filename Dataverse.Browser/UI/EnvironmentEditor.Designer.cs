@@ -136,7 +136,7 @@
             this.btnSelectAssembly.TabIndex = 6;
             this.btnSelectAssembly.Text = "...";
             this.btnSelectAssembly.UseVisualStyleBackColor = true;
-            this.btnSelectAssembly.Click += new System.EventHandler(this.btnSelectAssembly_Click);
+            this.btnSelectAssembly.Click += new System.EventHandler(this.BtnSelectAssembly_Click);
             // 
             // EnvironmentEditor
             // 
