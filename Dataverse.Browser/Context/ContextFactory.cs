@@ -6,8 +6,11 @@ using System.IO;
 using System.Net.Http;
 using System.Text.Json;
 using System.Windows;
+using System.Xml;
 using Dataverse.Browser.Configuration;
 using Dataverse.Plugin.Emulator.Steps;
+using Dataverse.Utils;
+using Microsoft.OData.Edm.Csdl;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Tooling.Connector;
 
@@ -75,32 +78,32 @@ namespace Dataverse.Browser.Context
                     return;
                 }
 
-                //var emulator = InitializePluginEmulator(this.SelectedEnvironment, connectionString);
+                var emulator = InitializePluginEmulator(this.SelectedEnvironment, connectionString);
 
-                //NotifyProgress("Initializing metadata cache...");
-                //MetadataCache metadataCache = new MetadataCache(client);
-                //NotifyProgress("Creating context...");
+                NotifyProgress("Initializing metadata cache...");
+                MetadataCache metadataCache = new MetadataCache(client);
+                NotifyProgress("Creating context...");
                 BrowserContext context = new BrowserContext
                 {
                     Host = this.SelectedEnvironment.DataverseHost,
                     CachePath = this.SelectedEnvironment.GetWorkingDirectory(),
                     CrmServiceClient = client,
                     HttpClient = new HttpClient(),
-                    //MetadataCache = metadataCache,
-                    //PluginsEmulator = emulator,
-                    //ProxyWithEmulator = emulator.CreateNewProxy()
+                    MetadataCache = metadataCache,
+                    PluginsEmulator = emulator,
+                    ProxyWithEmulator = emulator.CreateNewProxy()
                 };
 
-                //NotifyProgress("Downloading CSDL...");
-                //HttpRequestMessage downloadCsdlMessage = new HttpRequestMessage(HttpMethod.Get, $"{context.WebApiBaseUrl}$metadata");
-                //context.AddAuthorizationHeaders(downloadCsdlMessage);
+                NotifyProgress("Downloading CSDL...");
+                HttpRequestMessage downloadCsdlMessage = new HttpRequestMessage(HttpMethod.Get, $"{context.WebApiBaseUrl}$metadata");
+                context.AddAuthorizationHeaders(downloadCsdlMessage);
 
-                //var result = context.HttpClient.SendAsync(downloadCsdlMessage).Result;
-                //using (var stream = result.Content.ReadAsStreamAsync().Result)
-                //{
-                //    NotifyProgress("Parsing CSDL...");
-                //    context.Model = CsdlReader.Parse(XmlReader.Create(stream));
-                //}
+                var result = context.HttpClient.SendAsync(downloadCsdlMessage).Result;
+                using (var stream = result.Content.ReadAsStreamAsync().Result)
+                {
+                    NotifyProgress("Parsing CSDL...");
+                    context.Model = CsdlReader.Parse(XmlReader.Create(stream));
+                }
 
 
                 UpdateLogo(context);
@@ -146,7 +149,6 @@ namespace Dataverse.Browser.Context
                 int maxDim = bitmap.Height > bitmap.Width ? bitmap.Height : bitmap.Width;
                 if (maxDim > 100)
                 {
-#warning to test
                     bitmap = ResizeImage(bitmap, maxDim);
                 }
 
@@ -174,15 +176,6 @@ namespace Dataverse.Browser.Context
             bitmap.Dispose();
             bitmap = target;
             return bitmap;
-            //Bitmap target = new Bitmap(bitmap);
-            //Graphics g = Graphics.FromImage(target);
-            //var pen = new Pen(Color.FromArgb(44, 52, 80), 200);
-            //g.DrawRectangle(pen, 0, 0, target.Width, target.Height);
-            //g.DrawImage(bitmap, (target.Width - bitmap.Width) / 2, (target.Height - bitmap.Height) / 2);
-            //g.Dispose();
-            //bitmap.Dispose();
-            //bitmap = target;
-            //return bitmap;
         }
 
         private static Bitmap ResizeImage(Bitmap bitmap, int maxDim)
