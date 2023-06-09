@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using Dataverse.Utils.Constants;
 using Dataverse.WebApi2IOrganizationService.Model;
 using Microsoft.OData.Edm;
@@ -26,11 +25,9 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
             {
                 throw new ApplicationException("Entity not found: " + entity);
             }
-            var id = GetIdFromKeySegment(keySegment);
-
             DeleteRequest deleteRequest = new DeleteRequest
             {
-                Target = new EntityReference(entity.LogicalName, id)
+                Target = GetEntityReferenceFromKeySegment(entity, keySegment)
             };
             conversionResult.ConvertedRequest = deleteRequest;
         }
@@ -44,11 +41,10 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
             {
                 throw new ApplicationException("Entity not found: " + entity);
             }
-            var id = GetIdFromKeySegment(keySegment);
 
             RetrieveRequest retrieveRequest = new RetrieveRequest
             {
-                Target = new EntityReference(entity.LogicalName, id),
+                Target = GetEntityReferenceFromKeySegment(entity, keySegment),
                 ColumnSet = GetColumnSet(parser)
             };
             conversionResult.ConvertedRequest = retrieveRequest;
@@ -124,7 +120,15 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                 {
                     Target = record
                 };
-                record.Id = GetIdFromKeySegment(keySegment);
+                GetIdFromKeySegment(keySegment, out var id, out var keys);
+                if (id == Guid.Empty)
+                {
+                    record.KeyAttributes = keys;
+                }
+                else
+                {
+                    record.Id = id;
+                }
             }
 
             using (JsonDocument json = JsonDocument.Parse(body))
@@ -272,20 +276,6 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
             throw new NotImplementedException("Unknow activity party attribute: " + logicalName + "/" + participationTypeMask);
         }
 
-        private static Guid GetIdFromKeySegment(KeySegment keySegment)
-        {
-            if (keySegment.Keys.Count() != 1)
-            {
-                throw new NotImplementedException("Alternate key not supported");
-            }
-            var key = keySegment.Keys.First();
-            if (!(key.Value is Guid))
-            {
-                throw new NotImplementedException("Alternate key not supported");
-            }
-            var id = (Guid)key.Value;
-            return id;
-        }
 
         private object ConvertValueToAttribute(AttributeMetadata attributeMetadata, JsonElement value)
         {
@@ -300,24 +290,23 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                 case AttributeTypeCode.Customer:
                 case AttributeTypeCode.Lookup:
                 case AttributeTypeCode.Owner:
-                    Regex targetRegex = new Regex(@"/?(?<entityset>.*)\((?<id>.*)\)");
-                    var result = targetRegex.Match(value.GetString());
-                    if (!result.Success)
-                        return null;
-                    var entitySet = result.Groups["entityset"].Value;
-                    var id = result.Groups["id"].Value;
-                    var lookupMetadata = (LookupAttributeMetadata)attributeMetadata;
-                    var targetEntity = this.Context.MetadataCache.GetEntityFromSetName(entitySet) ?? throw new ApplicationException("Target entity not found: " + entitySet);
-                    if (!lookupMetadata.Targets.Contains(targetEntity.LogicalName))
+                    var parser = new ODataUriParser(this.Context.Model, new Uri(value.GetString(), UriKind.Relative))
                     {
-                        throw new ApplicationException("Target entity not matching allowed targets: " + entitySet);
-                    }
-                    if (!Guid.TryParse(id, out var recordId))
+                        Resolver = new AlternateKeysODataUriResolver(this.Context.Model)
+                    };
+                    var path = parser.ParsePath();
+                    if (path.Count != 2)
                     {
-                        //TODO alternate keys
-                        throw new ApplicationException("Invalid guid: " + id);
+                        throw new NotSupportedException("2 segments was expected:" + value.GetString());
                     }
-                    return new EntityReference(targetEntity.LogicalName, recordId);
+                    var entitySegment = path.FirstSegment as EntitySetSegment;
+                    var keySegment = path.LastSegment as KeySegment;
+                    if (entitySegment == null || keySegment == null)
+                    {
+                        throw new NotSupportedException($"Error while parsing[{value.GetString()}]: {entitySegment}-{keySegment}");
+                    }
+                    var entity = this.Context.MetadataCache.GetEntityFromSetName(path.FirstSegment.Identifier);
+                    return GetEntityReferenceFromKeySegment(entity, keySegment);
                 case AttributeTypeCode.String:
                 case AttributeTypeCode.Memo:
                     return value.GetString();
