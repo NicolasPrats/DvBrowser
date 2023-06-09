@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Net.Http;
+using System.Text.Json;
 using System.Windows;
 using System.Xml;
 using Dataverse.Browser.Configuration;
@@ -93,7 +96,7 @@ namespace Dataverse.Browser.Context
 
                 NotifyProgress("Downloading CSDL...");
                 HttpRequestMessage downloadCsdlMessage = new HttpRequestMessage(HttpMethod.Get, $"{context.WebApiBaseUrl}$metadata");
-                downloadCsdlMessage.Headers.Add("Authorization", "Bearer " + context.CrmServiceClient.CurrentAccessToken);
+                context.AddAuthorizationHeaders(downloadCsdlMessage);
 
                 var result = context.HttpClient.SendAsync(downloadCsdlMessage).Result;
                 using (var stream = result.Content.ReadAsStreamAsync().Result)
@@ -101,6 +104,9 @@ namespace Dataverse.Browser.Context
                     NotifyProgress("Parsing CSDL...");
                     context.Model = CsdlReader.Parse(XmlReader.Create(stream));
                 }
+
+
+                UpdateLogo(context);
                 this.Context = context;
                 OnFinished?.Invoke(this, EventArgs.Empty);
                 return;
@@ -109,6 +115,94 @@ namespace Dataverse.Browser.Context
             {
                 OnError?.Invoke(this, ex);
             }
+        }
+
+        private void UpdateLogo(BrowserContext context)
+        {
+            NotifyProgress("Loading logo...");
+            try
+            {
+                HttpRequestMessage downloadThemeMessage = new HttpRequestMessage(HttpMethod.Get, $"{context.WebApiBaseUrl}/themes?$orderby=isdefaulttheme desc&$select=navbarbackgroundcolor&$expand=logoimage($select=content,name)&$top=1");
+                context.AddAuthorizationHeaders(downloadThemeMessage);
+                var result = context.HttpClient.SendAsync(downloadThemeMessage).Result;
+                ThemeResponse theme;
+                using (var stream = result.Content.ReadAsStreamAsync().Result)
+                {
+                    theme = JsonSerializer.Deserialize<ThemeResponse>(stream);
+                }
+                GenerateLogoFromTheme(theme);
+            }
+            catch
+            {
+                this.SelectedEnvironment.LogoPath = null;
+            }
+
+
+        }
+
+        private void GenerateLogoFromTheme(ThemeResponse theme)
+        {
+            var logoStream = new MemoryStream(Convert.FromBase64String(theme.value[0].logoimage.content));
+            var bitmap = new Bitmap(logoStream);
+            try
+            {
+                int maxDim = bitmap.Height > bitmap.Width ? bitmap.Height : bitmap.Width;
+                if (maxDim > 100)
+                {
+                    bitmap = ResizeImage(bitmap, maxDim);
+                }
+
+                bitmap = CenterAndRemoveTransparentBg(bitmap, theme.value[0].navbarbackgroundcolor);
+                string logoPath = Path.Combine(this.SelectedEnvironment.GetWorkingDirectory(), "logoenv.bmp");
+                bitmap.Save(logoPath, ImageFormat.Bmp);
+                this.SelectedEnvironment.LogoPath = logoPath;
+            }
+            finally
+            {
+                bitmap.Dispose();
+            }
+
+
+        }
+
+        private static Bitmap CenterAndRemoveTransparentBg(Bitmap bitmap, string backgroundcolor)
+        {
+            Bitmap target = new Bitmap(100, 100);
+            Graphics g = Graphics.FromImage(target);
+            var pen = new Pen(ColorTranslator.FromHtml(backgroundcolor), 200);
+            g.DrawRectangle(pen, 0, 0, target.Width, target.Height);
+            g.DrawImage(bitmap, (target.Width - bitmap.Width) / 2, (target.Height - bitmap.Height) / 2);
+            g.Dispose();
+            bitmap.Dispose();
+            bitmap = target;
+            return bitmap;
+        }
+
+        private static Bitmap ResizeImage(Bitmap bitmap, int maxDim)
+        {
+            var ratio = maxDim / 100.0;
+            var newBitmap = new Bitmap(bitmap, (int)(bitmap.Width / ratio), (int)(bitmap.Height / ratio));
+            bitmap.Dispose();
+            bitmap = newBitmap;
+            return bitmap;
+        }
+
+        private class ThemeResponse
+        {
+            internal class LogoImage
+            {
+                [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "<Pending>")]
+                public string content { get; set; }
+            }
+            internal class Theme
+            {
+                [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "<Pending>")]
+                public string navbarbackgroundcolor { get; set; }
+                [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "<Pending>")]
+                public LogoImage logoimage { get; set; }
+            }
+            [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "<Pending>")]
+            public Theme[] value { get; set; }
         }
 
         private void ContextFactory_OnError(object sender, Exception e)

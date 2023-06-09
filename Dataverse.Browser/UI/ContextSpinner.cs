@@ -77,7 +77,7 @@ namespace Dataverse.Browser.UI
             });
         }
 
-        private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        private void LinkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
             Process.Start(this.SelectedEnvironment.GetWorkingDirectory());
         }

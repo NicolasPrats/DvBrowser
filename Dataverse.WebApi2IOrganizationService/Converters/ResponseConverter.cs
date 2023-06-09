@@ -318,7 +318,7 @@ $@"{{
         private HttpResponseMessage HttpGet(string url, bool bypassPLugins)
         {
             HttpRequestMessage retrieveMessage = new HttpRequestMessage(HttpMethod.Get, url);
-            retrieveMessage.Headers.Add("Authorization", "Bearer " + this.Context.CrmServiceClient.CurrentAccessToken);
+            this.Context.AddAuthorizationHeaders(retrieveMessage);
             if (bypassPLugins)
             {
                 retrieveMessage.Headers.Add("MSCRM.BypassCustomPluginExecution", "true");

@@ -16,5 +16,10 @@ namespace Dataverse.Utils
 
         public IEdmModel Model { get; set; }
 
+        public void AddAuthorizationHeaders(HttpRequestMessage httpRequest)
+        {
+            httpRequest.Headers.Add("Authorization", "Bearer " + this.CrmServiceClient.CurrentAccessToken);
+        }
+
     }
 }
