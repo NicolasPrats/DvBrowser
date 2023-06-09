@@ -11,11 +11,11 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
 {
     public partial class RequestConverter
     {
-        private void ConvertToAction(IEdmOperation operation, RequestConversionResult conversionResult, bool isBound)
+        private void ConvertToAction(IEdmOperation operation, RequestConversionResult conversionResult, EntityReference target)
         {
             OrganizationRequest request = new OrganizationRequest(operation.Name);
             string boundParameterName = null;
-            if (isBound)
+            if (target != null)
             {
                 boundParameterName = operation.Parameters.First().Name;
             }
@@ -32,6 +32,10 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                     }
                     request[key] = ConvertValueToAttribute(node.Value, customApiRequestParameter, parameter.Type);
                 }
+            }
+            if (target != null && !request.Parameters.Contains("Target"))
+            {
+                request["Target"] = target;
             }
             conversionResult.ConvertedRequest = request;
         }
