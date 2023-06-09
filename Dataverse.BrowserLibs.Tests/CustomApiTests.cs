@@ -134,6 +134,24 @@ namespace Dataverse.BrowserLibs.Tests
         }
 
 
+
+        [TestMethod]
+        public void EntityBound_NoResponse()
+        {
+            var id = Helper.GetId(this.TestContext, "contact");
+            WebApiRequest webApiRequest = WebApiRequest.CreateFromLocalPathWithQuery(
+                "POST",
+                $"/api/data/v9.2/contacts({id})/Microsoft.Dynamics.CRM.dvb_Entitybound_NoResponse",
+                new System.Collections.Specialized.NameValueCollection()
+                {
+                    {"Content-Type", "application/json" }
+                },
+               "{}"
+                );
+            Helper.TestAgainstExpected(this.TestContext, webApiRequest);
+        }
+
+
     }
 
 }

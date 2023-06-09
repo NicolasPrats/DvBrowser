@@ -124,7 +124,7 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                 {
                     Target = record
                 };
-                record.Id = GetIdFromKeySegment(keySegment); ;
+                record.Id = GetIdFromKeySegment(keySegment);
             }
 
             using (JsonDocument json = JsonDocument.Parse(body))

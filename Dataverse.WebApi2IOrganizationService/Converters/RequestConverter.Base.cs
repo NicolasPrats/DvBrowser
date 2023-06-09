@@ -4,6 +4,7 @@ using Dataverse.Utils;
 using Dataverse.WebApi2IOrganizationService.Model;
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
+using Microsoft.Xrm.Sdk;
 
 namespace Dataverse.WebApi2IOrganizationService.Converters
 {
@@ -106,9 +107,15 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                 {
                     throw new NotImplementedException("Post with 3 segments are implemented only for custom api!");
                 }
+                var entity = this.Context.MetadataCache.GetEntityFromSetName(path.FirstSegment.Identifier) ?? throw new NotSupportedException($"Entity: {path.FirstSegment.Identifier} not found!");
+                var keySegment = path.Skip(1).First() as KeySegment ?? throw new NotSupportedException("2nd segment should be of type identifier");
+                var id = GetIdFromKeySegment(keySegment);
+
+                var target = new EntityReference(entity.LogicalName, id);
                 string identifier = path.LastSegment.Identifier;
                 var declaredOperation = this.Context.Model.FindDeclaredOperations(identifier).Single();
-                ConvertToAction(declaredOperation, result, true);
+
+                ConvertToAction(declaredOperation, result, target);
             }
 
             void ManagePost1Segment()
@@ -125,7 +132,7 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                     {
                         //Custom api returning only one collection have a first segment of type collection
                         var declaredOperation = this.Context.Model.FindDeclaredOperationImports(identifier).FirstOrDefault() ?? throw new NotImplementedException("Identifier unknown:" + identifier);
-                        ConvertToAction(declaredOperation.Operation, result, false);
+                        ConvertToAction(declaredOperation.Operation, result, null);
                     }
                 }
                 else if (path.FirstSegment.Identifier == "$batch")
@@ -136,7 +143,7 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                 {
                     string identifier = path.FirstSegment.Identifier;
                     var declaredOperation = this.Context.Model.FindDeclaredOperationImports(identifier).Single();
-                    ConvertToAction(declaredOperation.Operation, result, false);
+                    ConvertToAction(declaredOperation.Operation, result, null);
                 }
                 else
                 {
