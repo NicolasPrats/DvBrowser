@@ -5,6 +5,7 @@ using Dataverse.WebApi2IOrganizationService.Model;
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
 using Microsoft.Xrm.Sdk;
+using Microsoft.Xrm.Sdk.Metadata;
 
 namespace Dataverse.WebApi2IOrganizationService.Converters
 {
@@ -34,7 +35,10 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
             ODataPath path;
             try
             {
-                parser = new ODataUriParser(this.Context.Model, new Uri(request.LocalPathWithQuery.Substring(15), UriKind.Relative));
+                parser = new ODataUriParser(this.Context.Model, new Uri(request.LocalPathWithQuery.Substring(15), UriKind.Relative))
+                {
+                    Resolver = new AlternateKeysODataUriResolver(this.Context.Model)
+                };
                 path = parser.ParsePath();
             }
             catch (Exception ex)
@@ -112,9 +116,7 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                 }
                 var entity = this.Context.MetadataCache.GetEntityFromSetName(path.FirstSegment.Identifier) ?? throw new NotSupportedException($"Entity: {path.FirstSegment.Identifier} not found!");
                 var keySegment = path.Skip(1).First() as KeySegment ?? throw new NotSupportedException("2nd segment should be of type identifier");
-                var id = GetIdFromKeySegment(keySegment);
-
-                var target = new EntityReference(entity.LogicalName, id);
+                EntityReference target = GetEntityReferenceFromKeySegment(entity, keySegment);
                 string identifier = path.LastSegment.Identifier;
                 var declaredOperation = this.Context.Model.FindDeclaredOperations(identifier).Single();
 
@@ -165,6 +167,43 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                 {
                     throw new NotImplementedException("POST is not implemented for: " + path.FirstSegment.EdmType?.TypeKind);
                 }
+            }
+        }
+
+        private static EntityReference GetEntityReferenceFromKeySegment(EntityMetadata entity, KeySegment keySegment)
+        {
+            GetIdFromKeySegment(keySegment, out var id, out var keys);
+
+            EntityReference target;
+            if (id == Guid.Empty)
+            {
+                target = new EntityReference(entity.LogicalName, keys);
+            }
+            else
+            {
+                target = new EntityReference(entity.LogicalName, id);
+            }
+
+            return target;
+        }
+
+        private static void GetIdFromKeySegment(KeySegment keySegment, out Guid id, out KeyAttributeCollection keys)
+        {
+            if (keySegment.Keys.Count() == 1)
+            {
+                var key = keySegment.Keys.First();
+                if (key.Value is Guid keyId)
+                {
+                    id = keyId;
+                    keys = null;
+                    return;
+                }
+            }
+            id = Guid.Empty;
+            keys = new KeyAttributeCollection();
+            foreach (var key in keySegment.Keys)
+            {
+                keys[key.Key] = key.Value;
             }
         }
 
