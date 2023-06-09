@@ -52,6 +52,9 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                             case 1:
                                 ManagePost1Segment();
                                 break;
+                            case 2:
+                                ManagePost2Segment();
+                                break;
                             case 3:
                                 ManagePost3Segment();
                                 break;
@@ -116,6 +119,19 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                 var declaredOperation = this.Context.Model.FindDeclaredOperations(identifier).Single();
 
                 ConvertToAction(declaredOperation, result, target);
+            }
+
+            void ManagePost2Segment()
+            {
+                if (!(path.LastSegment is OperationSegment operationImport))
+                {
+                    throw new NotImplementedException("Post with 3 segments are implemented only for custom api!");
+                }
+                var entity = this.Context.MetadataCache.GetEntityFromSetName(path.FirstSegment.Identifier) ?? throw new NotSupportedException($"Entity: {path.FirstSegment.Identifier} not found!");
+                string identifier = path.LastSegment.Identifier;
+                var declaredOperation = this.Context.Model.FindDeclaredOperations(identifier).Single();
+
+                ConvertToAction(declaredOperation, result, null);
             }
 
             void ManagePost1Segment()
