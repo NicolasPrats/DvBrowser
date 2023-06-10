@@ -103,6 +103,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Context\EmulatedPluginContext.cs" />
+    <Compile Include="Context\EmulatedPluginOptions.cs" />
     <Compile Include="ExecutionTree\ExecutionTreeNode.cs" />
     <Compile Include="ExecutionTree\TriggeredStep.cs" />
     <Compile Include="ExecutionTree\ExecutionTreeNodeType.cs" />

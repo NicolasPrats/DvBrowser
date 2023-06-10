@@ -31,7 +31,7 @@
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(BrowserWindow));
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
-            this.CbEnabled = new System.Windows.Forms.CheckBox();
+            this.ComboBoxBehavior = new System.Windows.Forms.ComboBox();
             this.btnDebugger = new System.Windows.Forms.Button();
             this.btnClear = new System.Windows.Forms.Button();
             this.treeView1 = new System.Windows.Forms.TreeView();
@@ -51,7 +51,7 @@
             // 
             // splitContainer1.Panel2
             // 
-            this.splitContainer1.Panel2.Controls.Add(this.CbEnabled);
+            this.splitContainer1.Panel2.Controls.Add(this.ComboBoxBehavior);
             this.splitContainer1.Panel2.Controls.Add(this.btnDebugger);
             this.splitContainer1.Panel2.Controls.Add(this.btnClear);
             this.splitContainer1.Panel2.Controls.Add(this.treeView1);
@@ -60,19 +60,22 @@
             this.splitContainer1.SplitterDistance = 531;
             this.splitContainer1.TabIndex = 1;
             // 
-            // CbEnabled
+            // ComboBoxBehavior
             // 
-            this.CbEnabled.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.CbEnabled.AutoSize = true;
-            this.CbEnabled.Checked = true;
-            this.CbEnabled.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.CbEnabled.Location = new System.Drawing.Point(244, 12);
-            this.CbEnabled.Name = "CbEnabled";
-            this.CbEnabled.Size = new System.Drawing.Size(18, 17);
-            this.CbEnabled.TabIndex = 5;
-            this.toolTipButtons.SetToolTip(this.CbEnabled, "Are plugin run locally ?");
-            this.CbEnabled.UseVisualStyleBackColor = true;
-            this.CbEnabled.CheckedChanged += new System.EventHandler(this.CbEnabled_CheckedChanged);
+            this.ComboBoxBehavior.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.ComboBoxBehavior.CausesValidation = false;
+            this.ComboBoxBehavior.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.ComboBoxBehavior.FormattingEnabled = true;
+            this.ComboBoxBehavior.Items.AddRange(new object[] {
+            "Do not execute plugins",
+            "Execute plugins ",
+            "Execute plugins with auto break"});
+            this.ComboBoxBehavior.Location = new System.Drawing.Point(86, 12);
+            this.ComboBoxBehavior.Name = "ComboBoxBehavior";
+            this.ComboBoxBehavior.Size = new System.Drawing.Size(176, 24);
+            this.ComboBoxBehavior.TabIndex = 5;
+            this.ComboBoxBehavior.SelectedIndexChanged += new System.EventHandler(this.ComboBoxBehavior_SelectedIndexChanged);
             // 
             // btnDebugger
             // 
@@ -144,7 +147,6 @@
             this.Name = "BrowserWindow";
             this.Text = "Browser";
             this.splitContainer1.Panel2.ResumeLayout(false);
-            this.splitContainer1.Panel2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).EndInit();
             this.splitContainer1.ResumeLayout(false);
             this.ResumeLayout(false);
@@ -160,7 +162,7 @@
         private System.Windows.Forms.Button btnClear;
         private System.Windows.Forms.Button btnDebugger;
         private System.Windows.Forms.ToolTip toolTipButtons;
-        private System.Windows.Forms.CheckBox CbEnabled;
+        private System.Windows.Forms.ComboBox ComboBoxBehavior;
     }
 }
 
