@@ -48,6 +48,7 @@ namespace Dataverse.Browser.UI
             context.LastRequests.OnHistoryCleared += LastRequests_OnHistoryCleared;
             context.LastRequests.OnRequestUpdated += LastRequests_OnRequestUpdated;
 
+            this.ComboBoxBehavior.SelectedIndex = 1;
         }
 
         private void LastRequests_OnRequestUpdated(object sender, InterceptedWebApiRequest e)
@@ -176,10 +177,30 @@ namespace Dataverse.Browser.UI
 
         }
 
-        private void CbEnabled_CheckedChanged(object sender, EventArgs e)
+        private void ComboBoxBehavior_SelectedIndexChanged(object sender, EventArgs e)
         {
-            this.DataverseContext.IsEnabled = this.CbEnabled.Checked;
+            string text;
+            switch (this.ComboBoxBehavior.SelectedIndex)
+            {
+                case 0:
+                    this.DataverseContext.IsEnabled = false;
+                    text = "Plugins will no longer be executed locally.";
+                    break;
+                case 1:
+                    this.DataverseContext.IsEnabled = true;
+                    this.DataverseContext.PluginsEmulator.EmulatorOptions.BreakBeforeExecutingPlugins = false;
+                    text = "Plugins will be executed locally. If you have attached a debugger and set breakpoints, you will be able to debug the plugins.";
+                    break;
+                case 2:
+                    this.DataverseContext.IsEnabled = true;
+                    this.DataverseContext.PluginsEmulator.EmulatorOptions.BreakBeforeExecutingPlugins = true;
+                    text = "Plugins will be executed locally. If you have attached a debugger, it will automatically break before executing any plugin.\n\nYou have to \"Step Into\" to start the plugin execution.";
+                    break;
+                default:
+                    return;
+            }
+            this.toolTipButtons.Hide(this.ComboBoxBehavior);
+            this.toolTipButtons.Show(text, this.ComboBoxBehavior, -100, this.ComboBoxBehavior.Height + 10, 5000);
         }
-
     }
 }

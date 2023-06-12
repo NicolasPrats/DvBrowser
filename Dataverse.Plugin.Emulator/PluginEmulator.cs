@@ -11,6 +11,7 @@ namespace Dataverse.Plugin.Emulator.Steps
     public class PluginEmulator
     {
 
+        public EmulatorOptions EmulatorOptions { get; } = new EmulatorOptions();
         private IOrganizationService InnerServiceProxy { get; }
 
 
@@ -25,6 +26,8 @@ namespace Dataverse.Plugin.Emulator.Steps
             this.ProxyFactory = proxyFactory ?? throw new ArgumentNullException(nameof(proxyFactory));
             this.InnerServiceProxy = this.ProxyFactory(Guid.Empty);
         }
+
+
 
         public bool AddPluginAssembly(string pluginPath)
         {
@@ -150,7 +153,7 @@ namespace Dataverse.Plugin.Emulator.Steps
         internal OrganizationServiceWithEmulatedPlugins CreateNewProxy(Guid userId, EmulatedPluginContext context)
         {
             var service = this.ProxyFactory(userId);
-            return new OrganizationServiceWithEmulatedPlugins(service, this, context);
+            return new OrganizationServiceWithEmulatedPlugins(service, this, context, this.EmulatorOptions);
         }
 
         public void ReenableAsyncSteps()

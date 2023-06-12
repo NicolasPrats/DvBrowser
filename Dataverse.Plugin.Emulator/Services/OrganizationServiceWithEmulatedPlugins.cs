@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Dataverse.Plugin.Emulator.Context;
 using Dataverse.Plugin.Emulator.ExecutionTree;
@@ -18,12 +19,13 @@ namespace Dataverse.Plugin.Emulator.Services
     {
 
         private IOrganizationService InnerService { get; }
+        private EmulatorOptions EmulatorOptions { get; }
         internal PluginEmulator Emulator { get; }
         internal EmulatedPluginContext CurrentContext { get; }
         internal WhoAmIResponse WhoAmIResponse { get; }
         internal OrganizationDetail CurrentOrganization { get; }
 
-        internal OrganizationServiceWithEmulatedPlugins(IOrganizationService innerService, PluginEmulator manager, EmulatedPluginContext currentContext)
+        internal OrganizationServiceWithEmulatedPlugins(IOrganizationService innerService, PluginEmulator manager, EmulatedPluginContext currentContext, EmulatorOptions emulatorOptions)
         {
             this.InnerService = innerService ?? throw new ArgumentNullException(nameof(innerService));
             this.Emulator = manager ?? throw new ArgumentNullException(nameof(manager));
@@ -34,8 +36,7 @@ namespace Dataverse.Plugin.Emulator.Services
 
             RetrieveCurrentOrganizationRequest orgRequest = new RetrieveCurrentOrganizationRequest();
             this.CurrentOrganization = ((RetrieveCurrentOrganizationResponse)InnerExecute(orgRequest)).Detail;
-
-
+            this.EmulatorOptions = emulatorOptions ?? throw new ArgumentNullException(nameof(emulatorOptions));
         }
 
         private OrganizationResponse InnerExecute(OrganizationRequest request)
@@ -278,7 +279,7 @@ namespace Dataverse.Plugin.Emulator.Services
             return images;
         }
 
-        //[DebuggerStepThrough()]
+        [System.Diagnostics.DebuggerStepThrough()]
         private void ExecuteStep(ExecutionTreeNode executionTreeNode, PluginStepDescription step, OrganizationRequest request, OrganizationResponse response, ParameterCollection sharedVariables, EntityImageCollection preImages, EntityImageCollection postImages, Guid targetId)
         {
             string title = step.Stage + " " + step.MessageName + " " + (step.IsAsynchronous ? "Async " : " ") + step.EventHandler;
@@ -295,8 +296,13 @@ namespace Dataverse.Plugin.Emulator.Services
             serviceProvider.AddService(new EmulatedServiceEndpointNotificationService());
 
             var plugin = this.Emulator.PluginCache.GetPlugin(step);
-            //System.Diagnostics.Debugger.Launch();
-            //System.Diagnostics.Debugger.Break();
+
+            if (this.EmulatorOptions.BreakBeforeExecutingPlugins && Debugger.IsAttached)
+            {
+                Debug.Print(title);
+                Debug.Print("\"Step into\" to debug the plugin");
+                Debugger.Break();
+            }
 
             plugin.Execute(serviceProvider);
         }
