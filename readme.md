@@ -6,6 +6,10 @@ It's a browser which allows a Dataverse developer to:
 * Analyze in real time what plugins are triggerred. This is particularly useful when you have plugins triggerring other plugins.
 
 
+https://github.com/NicolasPrats/DvBrowser/assets/33152924/059a3c49-26d2-4e2c-9425-2d6951081479
+
+
+
 # How does it work?
 
 The application embeds a web browser based on Chromium (thanks to [CEFSharp](https://cefsharp.github.io/)). It intercepts all web api requests and translates them to SDK requests. Then it analyzes if some plugin steps are registered on the message. If yes, it loads them and make them run locally. All other requests are sent to the Dataverse, so that the plugins are interacting with the real database.
