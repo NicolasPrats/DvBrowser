@@ -211,6 +211,12 @@
     <Compile Include="Configuration\EnvironnementConfiguration.cs" />
     <Compile Include="Context\ContextFactory.cs" />
     <Compile Include="UI\BrowserHandlers\KeyboardHandler.cs" />
+    <Compile Include="UI\BrowserTab.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UI\BrowserTab.Designer.cs">
+      <DependentUpon>BrowserTab.cs</DependentUpon>
+    </Compile>
     <Compile Include="UI\ContextSpinner.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -244,6 +250,9 @@
     <Compile Include="Requests\BrowserRequestHandler.cs" />
     <Compile Include="Requests\InterceptedWebApiRequest.cs" />
     <Compile Include="Requests\WebApiResourceRequestHandler.cs" />
+    <EmbeddedResource Include="UI\BrowserTab.resx">
+      <DependentUpon>BrowserTab.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="UI\ContextSpinner.resx">
       <DependentUpon>ContextSpinner.cs</DependentUpon>
     </EmbeddedResource>

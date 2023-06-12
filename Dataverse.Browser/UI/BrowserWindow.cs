@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Windows.Forms;
-using CefSharp;
-using CefSharp.WinForms;
 using Dataverse.Browser.Context;
 using Dataverse.Browser.Requests;
 using Dataverse.Plugin.Emulator.ExecutionTree;
@@ -14,7 +12,6 @@ namespace Dataverse.Browser.UI
 {
     internal partial class BrowserWindow : Form
     {
-        private ChromiumWebBrowser CurrentBrowser { get; set; }
         public BrowserContext DataverseContext { get; }
 
         private delegate void RequestEventDelegate(InterceptedWebApiRequest request);
@@ -30,13 +27,9 @@ namespace Dataverse.Browser.UI
 
             InitializeComponent();
 
-            var browser = new ChromiumWebBrowser("https://" + context.Host)
-            {
-                RequestHandler = new BrowserRequestHandler(context),
+            var tab = new BrowserTab(context);
+            this.groupBoxLeft.Controls.Add(tab);
 
-            };
-            this.splitContainer1.Panel1.Controls.Add(browser);
-            this.CurrentBrowser = browser;
 
             this.DataverseContext = context;
             foreach (var request in context.LastRequests)
@@ -148,11 +141,6 @@ namespace Dataverse.Browser.UI
             }
         }
 
-
-        private void BtnDevTools_Click(object sender, EventArgs e)
-        {
-            this.CurrentBrowser.ShowDevTools();
-        }
 
         private void BtnClear_Click(object sender, EventArgs e)
         {

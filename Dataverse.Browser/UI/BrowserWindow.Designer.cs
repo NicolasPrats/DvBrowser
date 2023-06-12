@@ -31,16 +31,19 @@
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(BrowserWindow));
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
+            this.groupBoxLeft = new System.Windows.Forms.GroupBox();
             this.ComboBoxBehavior = new System.Windows.Forms.ComboBox();
-            this.btnDebugger = new System.Windows.Forms.Button();
             this.btnClear = new System.Windows.Forms.Button();
             this.treeView1 = new System.Windows.Forms.TreeView();
             this.imageList1 = new System.Windows.Forms.ImageList(this.components);
-            this.btnDevTools = new System.Windows.Forms.Button();
+            this.groupBoxRight = new System.Windows.Forms.GroupBox();
+            this.btnDebugger = new System.Windows.Forms.Button();
             this.toolTipButtons = new System.Windows.Forms.ToolTip(this.components);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
+            this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
             this.splitContainer1.SuspendLayout();
+            this.groupBoxRight.SuspendLayout();
             this.SuspendLayout();
             // 
             // splitContainer1
@@ -49,16 +52,28 @@
             this.splitContainer1.Location = new System.Drawing.Point(0, 0);
             this.splitContainer1.Name = "splitContainer1";
             // 
+            // splitContainer1.Panel1
+            // 
+            this.splitContainer1.Panel1.Controls.Add(this.groupBoxLeft);
+            // 
             // splitContainer1.Panel2
             // 
             this.splitContainer1.Panel2.Controls.Add(this.ComboBoxBehavior);
-            this.splitContainer1.Panel2.Controls.Add(this.btnDebugger);
             this.splitContainer1.Panel2.Controls.Add(this.btnClear);
             this.splitContainer1.Panel2.Controls.Add(this.treeView1);
-            this.splitContainer1.Panel2.Controls.Add(this.btnDevTools);
+            this.splitContainer1.Panel2.Controls.Add(this.groupBoxRight);
             this.splitContainer1.Size = new System.Drawing.Size(800, 450);
             this.splitContainer1.SplitterDistance = 531;
             this.splitContainer1.TabIndex = 1;
+            // 
+            // groupBoxLeft
+            // 
+            this.groupBoxLeft.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.groupBoxLeft.Location = new System.Drawing.Point(0, 0);
+            this.groupBoxLeft.Name = "groupBoxLeft";
+            this.groupBoxLeft.Size = new System.Drawing.Size(531, 450);
+            this.groupBoxLeft.TabIndex = 0;
+            this.groupBoxLeft.TabStop = false;
             // 
             // ComboBoxBehavior
             // 
@@ -71,22 +86,11 @@
             "Do not execute plugins",
             "Execute plugins ",
             "Execute plugins with auto break"});
-            this.ComboBoxBehavior.Location = new System.Drawing.Point(86, 12);
+            this.ComboBoxBehavior.Location = new System.Drawing.Point(43, 12);
             this.ComboBoxBehavior.Name = "ComboBoxBehavior";
-            this.ComboBoxBehavior.Size = new System.Drawing.Size(176, 24);
+            this.ComboBoxBehavior.Size = new System.Drawing.Size(213, 24);
             this.ComboBoxBehavior.TabIndex = 5;
             this.ComboBoxBehavior.SelectedIndexChanged += new System.EventHandler(this.ComboBoxBehavior_SelectedIndexChanged);
-            // 
-            // btnDebugger
-            // 
-            this.btnDebugger.Image = ((System.Drawing.Image)(resources.GetObject("btnDebugger.Image")));
-            this.btnDebugger.Location = new System.Drawing.Point(49, 5);
-            this.btnDebugger.Name = "btnDebugger";
-            this.btnDebugger.Size = new System.Drawing.Size(31, 31);
-            this.btnDebugger.TabIndex = 4;
-            this.toolTipButtons.SetToolTip(this.btnDebugger, "Attach a debugger");
-            this.btnDebugger.UseVisualStyleBackColor = true;
-            this.btnDebugger.Click += new System.EventHandler(this.BtnDebugger_Click);
             // 
             // btnClear
             // 
@@ -102,12 +106,10 @@
             // 
             // treeView1
             // 
-            this.treeView1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
             this.treeView1.ImageIndex = 0;
             this.treeView1.ImageList = this.imageList1;
-            this.treeView1.Location = new System.Drawing.Point(12, 42);
+            this.treeView1.Location = new System.Drawing.Point(6, 42);
+            this.treeView1.Margin = new System.Windows.Forms.Padding(0);
             this.treeView1.Name = "treeView1";
             this.treeView1.SelectedImageIndex = 0;
             this.treeView1.ShowNodeToolTips = true;
@@ -125,17 +127,26 @@
             this.imageList1.Images.SetKeyName(4, "terminal-line.png");
             this.imageList1.Images.SetKeyName(5, "file-search-fill-red.png");
             // 
-            // btnDevTools
+            // groupBoxRight
             // 
-            this.btnDevTools.AccessibleDescription = "";
-            this.btnDevTools.Image = ((System.Drawing.Image)(resources.GetObject("btnDevTools.Image")));
-            this.btnDevTools.Location = new System.Drawing.Point(12, 5);
-            this.btnDevTools.Name = "btnDevTools";
-            this.btnDevTools.Size = new System.Drawing.Size(31, 31);
-            this.btnDevTools.TabIndex = 1;
-            this.toolTipButtons.SetToolTip(this.btnDevTools, "Open the browser Dev Tool");
-            this.btnDevTools.UseVisualStyleBackColor = true;
-            this.btnDevTools.Click += new System.EventHandler(this.BtnDevTools_Click);
+            this.groupBoxRight.Controls.Add(this.btnDebugger);
+            this.groupBoxRight.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.groupBoxRight.Location = new System.Drawing.Point(0, 0);
+            this.groupBoxRight.Name = "groupBoxRight";
+            this.groupBoxRight.Size = new System.Drawing.Size(265, 450);
+            this.groupBoxRight.TabIndex = 6;
+            this.groupBoxRight.TabStop = false;
+            // 
+            // btnDebugger
+            // 
+            this.btnDebugger.Image = ((System.Drawing.Image)(resources.GetObject("btnDebugger.Image")));
+            this.btnDebugger.Location = new System.Drawing.Point(6, 8);
+            this.btnDebugger.Name = "btnDebugger";
+            this.btnDebugger.Size = new System.Drawing.Size(31, 31);
+            this.btnDebugger.TabIndex = 4;
+            this.toolTipButtons.SetToolTip(this.btnDebugger, "Attach a debugger");
+            this.btnDebugger.UseVisualStyleBackColor = true;
+            this.btnDebugger.Click += new System.EventHandler(this.BtnDebugger_Click);
             // 
             // BrowserWindow
             // 
@@ -146,9 +157,11 @@
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "BrowserWindow";
             this.Text = "Browser";
+            this.splitContainer1.Panel1.ResumeLayout(false);
             this.splitContainer1.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).EndInit();
             this.splitContainer1.ResumeLayout(false);
+            this.groupBoxRight.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -156,13 +169,14 @@
         #endregion
 
         private System.Windows.Forms.SplitContainer splitContainer1;
-        private System.Windows.Forms.Button btnDevTools;
         private System.Windows.Forms.TreeView treeView1;
         private System.Windows.Forms.ImageList imageList1;
         private System.Windows.Forms.Button btnClear;
         private System.Windows.Forms.Button btnDebugger;
         private System.Windows.Forms.ToolTip toolTipButtons;
         private System.Windows.Forms.ComboBox ComboBoxBehavior;
+        private System.Windows.Forms.GroupBox groupBoxLeft;
+        private System.Windows.Forms.GroupBox groupBoxRight;
     }
 }
 
