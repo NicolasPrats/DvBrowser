@@ -28,8 +28,12 @@ namespace Dataverse.Browser.UI
             InitializeComponent();
 
             var tab = new BrowserTab(context);
-            this.groupBoxLeft.Controls.Add(tab);
+            this.tabControl1.TabPages[0].Controls.Add(tab);
+            this.tabControl1.TabPages[0].Text = context.CrmServiceClient.ConnectedOrgFriendlyName;
 
+            tab = new BrowserTab(context);
+            this.tabControl1.TabPages[1].Controls.Add(tab);
+            this.tabControl1.TabPages[1].Text = "www.google.fr";
 
             this.DataverseContext = context;
             foreach (var request in context.LastRequests)

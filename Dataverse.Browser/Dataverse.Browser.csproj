@@ -136,6 +136,7 @@
     <Reference Include="System.DirectoryServices" />
     <Reference Include="System.DirectoryServices.AccountManagement" />
     <Reference Include="System.IdentityModel" />
+    <Reference Include="System.IO.Compression.FileSystem" />
     <Reference Include="System.Memory, Version=4.0.1.2, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Memory.4.5.5\lib\net461\System.Memory.dll</HintPath>
     </Reference>
@@ -210,6 +211,9 @@
     <Compile Include="Configuration\DataverseBrowserConfiguration.cs" />
     <Compile Include="Configuration\EnvironnementConfiguration.cs" />
     <Compile Include="Context\ContextFactory.cs" />
+    <Compile Include="Extensions\ExtensionsRequestHandler.cs" />
+    <Compile Include="UI\BrowserHandlers\IRequestHandler.cs" />
+    <Compile Include="UI\BrowserHandlers\BrowserRequestHandler.cs" />
     <Compile Include="UI\BrowserHandlers\KeyboardHandler.cs" />
     <Compile Include="UI\BrowserTab.cs">
       <SubType>UserControl</SubType>
@@ -247,7 +251,7 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Requests\WebApiResourceHandler.cs" />
-    <Compile Include="Requests\BrowserRequestHandler.cs" />
+    <Compile Include="Requests\WebApiRequestHandler.cs" />
     <Compile Include="Requests\InterceptedWebApiRequest.cs" />
     <Compile Include="Requests\WebApiResourceRequestHandler.cs" />
     <EmbeddedResource Include="UI\BrowserTab.resx">
@@ -277,6 +281,9 @@
     </Compile>
     <None Include="..\.editorconfig">
       <Link>.editorconfig</Link>
+    </None>
+    <None Include="Extensions\DataverseRESTBuilder_1_0_0_43_managed.zip">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
@@ -325,6 +332,7 @@
     <Analyzer Include="..\packages\Microsoft.CodeAnalysis.Analyzers.3.3.4\analyzers\dotnet\cs\Microsoft.CodeAnalysis.Analyzers.dll" />
     <Analyzer Include="..\packages\Microsoft.CodeAnalysis.Analyzers.3.3.4\analyzers\dotnet\cs\Microsoft.CodeAnalysis.CSharp.Analyzers.dll" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
