@@ -31,9 +31,11 @@ namespace Dataverse.Browser.UI
             this.tabControl1.TabPages[0].Controls.Add(tab);
             this.tabControl1.TabPages[0].Text = context.CrmServiceClient.ConnectedOrgFriendlyName;
 
-            tab = new BrowserTab(context);
+
+            string url = $"https://{context.Host}/main.aspx?pagetype=webresource&webresourceName={ExtensionsRequestHandler.FakeIdentifier}%2Fgp_%2Fdrb%2Fdrb_index.htm";
+            tab = new BrowserTab(context, url);
             this.tabControl1.TabPages[1].Controls.Add(tab);
-            this.tabControl1.TabPages[1].Text = "www.google.fr";
+
 
             this.DataverseContext = context;
             foreach (var request in context.LastRequests)

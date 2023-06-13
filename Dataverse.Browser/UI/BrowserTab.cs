@@ -12,7 +12,7 @@ namespace Dataverse.Browser.UI
         private delegate void StringDelegate(string value);
         public ChromiumWebBrowser CurrentBrowser { get; }
 
-        public BrowserTab(BrowserContext context)
+        public BrowserTab(BrowserContext context, string url = null)
         {
             if (context is null)
             {
@@ -22,7 +22,8 @@ namespace Dataverse.Browser.UI
             InitializeComponent();
 
             this.Dock = DockStyle.Fill;
-            this.CurrentBrowser = new ChromiumWebBrowser("https://" + context.Host)
+            url = url ?? "https://" + context.Host;
+            this.CurrentBrowser = new ChromiumWebBrowser(url)
             {
                 RequestHandler = new BrowserRequestHandler(context),
                 KeyboardHandler = new Dataverse.UI.BrowserHandlers.KeyboardHandler()

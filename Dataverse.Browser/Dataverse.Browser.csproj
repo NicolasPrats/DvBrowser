@@ -212,6 +212,7 @@
     <Compile Include="Configuration\EnvironnementConfiguration.cs" />
     <Compile Include="Context\ContextFactory.cs" />
     <Compile Include="Extensions\ExtensionsRequestHandler.cs" />
+    <Compile Include="Extensions\ExtensionsResourceRequestHandler.cs" />
     <Compile Include="UI\BrowserHandlers\IRequestHandler.cs" />
     <Compile Include="UI\BrowserHandlers\BrowserRequestHandler.cs" />
     <Compile Include="UI\BrowserHandlers\KeyboardHandler.cs" />
