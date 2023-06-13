@@ -29,35 +29,35 @@ namespace Dataverse.BrowserLibs.Tests
         }
 
         // TODO: when only 1 reponse property of type entity or entitycollection, dataverse doesn't return anything. To investigate
-        //[TestMethod]
-        //public void Unbound_1ResponseEntity()
-        //{
-        //    WebApiRequest webApiRequest = WebApiRequest.CreateFromLocalPathWithQuery(
-        //       "POST",
-        //       $"/api/data/v9.2/dvb_Unbound_1ResponseEntity",
-        //       new System.Collections.Specialized.NameValueCollection()
-        //       {
-        //            {"Content-Type", "application/json" }
-        //       },
-        //       "{}"
-        //       );
-        //    Helper.TestAgainstExpected(this.TestContext, webApiRequest);
-        //}
+        [TestMethod]
+        public void Unbound_1ResponseEntity()
+        {
+            WebApiRequest webApiRequest = WebApiRequest.CreateFromLocalPathWithQuery(
+               "POST",
+               $"/api/data/v9.2/dvb_Unbound_1ResponseEntity",
+               new System.Collections.Specialized.NameValueCollection()
+               {
+                    {"Content-Type", "application/json" }
+               },
+               "{}"
+               );
+            Helper.TestAgainstExpected(this.TestContext, webApiRequest);
+        }
 
-        //[TestMethod]
-        //public void Unbound_1ResponseCollection()
-        //{
-        //    WebApiRequest webApiRequest = WebApiRequest.CreateFromLocalPathWithQuery(
-        //        "POST",
-        //        $"/api/data/v9.2/dvb_Unbound_1ResponseCollection",
-        //        new System.Collections.Specialized.NameValueCollection()
-        //        {
-        //            {"Content-Type", "application/json" }
-        //        },
-        //        "{}"
-        //        );
-        //    Helper.TestAgainstExpected(this.TestContext, webApiRequest);
-        //}
+        [TestMethod]
+        public void Unbound_1ResponseCollection()
+        {
+            WebApiRequest webApiRequest = WebApiRequest.CreateFromLocalPathWithQuery(
+                "POST",
+                $"/api/data/v9.2/dvb_Unbound_1ResponseCollection",
+                new System.Collections.Specialized.NameValueCollection()
+                {
+                    {"Content-Type", "application/json" }
+                },
+                "{}"
+                );
+            Helper.TestAgainstExpected(this.TestContext, webApiRequest);
+        }
 
         [TestMethod]
         public void Unbound_1ResponseEntityReference()

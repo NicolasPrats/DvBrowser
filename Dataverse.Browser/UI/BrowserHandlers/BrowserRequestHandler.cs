@@ -17,7 +17,7 @@ namespace Dataverse.Browser.Requests
                 throw new ArgumentNullException(nameof(context));
             }
             this.Handlers = new IRequestHandler[] {
-                new ExtensionsRequestHandler(context),
+                new ExtensionsRequestHandler(),
                 new WebApiRequestHandler(context)
             };
         }

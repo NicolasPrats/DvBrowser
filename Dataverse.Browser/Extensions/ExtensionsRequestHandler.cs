@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Xml;
 using CefSharp;
-using Dataverse.Browser.Context;
 
 namespace Dataverse.Browser.Requests
 {
@@ -14,13 +12,12 @@ namespace Dataverse.Browser.Requests
     {
         public const string FakeIdentifier = "dvbrowser_fakewr_";
 
-        private BrowserContext Context { get; }
+
         private Dictionary<string, MemoryStream> WebResources { get; } = new Dictionary<string, MemoryStream>();
 
 
-        public ExtensionsRequestHandler(BrowserContext context)
+        public ExtensionsRequestHandler()
         {
-            this.Context = context ?? throw new ArgumentNullException(nameof(context));
             foreach (var zipFile in Directory.GetFiles("Extensions"))
             {
                 LoadWebResources(zipFile);
