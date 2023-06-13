@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
 using System.Windows;
@@ -142,7 +143,12 @@ namespace Dataverse.Browser.Context
 
         private void GenerateLogoFromTheme(ThemeResponse theme)
         {
-            var logoStream = new MemoryStream(Convert.FromBase64String(theme.value[0].logoimage.content));
+            var content = theme?.value.FirstOrDefault()?.logoimage?.content;
+            if (content == null)
+            {
+                return;
+            }
+            var logoStream = new MemoryStream(Convert.FromBase64String(content));
             var bitmap = new Bitmap(logoStream);
             try
             {

@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Windows.Forms;
-using CefSharp;
-using CefSharp.WinForms;
 using Dataverse.Browser.Context;
 using Dataverse.Browser.Requests;
 using Dataverse.Plugin.Emulator.ExecutionTree;
@@ -14,7 +12,6 @@ namespace Dataverse.Browser.UI
 {
     internal partial class BrowserWindow : Form
     {
-        private ChromiumWebBrowser CurrentBrowser { get; set; }
         public BrowserContext DataverseContext { get; }
 
         private delegate void RequestEventDelegate(InterceptedWebApiRequest request);
@@ -30,13 +27,15 @@ namespace Dataverse.Browser.UI
 
             InitializeComponent();
 
-            var browser = new ChromiumWebBrowser("https://" + context.Host)
-            {
-                RequestHandler = new BrowserRequestHandler(context),
+            var tab = new BrowserTab(context);
+            this.tabControl1.TabPages[0].Controls.Add(tab);
+            this.tabControl1.TabPages[0].Text = context.CrmServiceClient.ConnectedOrgFriendlyName;
 
-            };
-            this.splitContainer1.Panel1.Controls.Add(browser);
-            this.CurrentBrowser = browser;
+
+            string url = $"https://{context.Host}/main.aspx?pagetype=webresource&webresourceName={ExtensionsRequestHandler.FakeIdentifier}%2Fgp_%2Fdrb%2Fdrb_index.htm";
+            tab = new BrowserTab(context, url);
+            this.tabControl1.TabPages[1].Controls.Add(tab);
+
 
             this.DataverseContext = context;
             foreach (var request in context.LastRequests)
@@ -148,11 +147,6 @@ namespace Dataverse.Browser.UI
             }
         }
 
-
-        private void BtnDevTools_Click(object sender, EventArgs e)
-        {
-            this.CurrentBrowser.ShowDevTools();
-        }
 
         private void BtnClear_Click(object sender, EventArgs e)
         {

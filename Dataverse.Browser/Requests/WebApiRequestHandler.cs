@@ -8,12 +8,13 @@ using Dataverse.WebApi2IOrganizationService.Model;
 
 namespace Dataverse.Browser.Requests
 {
-    internal class BrowserRequestHandler : CefSharp.Handler.RequestHandler
+    internal class WebApiRequestHandler
+        : IRequestHandler
     {
         private BrowserContext Context { get; }
         private RequestConverter RequestConverter { get; }
 
-        public BrowserRequestHandler(BrowserContext context)
+        public WebApiRequestHandler(BrowserContext context)
         {
             this.Context = context ?? throw new ArgumentNullException(nameof(context));
             this.RequestConverter = new RequestConverter(this.Context);
@@ -44,7 +45,7 @@ namespace Dataverse.Browser.Requests
             return body;
         }
 
-        protected override IResourceRequestHandler GetResourceRequestHandler(IWebBrowser chromiumWebBrowser, IBrowser browser, IFrame frame, IRequest request, bool isNavigation, bool isDownload, string requestInitiator, ref bool disableDefaultHandling)
+        public IResourceRequestHandler GetResourceRequestHandler(IWebBrowser chromiumWebBrowser, IBrowser browser, IFrame frame, IRequest request, bool isNavigation, bool isDownload, string requestInitiator, ref bool disableDefaultHandling)
         {
 
             var webApiRequest = WebApiRequest.Create(request.Method, request.Url, request.Headers, ExtractRequestBody(request));
