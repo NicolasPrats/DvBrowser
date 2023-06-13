@@ -100,10 +100,27 @@ $@"{{
             var operation = this.Context.Model.FindDeclaredOperations("Microsoft.Dynamics.CRM." + organizationResponse.ResponseName).Single();
             var returnTypeDefinition = operation.ReturnType.Definition as IEdmStructuredType;
 
+            bool bodyIsEmpty = true;
             foreach (var property in organizationResponse.Results)
             {
-                var parameter = returnTypeDefinition.DeclaredProperties.FirstOrDefault(p => p.Name == property.Key);
-                AddValueToJsonObject(body, property, null, parameter);
+                var parameter = returnTypeDefinition?.DeclaredProperties?.FirstOrDefault(p => p.Name == property.Key);
+                if (parameter != null)
+                {
+                    AddValueToJsonObject(body, property, null, parameter);
+                    bodyIsEmpty = false;
+                }
+            }
+            if (bodyIsEmpty)
+            {
+                return new WebApiResponse()
+                {
+
+                    Headers = new NameValueCollection
+                    {
+                        { "OData-Version", "4.0" }
+                    },
+                    StatusCode = 204
+                };
             }
             string jsonBody = body.ToJsonString();
             return new WebApiResponse()
