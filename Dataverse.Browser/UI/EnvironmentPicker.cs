@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
@@ -16,10 +17,13 @@ namespace Dataverse.Browser.UI
 
         public EnvironmentPicker(DataverseBrowserConfiguration configuration)
         {
-            string jsonPath = Path.Combine(ConfigurationManager.GetApplicationDataPath(), "autoupdater.json");
-            AutoUpdater.PersistenceProvider = new JsonFilePersistenceProvider(jsonPath);
-            AutoUpdater.ClearAppDirectory = true;
-            AutoUpdater.Start("https://nicolasprats.github.io/pages/dvbrowser/autoupdate.xml");
+            if (!Debugger.IsAttached)
+            {
+                string jsonPath = Path.Combine(ConfigurationManager.GetApplicationDataPath(), "autoupdater.json");
+                AutoUpdater.PersistenceProvider = new JsonFilePersistenceProvider(jsonPath);
+                AutoUpdater.ClearAppDirectory = true;
+                AutoUpdater.Start("https://nicolasprats.github.io/pages/dvbrowser/autoupdate.xml");
+            }
 
             InitializeComponent();
             this.Configuration = configuration;
