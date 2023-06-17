@@ -194,7 +194,7 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                     {
                         participationTypeMask = attribute.Value.GetInt32();
                     }
-                    else
+                    else if (attribute.Name.StartsWith("partyid_") && attribute.Name.EndsWith("@odata.bind"))
                     {
                         string attributeName = ExtractAttributeNameFromodatabind(entityMetadata, attribute.Name);
                         AttributeMetadata attributeMetadata = entityMetadata.Attributes.FirstOrDefault(a => a.LogicalName == attributeName);
@@ -272,6 +272,8 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                     return "customer";
                 case var tuple when tuple.logicalName == "serviceappointment" && ActivityPartyType.Resource == tuple.participationTypeMask:
                     return "resource";
+                case var tuple when ActivityPartyType.Owner == tuple.participationTypeMask:
+                    return "ownerid";
             }
             throw new NotImplementedException("Unknow activity party attribute: " + logicalName + "/" + participationTypeMask);
         }
