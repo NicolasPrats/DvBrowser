@@ -328,7 +328,7 @@ $@"{{
             {
                 Body = retrieveResult.Content.ReadAsByteArrayAsync().Result,
                 Headers = headers,
-                StatusCode = 204
+                StatusCode = 200
             };
         }
 
