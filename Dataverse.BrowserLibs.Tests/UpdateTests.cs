@@ -10,9 +10,6 @@ namespace Dataverse.BrowserLibs.Tests
     {
         public TestContext TestContext { get; set; }
 
-
-
-
         [TestMethod]
         public void Update()
         {
