@@ -13,7 +13,7 @@ namespace Dataverse.Plugin.Emulator.Steps
 
         public EmulatorOptions EmulatorOptions { get; } = new EmulatorOptions();
         private IOrganizationService InnerServiceProxy { get; }
-
+        internal DataCache DataCache { get; }
 
         private Func<Guid, IOrganizationService> ProxyFactory { get; }
         internal Dictionary<string, List<PluginStepDescription>> PluginSteps { get; } = new Dictionary<string, List<PluginStepDescription>>();
@@ -25,6 +25,7 @@ namespace Dataverse.Plugin.Emulator.Steps
         {
             this.ProxyFactory = proxyFactory ?? throw new ArgumentNullException(nameof(proxyFactory));
             this.InnerServiceProxy = this.ProxyFactory(Guid.Empty);
+            this.DataCache = new DataCache(this.InnerServiceProxy);
         }
 
 

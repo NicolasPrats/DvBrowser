@@ -20,10 +20,10 @@ namespace Dataverse.Plugin.Emulator.Services
 
         private IOrganizationService InnerService { get; }
         private EmulatorOptions EmulatorOptions { get; }
-        internal PluginEmulator Emulator { get; }
-        internal EmulatedPluginContext CurrentContext { get; }
-        internal WhoAmIResponse WhoAmIResponse { get; }
-        internal OrganizationDetail CurrentOrganization { get; }
+        private PluginEmulator Emulator { get; }
+        private EmulatedPluginContext CurrentContext { get; }
+        private WhoAmIResponse WhoAmIResponse { get; }
+        private static OrganizationDetail CurrentOrganization { get; set; }
 
         internal OrganizationServiceWithEmulatedPlugins(IOrganizationService innerService, PluginEmulator manager, EmulatedPluginContext currentContext, EmulatorOptions emulatorOptions)
         {
@@ -34,8 +34,11 @@ namespace Dataverse.Plugin.Emulator.Services
             WhoAmIRequest request = new WhoAmIRequest();
             this.WhoAmIResponse = (WhoAmIResponse)InnerExecute(request);
 
-            RetrieveCurrentOrganizationRequest orgRequest = new RetrieveCurrentOrganizationRequest();
-            this.CurrentOrganization = ((RetrieveCurrentOrganizationResponse)InnerExecute(orgRequest)).Detail;
+            if (CurrentOrganization == null)
+            {
+                RetrieveCurrentOrganizationRequest orgRequest = new RetrieveCurrentOrganizationRequest();
+                CurrentOrganization = ((RetrieveCurrentOrganizationResponse)InnerExecute(orgRequest)).Detail;
+            }
             this.EmulatorOptions = emulatorOptions ?? throw new ArgumentNullException(nameof(emulatorOptions));
         }
 
@@ -319,7 +322,7 @@ namespace Dataverse.Plugin.Emulator.Services
                 InputParameters = request.Parameters,
                 Mode = step.IsAsynchronous ? 1 : 0,
                 MessageName = step.MessageName,
-                OrganizationName = this.CurrentOrganization.UniqueName,
+                OrganizationName = CurrentOrganization.UniqueName,
                 OperationCreatedOn = DateTime.UtcNow,
                 OrganizationId = this.WhoAmIResponse.OrganizationId,
                 OutputParameters = MapResponseParameters(response),
@@ -337,7 +340,8 @@ namespace Dataverse.Plugin.Emulator.Services
                 IsInTransaction = (this.CurrentContext != null && this.CurrentContext.IsInTransaction) || step.Stage != 10,
                 ExecutionTreeRoot = executionTreeNode
             };
-
+            newContext.UserAzureActiveDirectoryObjectId = this.Emulator.DataCache.GetAzureADIdFromSystemUserId(newContext.UserId);
+            newContext.InitiatingUserAzureActiveDirectoryObjectId = this.Emulator.DataCache.GetAzureADIdFromSystemUserId(newContext.InitiatingUserId);
             return newContext;
         }
 

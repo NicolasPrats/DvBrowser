@@ -4,8 +4,9 @@ using Microsoft.Xrm.Sdk;
 
 namespace Dataverse.Plugin.Emulator.Context
 {
+
     internal class EmulatedPluginContext
-        : IPluginExecutionContext
+        : IPluginExecutionContext5
     {
 
         public EmulatedPluginContext() { }
@@ -74,5 +75,24 @@ namespace Dataverse.Plugin.Emulator.Context
         public Guid OperationId => this.CorrelationId; //TODO
 
         public DateTime OperationCreatedOn { get; internal set; }
+
+        public Guid UserAzureActiveDirectoryObjectId { get; internal set; }
+
+        public Guid InitiatingUserAzureActiveDirectoryObjectId { get; internal set; }
+
+        public Guid InitiatingUserApplicationId => throw new NotImplementedException();
+
+        public Guid PortalsContactId => throw new NotSupportedException();
+
+        public bool IsPortalsClientCall => false;
+
+        public Guid AuthenticatedUserId => throw new NotSupportedException();
+
+        // https://learn.microsoft.com/en-us/power-apps/developer/data-platform/bulk-operations?tabs=sdk
+        public EntityImageCollection[] PreEntityImagesCollection => throw new NotImplementedException();
+
+        public EntityImageCollection[] PostEntityImagesCollection => throw new NotImplementedException();
+
+        public string InitiatingUserAgent => "Dataverse Browser";
     }
 }

@@ -104,7 +104,7 @@ $@"{{
             foreach (var property in organizationResponse.Results)
             {
                 var parameter = returnTypeDefinition?.DeclaredProperties?.FirstOrDefault(p => p.Name == property.Key);
-                if (parameter != null)
+                if (parameter != null || returnTypeDefinition?.FullTypeName() == "Microsoft.Dynamics.CRM.crmbaseentity")
                 {
                     AddValueToJsonObject(body, property, null, parameter);
                     bodyIsEmpty = false;
