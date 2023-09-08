@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.Xrm.Sdk;
+using Microsoft.Xrm.Sdk.Messages;
+using Microsoft.Xrm.Sdk.Metadata;
 
 namespace Dataverse.Plugin.Emulator
 {
@@ -28,6 +30,11 @@ namespace Dataverse.Plugin.Emulator
             return id;
         }
 
-
+        internal EntityMetadata GetMetadataEntityWithAttributes(string logicalName)
+        {
+            RetrieveEntityRequest metadataRequest = new RetrieveEntityRequest { EntityFilters = EntityFilters.Attributes, LogicalName = logicalName };
+            RetrieveEntityResponse metadataResponse = (RetrieveEntityResponse)this.Service.Execute(metadataRequest);
+            return metadataResponse.EntityMetadata;
+        }
     }
 }
