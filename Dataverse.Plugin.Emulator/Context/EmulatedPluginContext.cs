@@ -89,9 +89,9 @@ namespace Dataverse.Plugin.Emulator.Context
         public Guid AuthenticatedUserId => throw new NotSupportedException();
 
         // https://learn.microsoft.com/en-us/power-apps/developer/data-platform/bulk-operations?tabs=sdk
-        public EntityImageCollection[] PreEntityImagesCollection => throw new NotImplementedException();
+        public EntityImageCollection[] PreEntityImagesCollection { get; set; }
 
-        public EntityImageCollection[] PostEntityImagesCollection => throw new NotImplementedException();
+        public EntityImageCollection[] PostEntityImagesCollection { get; set; }
 
         public string InitiatingUserAgent => "Dataverse Browser";
     }

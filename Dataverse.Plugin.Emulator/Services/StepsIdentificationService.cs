@@ -12,14 +12,15 @@ namespace Dataverse.Plugin.Emulator.Services
     internal class StepsIdentificationService
     {
 
-        private OrganizationRequest Request { get; }
-        private string MessageName { get; }
         private PluginEmulator Emulator { get; }
 
-        public StepsIdentificationService(PluginEmulator emulator, OrganizationRequest request)
+        public StepsIdentificationService(PluginEmulator emulator)
         {
-            this.Request = request;
+            this.Emulator = emulator;
+        }
 
+        private string GetMessageNameFromRequest(OrganizationRequest request)
+        {
             string messageName = request.RequestName;
             if (String.IsNullOrEmpty(messageName))
             {
@@ -37,21 +38,64 @@ namespace Dataverse.Plugin.Emulator.Services
             {
                 throw new ApplicationException("Message has not been identified!");
             }
-            this.MessageName = messageName;
-            this.Emulator = emulator;
+            return messageName;
         }
 
-        public IEnumerable<StepTriggered> GetStepsToExecute(out string targetLogicalName)
+        public IEnumerable<IStepTriggered> GetStepsToExecute(OrganizationRequest request, out string targetLogicalName)
         {
+            switch (request)
+            {
+                case CreateRequest createRequest:
+                    return GetStepsToExecute_Simple(request, out targetLogicalName);
+                case UpsertRequest upsertMultipleRequest:
+                    return GetStepsToExecute_Simple(request, out targetLogicalName);
+                case UpdateRequest updateRequest:
+                    return GetStepsToExecute_Simple(request, out targetLogicalName);
+                case DeleteRequest deleteRequest:
+                    return GetStepsToExecute_Simple(request, out targetLogicalName);
+                //TODO : deletemultiple still not implemented in SDK ?
+                case CreateMultipleRequest createMultipleRequest:
+                    return GetStepsToExecute_Multiple(createMultipleRequest, out targetLogicalName);
+                case UpsertMultipleRequest upsertMultipleRequest:
+                    return GetStepsToExecute_Multiple(upsertMultipleRequest, out targetLogicalName);
+                case UpdateMultipleRequest updateMultipleRequest:
+                    return GetStepsToExecute_Multiple(updateMultipleRequest, out targetLogicalName);
+                default:
+                    return GetStepsToExecute_Simple(request, out targetLogicalName);
+            }
+        }
+
+        private IEnumerable<IStepTriggered> GetStepsToExecute_Multiple(CreateMultipleRequest createMultipleRequest, out string targetLogicalName)
+        {
+            string messageName = GetMessageNameFromRequest(createMultipleRequest);
+            var targets = createMultipleRequest.Targets;
+            targetLogicalName = targets.Entities.FirstOrDefault()?.LogicalName;
+            IEnumerable<PluginStepDescription> stepsToExecute = null;
+            if (this.Emulator.PluginSteps.TryGetValue(messageName, out var steps))
+            {
+                stepsToExecute = steps;
+            }
+            //TODO : add simple Create
+            return stepsToExecute?.Select(s => new MultipleStepTriggered()
+            {
+                StepDescription = s,
+                OrganizationRequest = createMultipleRequest,
+                Targets = targets
+            });
+        }
+
+        private IEnumerable<IStepTriggered> GetStepsToExecute_Simple(OrganizationRequest request, out string targetLogicalName)
+        {
+            string messageName = GetMessageNameFromRequest(request);
             IEnumerable<PluginStepDescription> stepsToExecute = null;
             EntityReference targetRef = null;
             Entity target = null;
             targetLogicalName = null;
-            if (this.Emulator.PluginSteps.TryGetValue(this.MessageName, out var steps))
+            if (this.Emulator.PluginSteps.TryGetValue(messageName, out var steps))
             {
                 stepsToExecute = steps;
             }
-            switch (this.Request)
+            switch (request)
             {
                 case CreateRequest createRequest:
                     target = createRequest.Target;
@@ -104,12 +148,15 @@ namespace Dataverse.Plugin.Emulator.Services
                 string logicalName = targetLogicalName;
                 stepsToExecute = stepsToExecute?.Where(s => s.PrimaryEntity == logicalName);
             }
-            return stepsToExecute?.Select(s => new StepTriggered()
+            return stepsToExecute?.Select(s => new SimpleStepTriggered()
             {
                 StepDescription = s,
                 TargetReference = targetRef,
-                OrganizationRequest = Request
-            }); ;
+                OrganizationRequest = request
+            });
         }
+
+
+
     }
 }

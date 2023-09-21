@@ -45,8 +45,7 @@ public class ObjectDumper
                 this._level++;
             }
 
-            var enumerableElement = element as IEnumerable;
-            if (enumerableElement != null)
+            if (element is IEnumerable enumerableElement)
             {
                 foreach (object item in enumerableElement)
                 {
@@ -148,13 +147,13 @@ public class ObjectDumper
         if (o == null)
             return "null";
 
-        if (o is DateTime)
-            return ((DateTime)o).ToShortDateString();
+        if (o is DateTime time)
+            return time.ToShortDateString();
 
         if (o is string)
             return string.Format("\"{0}\"", o);
 
-        if (o is char && (char)o == '\0')
+        if (o is char v && v == '\0')
             return string.Empty;
 
         if (o is ValueType)

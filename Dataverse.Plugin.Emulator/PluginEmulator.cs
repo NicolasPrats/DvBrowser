@@ -28,8 +28,6 @@ namespace Dataverse.Plugin.Emulator.Steps
             this.DataCache = new DataCache(this.InnerServiceProxy);
         }
 
-
-
         public bool AddPluginAssembly(string pluginPath)
         {
             bool allStepsHaveBeenLoaded = true;
@@ -178,6 +176,11 @@ namespace Dataverse.Plugin.Emulator.Steps
             }
         }
 
+        internal OrganizationResponse InnerExecute(OrganizationRequest request)
+        {
+            request.Parameters.Add("BypassCustomPluginExecution", true);
+            return this.InnerServiceProxy.Execute(request);
+        }
 
     }
 }

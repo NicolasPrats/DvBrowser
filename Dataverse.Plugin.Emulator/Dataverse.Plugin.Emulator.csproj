@@ -117,11 +117,13 @@
     <Compile Include="PluginInstanceCache.cs" />
     <Compile Include="Services\EmulatedServiceEndpointNotificationService.cs" />
     <Compile Include="Services\StepsIdentificationService.cs" />
+    <Compile Include="Steps\MultipleStepTriggered.cs" />
     <Compile Include="Steps\PluginStepDescription.cs" />
     <Compile Include="Steps\PluginStepImage.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\OrganizationServiceWithEmulatedPlugins.cs" />
-    <Compile Include="Steps\StepTriggered.cs" />
+    <Compile Include="Steps\IStepTriggered.cs" />
+    <Compile Include="Steps\SimpleStepTriggered.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

@@ -104,8 +104,8 @@ namespace Dataverse.Plugin.Emulator.Services
             {
                 throw new ArgumentException(nameof(executionTreeNode));
             }
-            var stepsIdentificationService = new StepsIdentificationService(this.Emulator, request);
-            var stepsToExecute = stepsIdentificationService.GetStepsToExecute(out var targetLogicalName);
+            var stepsIdentificationService = new StepsIdentificationService(this.Emulator);
+            var stepsToExecute = stepsIdentificationService.GetStepsToExecute(request, out var targetLogicalName);
 
             executionTreeNode.Type = ExecutionTreeNodeType.Message;
             executionTreeNode.Title = request.RequestName;
@@ -125,19 +125,19 @@ namespace Dataverse.Plugin.Emulator.Services
             }
         }
 
-        private OrganizationResponse Execute(ExecutionTreeNode treeNode, OrganizationRequest request, IEnumerable<StepTriggered> steps)
+        private OrganizationResponse Execute(ExecutionTreeNode treeNode, OrganizationRequest request, IEnumerable<IStepTriggered> steps)
         {
             ParameterCollection sharedVariables = new ParameterCollection();
             var preValidateSteps = steps.Where(s => s.StepDescription.Stage == 10);
             foreach (var step in preValidateSteps.OrderBy(s => s.StepDescription.Rank))
             {
-                GenerateImages(step, 0);
+                step.GenerateImages(0, InnerExecute);
                 ExecuteStep(sharedVariables, treeNode, step);
             }
             var preExecuteSteps = steps.Where(s => s.StepDescription.Stage == 20);
             foreach (var step in preExecuteSteps.OrderBy(s => s.StepDescription.Rank))
             {
-                GenerateImages(step, 0);
+                step.GenerateImages(0, InnerExecute);
                 ExecuteStep(sharedVariables, treeNode, step);
             }
 
@@ -153,7 +153,7 @@ namespace Dataverse.Plugin.Emulator.Services
                 };
                 foreach (var step in operationSteps.OrderBy(s => s.StepDescription.Rank))
                 {
-                    step.OrganizationResponse = response;
+                    step.SetOrganizationResponse(response);
                     ExecuteStep(sharedVariables, treeNode, step);
                 }
             }
@@ -162,65 +162,22 @@ namespace Dataverse.Plugin.Emulator.Services
                 response = InnerExecute(request);
                 foreach (var step in steps)
                 {
-                    step.OrganizationResponse = response;
+                    step.SetOrganizationResponse(response);
                 }
-                if (request is CreateRequest createRequest && response is CreateResponse createResponse)
-                {
-                    foreach (var step in steps)
-                    {
-                        step.TargetReference.Id = createResponse.id;
-                    }
-                    createRequest.Target.Id = createResponse.id;
-                }
+                //TODO : merged pipelines
             }
 
             var postExecuteSteps = steps.Where(s => s.StepDescription.Stage == 40);
             foreach (var step in postExecuteSteps.OrderBy(s => s.StepDescription.IsAsynchronous ? 1 : 0).ThenBy(s => s.StepDescription.Rank))
             {
-                GenerateImages(step, 1);
+                step.GenerateImages(1, InnerExecute);
                 ExecuteStep(sharedVariables, treeNode, step);
             }
             return response;
         }
 
-        private void GenerateImages(StepTriggered step, int imageType)
-        {
-            var images = new EntityImageCollection();
-            foreach (var image in step.StepDescription.Images.Where(i => i.ImageType == imageType || i.ImageType == 2))
-            {
-                if (step.TargetReference == null)
-                {
-                    throw new NotSupportedException("Images are supported only for messages with targets!");
-                }
-                ColumnSet columns;
-                if (image.Attributes == null || image.Attributes.Length == 0)
-                {
-                    columns = new ColumnSet(true);
-                }
-                else
-                {
-                    columns = new ColumnSet(image.Attributes);
-                }
-                RetrieveRequest retrieveRequest = new RetrieveRequest()
-                {
-                    ColumnSet = columns,
-                    Target = step.TargetReference
-                };
-                var record = ((RetrieveResponse)InnerExecute(retrieveRequest)).Entity;
-                images[image.EntityAlias] = record;
-            }
-            if (imageType == 0)
-            {
-                step.PreImages = images;
-            }
-            else
-            {
-                step.PostImages = images;
-            }
-        }
-
         [System.Diagnostics.DebuggerStepThrough()]
-        private void ExecuteStep(ParameterCollection sharedVariables, ExecutionTreeNode executionTreeNode, StepTriggered step)
+        private void ExecuteStep(ParameterCollection sharedVariables, ExecutionTreeNode executionTreeNode, IStepTriggered step)
         {
             string title = step.StepDescription.Stage + " " + step.StepDescription.MessageName + " " + (step.StepDescription.IsAsynchronous ? "Async " : " ") + step.StepDescription.EventHandler;
             var stepExecutionTreeNode = new ExecutionTreeNode(title, ExecutionTreeNodeType.Step);
@@ -248,7 +205,7 @@ namespace Dataverse.Plugin.Emulator.Services
         }
 
 
-        private EmulatedPluginContext GenerateContext(ParameterCollection sharedVariables, ExecutionTreeNode executionTreeNode, StepTriggered step)
+        private EmulatedPluginContext GenerateContext(ParameterCollection sharedVariables, ExecutionTreeNode executionTreeNode, IStepTriggered step)
         {
             var newContext = new EmulatedPluginContext
             {
@@ -265,9 +222,6 @@ namespace Dataverse.Plugin.Emulator.Services
                 OutputParameters = MapResponseParameters(step.OrganizationResponse),
                 OwningExtension = new EntityReference("sdkmessageprocessingstep", step.StepDescription.Id),
                 ParentContext = this.CurrentContext,
-                PrimaryEntityId = step.TargetReference?.Id ?? Guid.Empty,
-                PostEntityImages = step.PostImages,
-                PreEntityImages = step.PreImages,
                 PrimaryEntityName = step.StepDescription.PrimaryEntity,
                 RequestId = Guid.NewGuid(),
                 SecondaryEntityName = step.StepDescription.SecondaryEntity,
@@ -277,6 +231,7 @@ namespace Dataverse.Plugin.Emulator.Services
                 IsInTransaction = (this.CurrentContext != null && this.CurrentContext.IsInTransaction) || step.StepDescription.Stage != 10,
                 ExecutionTreeRoot = executionTreeNode
             };
+            step.FillContext(newContext);
             newContext.UserAzureActiveDirectoryObjectId = this.Emulator.DataCache.GetAzureADIdFromSystemUserId(newContext.UserId);
             newContext.InitiatingUserAzureActiveDirectoryObjectId = this.Emulator.DataCache.GetAzureADIdFromSystemUserId(newContext.InitiatingUserId);
             return newContext;
