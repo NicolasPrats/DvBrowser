@@ -40,8 +40,8 @@ namespace Dataverse.Plugin.Emulator.Steps
         }
 
 
-        public OrganizationResponse OrganizationResponse { get; }
-        public EntityCollection Targets { get; private set; }
+        public OrganizationResponse OrganizationResponse { get; private set; }
+        public EntityCollection Targets { get; set; }
 
         public EntityImageCollection[] PreEntityImagesCollection { get; internal set; }
         public EntityImageCollection[] PostEntityImagesCollection { get; internal set; }
@@ -54,7 +54,6 @@ namespace Dataverse.Plugin.Emulator.Steps
 
         public void GenerateImages(int imageType, Func<OrganizationRequest, OrganizationResponse> innerExecute)
         {
-
             var imagesCollection = new EntityImageCollection[this.Targets.Entities.Count];
             foreach (var image in this.StepDescription.Images.Where(i => i.ImageType == imageType || i.ImageType == 2))
             {
@@ -93,11 +92,12 @@ namespace Dataverse.Plugin.Emulator.Steps
             };
             var record = ((RetrieveResponse)innerExecute(retrieveRequest)).Entity;
             images[image.EntityAlias] = record;
+            return images;
         }
 
         public void SetOrganizationResponse(OrganizationResponse response)
         {
-            throw new NotImplementedException();
+            this.OrganizationResponse = response;
         }
     }
 }

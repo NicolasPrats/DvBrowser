@@ -84,6 +84,55 @@ namespace Dataverse.Plugin.Emulator.Services
             });
         }
 
+        private IEnumerable<IStepTriggered> GetStepsToExecute_Multiple(UpsertMultipleRequest upsertMultipleRequest, out string targetLogicalName)
+        {
+            string messageName = GetMessageNameFromRequest(upsertMultipleRequest);
+            var targets = upsertMultipleRequest.Targets;
+            targetLogicalName = targets.Entities.FirstOrDefault()?.LogicalName;
+            IEnumerable<PluginStepDescription> stepsToExecute = null;
+            if (this.Emulator.PluginSteps.TryGetValue(messageName, out var steps))
+            {
+                stepsToExecute = steps;
+            }
+            //TODO : add simple Upserts
+            //TODO : in case of update: filtering attributes
+            return stepsToExecute?.Select(s => new MultipleStepTriggered()
+            {
+                StepDescription = s,
+                OrganizationRequest = upsertMultipleRequest,
+                Targets = targets
+            });
+        }
+
+        private IEnumerable<IStepTriggered> GetStepsToExecute_Multiple(UpdateMultipleRequest updateMultipleRequest, out string targetLogicalName)
+        {
+            string messageName = GetMessageNameFromRequest(updateMultipleRequest);
+            var targets = updateMultipleRequest.Targets;
+            targetLogicalName = targets.Entities.FirstOrDefault()?.LogicalName;
+            IEnumerable<PluginStepDescription> stepsToExecute = null;
+            if (this.Emulator.PluginSteps.TryGetValue(messageName, out var steps))
+            {
+                stepsToExecute = steps;
+            }
+            var attributesInTargets = new HashSet<string>();
+            foreach (var target in targets.Entities)
+            {
+                foreach (var attribute in target.Attributes)
+                {
+                    attributesInTargets.Add(attribute.Key);
+                }
+            }
+            stepsToExecute = stepsToExecute?.Where(s => s.FilteringAttributes == null || s.FilteringAttributes.Length == 0
+                    || s.FilteringAttributes.Intersect(attributesInTargets).Any());
+            //TODO : add simple update
+            return stepsToExecute?.Select(s => new MultipleStepTriggered()
+            {
+                StepDescription = s,
+                OrganizationRequest = updateMultipleRequest,
+                Targets = targets
+            });
+        }
+
         private IEnumerable<IStepTriggered> GetStepsToExecute_Simple(OrganizationRequest request, out string targetLogicalName)
         {
             string messageName = GetMessageNameFromRequest(request);
