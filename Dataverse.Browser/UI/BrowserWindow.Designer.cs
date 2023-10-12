@@ -55,6 +55,7 @@
             // 
             this.splitContainer1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.splitContainer1.Location = new System.Drawing.Point(0, 0);
+            this.splitContainer1.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.splitContainer1.Name = "splitContainer1";
             // 
             // splitContainer1.Panel1
@@ -73,7 +74,9 @@
             this.groupBoxLeft.Controls.Add(this.tabControl1);
             this.groupBoxLeft.Dock = System.Windows.Forms.DockStyle.Fill;
             this.groupBoxLeft.Location = new System.Drawing.Point(0, 0);
+            this.groupBoxLeft.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.groupBoxLeft.Name = "groupBoxLeft";
+            this.groupBoxLeft.Padding = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.groupBoxLeft.Size = new System.Drawing.Size(476, 450);
             this.groupBoxLeft.TabIndex = 0;
             this.groupBoxLeft.TabStop = false;
@@ -83,18 +86,20 @@
             this.tabControl1.Controls.Add(this.tabPage1);
             this.tabControl1.Controls.Add(this.tabPage2);
             this.tabControl1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.tabControl1.Location = new System.Drawing.Point(3, 18);
+            this.tabControl1.Location = new System.Drawing.Point(3, 17);
+            this.tabControl1.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
-            this.tabControl1.Size = new System.Drawing.Size(470, 429);
+            this.tabControl1.Size = new System.Drawing.Size(470, 431);
             this.tabControl1.TabIndex = 0;
             // 
             // tabPage1
             // 
             this.tabPage1.Location = new System.Drawing.Point(4, 25);
+            this.tabPage1.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.tabPage1.Name = "tabPage1";
-            this.tabPage1.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage1.Size = new System.Drawing.Size(462, 400);
+            this.tabPage1.Padding = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.tabPage1.Size = new System.Drawing.Size(462, 402);
             this.tabPage1.TabIndex = 0;
             this.tabPage1.Text = "tabPage1";
             this.tabPage1.UseVisualStyleBackColor = true;
@@ -102,9 +107,10 @@
             // tabPage2
             // 
             this.tabPage2.Location = new System.Drawing.Point(4, 25);
+            this.tabPage2.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.tabPage2.Name = "tabPage2";
-            this.tabPage2.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage2.Size = new System.Drawing.Size(462, 400);
+            this.tabPage2.Padding = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.tabPage2.Size = new System.Drawing.Size(463, 398);
             this.tabPage2.TabIndex = 1;
             this.tabPage2.Text = "REST Builder";
             this.tabPage2.UseVisualStyleBackColor = true;
@@ -117,7 +123,9 @@
             this.groupBoxRight.Controls.Add(this.ComboBoxBehavior);
             this.groupBoxRight.Dock = System.Windows.Forms.DockStyle.Fill;
             this.groupBoxRight.Location = new System.Drawing.Point(0, 0);
+            this.groupBoxRight.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.groupBoxRight.Name = "groupBoxRight";
+            this.groupBoxRight.Padding = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.groupBoxRight.Size = new System.Drawing.Size(320, 450);
             this.groupBoxRight.TabIndex = 6;
             this.groupBoxRight.TabStop = false;
@@ -126,9 +134,10 @@
             // 
             this.btnClear.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnClear.Image = ((System.Drawing.Image)(resources.GetObject("btnClear.Image")));
-            this.btnClear.Location = new System.Drawing.Point(277, 407);
+            this.btnClear.Location = new System.Drawing.Point(271, 389);
+            this.btnClear.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.btnClear.Name = "btnClear";
-            this.btnClear.Size = new System.Drawing.Size(31, 31);
+            this.btnClear.Size = new System.Drawing.Size(37, 34);
             this.btnClear.TabIndex = 3;
             this.toolTipButtons.SetToolTip(this.btnClear, "Clear the history of requests");
             this.btnClear.UseVisualStyleBackColor = true;
@@ -141,7 +150,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.treeView1.ImageIndex = 0;
             this.treeView1.ImageList = this.imageList1;
-            this.treeView1.Location = new System.Drawing.Point(6, 42);
+            this.treeView1.Location = new System.Drawing.Point(5, 42);
             this.treeView1.Margin = new System.Windows.Forms.Padding(0);
             this.treeView1.Name = "treeView1";
             this.treeView1.SelectedImageIndex = 0;
@@ -163,9 +172,10 @@
             // btnDebugger
             // 
             this.btnDebugger.Image = ((System.Drawing.Image)(resources.GetObject("btnDebugger.Image")));
-            this.btnDebugger.Location = new System.Drawing.Point(6, 8);
+            this.btnDebugger.Location = new System.Drawing.Point(5, 7);
+            this.btnDebugger.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.btnDebugger.Name = "btnDebugger";
-            this.btnDebugger.Size = new System.Drawing.Size(31, 31);
+            this.btnDebugger.Size = new System.Drawing.Size(32, 32);
             this.btnDebugger.TabIndex = 4;
             this.toolTipButtons.SetToolTip(this.btnDebugger, "Attach a debugger");
             this.btnDebugger.UseVisualStyleBackColor = true;
@@ -177,14 +187,16 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.ComboBoxBehavior.CausesValidation = false;
             this.ComboBoxBehavior.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.ComboBoxBehavior.Font = new System.Drawing.Font("Microsoft Sans Serif", 11.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.ComboBoxBehavior.FormattingEnabled = true;
             this.ComboBoxBehavior.Items.AddRange(new object[] {
-            "Do not execute plugins",
-            "Execute plugins ",
-            "Execute plugins with auto break"});
-            this.ComboBoxBehavior.Location = new System.Drawing.Point(43, 12);
+            "🚫Do not intercept requests",
+            "▶️  Intercept requests and execute plugins locally",
+            "⏯️Intercept requests and execute plugins locally with auto break"});
+            this.ComboBoxBehavior.Location = new System.Drawing.Point(43, 7);
+            this.ComboBoxBehavior.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.ComboBoxBehavior.Name = "ComboBoxBehavior";
-            this.ComboBoxBehavior.Size = new System.Drawing.Size(268, 24);
+            this.ComboBoxBehavior.Size = new System.Drawing.Size(268, 32);
             this.ComboBoxBehavior.TabIndex = 5;
             this.ComboBoxBehavior.SelectedIndexChanged += new System.EventHandler(this.ComboBoxBehavior_SelectedIndexChanged);
             // 
@@ -195,8 +207,10 @@
             this.ClientSize = new System.Drawing.Size(800, 450);
             this.Controls.Add(this.splitContainer1);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.Name = "BrowserWindow";
-            this.Text = "Browser";
+            this.Text = "Dataverse Browser";
+            this.WindowState = System.Windows.Forms.FormWindowState.Maximized;
             this.splitContainer1.Panel1.ResumeLayout(false);
             this.splitContainer1.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).EndInit();

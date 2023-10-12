@@ -13,7 +13,7 @@
     <AssemblyName>PowerPlatform.Demo.Plugins</AssemblyName>
     <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <!--<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>-->
     <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);GetTfmPublishedFiles</TargetsForTfmSpecificBuildOutput>
   </PropertyGroup>
@@ -35,17 +35,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <PackageId>PowerPlatform.Demo.Plugins</PackageId>
-    <IsPackable>True</IsPackable>
-    <PackageVersion>1.0.0</PackageVersion>
-    <PackageOutputPath>bin\outputPackages</PackageOutputPath>
-    <PackageTags>plugin</PackageTags>
-    <Authors>Placeholder</Authors>
-    <Description>
-			Placeholder
-		</Description>
-  </PropertyGroup>
-  <PropertyGroup>
     <SignAssembly>true</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
@@ -61,18 +50,14 @@
     <Reference Include="System.ServiceModel" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Runtime.Serialization" />
-    <Reference Include="Microsoft.Xrm.Sdk">
-      <HintPath>..\..\..\..\..\..\program files\microsoft visual studio\2022\enterprise\common7\ide\extensions\wjvtinjj.hoc\Resources\CoreTools\Microsoft.Xrm.Sdk.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Crm.Sdk.Proxy">
-      <HintPath>..\..\..\..\..\..\program files\microsoft visual studio\2022\enterprise\common7\ide\extensions\wjvtinjj.hoc\Resources\CoreTools\Microsoft.Crm.Sdk.Proxy.dll</HintPath>
-    </Reference>
-    <PackageReference Include="NuGet.Build.Tasks.Pack" Version="5.2.0" />
-    <PackageReference Include="Microsoft.CrmSdk.CoreAssemblies" Version="9.0.2.*" />
+    <PackageReference Include="Microsoft.CrmSdk.CoreAssemblies" Version="9.0.2.50" />
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" PrivateAssets="All" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ObjectDumper.cs" />
     <Compile Include="PostOperationnonedvb_TestUnbound.cs" />
+    <Compile Include="GenericPlugin.cs" />
+    <Compile Include="PreValidationcontactCreateMultiple.cs" />
     <Compile Include="PreValidationcontactCreate.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PluginBase.cs" />

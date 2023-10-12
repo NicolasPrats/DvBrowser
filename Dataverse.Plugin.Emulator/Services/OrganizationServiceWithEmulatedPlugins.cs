@@ -8,7 +8,6 @@ using Dataverse.Plugin.Emulator.Steps;
 using Microsoft.Crm.Sdk.Messages;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Messages;
-using Microsoft.Xrm.Sdk.Metadata;
 using Microsoft.Xrm.Sdk.Organization;
 using Microsoft.Xrm.Sdk.Query;
 
@@ -20,22 +19,25 @@ namespace Dataverse.Plugin.Emulator.Services
 
         private IOrganizationService InnerService { get; }
         private EmulatorOptions EmulatorOptions { get; }
-        internal PluginEmulator Emulator { get; }
-        internal EmulatedPluginContext CurrentContext { get; }
-        internal WhoAmIResponse WhoAmIResponse { get; }
-        internal OrganizationDetail CurrentOrganization { get; }
+        private PluginEmulator Emulator { get; }
+        private EmulatedPluginContext CurrentContext { get; }
+        private WhoAmIResponse WhoAmIResponse { get; }
+        private static OrganizationDetail CurrentOrganization { get; set; }
 
-        internal OrganizationServiceWithEmulatedPlugins(IOrganizationService innerService, PluginEmulator manager, EmulatedPluginContext currentContext, EmulatorOptions emulatorOptions)
+        internal OrganizationServiceWithEmulatedPlugins(IOrganizationService innerService, PluginEmulator emulator, EmulatedPluginContext currentContext, EmulatorOptions emulatorOptions)
         {
             this.InnerService = innerService ?? throw new ArgumentNullException(nameof(innerService));
-            this.Emulator = manager ?? throw new ArgumentNullException(nameof(manager));
+            this.Emulator = emulator ?? throw new ArgumentNullException(nameof(emulator));
             this.CurrentContext = currentContext;
 
             WhoAmIRequest request = new WhoAmIRequest();
             this.WhoAmIResponse = (WhoAmIResponse)InnerExecute(request);
 
-            RetrieveCurrentOrganizationRequest orgRequest = new RetrieveCurrentOrganizationRequest();
-            this.CurrentOrganization = ((RetrieveCurrentOrganizationResponse)InnerExecute(orgRequest)).Detail;
+            if (CurrentOrganization == null)
+            {
+                RetrieveCurrentOrganizationRequest orgRequest = new RetrieveCurrentOrganizationRequest();
+                CurrentOrganization = ((RetrieveCurrentOrganizationResponse)InnerExecute(orgRequest)).Detail;
+            }
             this.EmulatorOptions = emulatorOptions ?? throw new ArgumentNullException(nameof(emulatorOptions));
         }
 
@@ -102,95 +104,20 @@ namespace Dataverse.Plugin.Emulator.Services
             {
                 throw new ArgumentException(nameof(executionTreeNode));
             }
+            var stepsIdentificationService = new StepsIdentificationService(this.Emulator);
+            var stepsToExecute = stepsIdentificationService.GetStepsToExecute(request, out var targetLogicalName);
 
-            string messageName = request.RequestName;
-            if (String.IsNullOrEmpty(messageName))
-            {
-                var typeName = request.GetType().Name;
-                if (typeName.EndsWith("Request"))
-                {
-                    messageName = typeName.Substring(0, typeName.Length - "Request".Length);
-                }
-                else
-                {
-                    messageName = typeName;
-                }
-            }
-            if (String.IsNullOrEmpty(messageName))
-            {
-                throw new ApplicationException("Message has not been identified!");
-            }
-
-            IEnumerable<PluginStepDescription> stepsToExecute = null;
-            EntityReference targetRef = null;
-            Entity target = null;
-            string targetLogicalName = null;
-            if (this.Emulator.PluginSteps.TryGetValue(messageName, out var steps))
-            {
-                stepsToExecute = steps;
-            }
-            switch (request)
-            {
-                case CreateRequest createRequest:
-                    target = createRequest.Target;
-                    break;
-                case UpsertRequest upsertRequest:
-                    target = upsertRequest.Target;
-                    //TODO : en cas d'update il faudrait appliquer les filtering attributes
-                    break;
-                case RetrieveRequest retrieveRequest:
-                    targetRef = retrieveRequest.Target;
-                    break;
-                case UpdateRequest updateRequest:
-                    target = updateRequest.Target;
-                    stepsToExecute = stepsToExecute?.Where(s => s.FilteringAttributes == null || s.FilteringAttributes.Length == 0
-                    || s.FilteringAttributes.Intersect(updateRequest.Target.Attributes.Select(a => a.Key)).Any());
-                    break;
-                case DeleteRequest deleteRequest:
-                    targetRef = deleteRequest.Target;
-                    break;
-                case RetrieveMultipleRequest retrieveMultipleRequest:
-                    if (retrieveMultipleRequest.Query is QueryExpression query)
-                    {
-                        targetLogicalName = query.EntityName;
-                    }
-                    else
-                    {
-                        //TODO: gérer les autres types de query
-                        throw new NotImplementedException(retrieveMultipleRequest?.Query.GetType().Name);
-                    }
-                    break;
-            }
-            if (targetRef == null && target != null)
-            {
-                if (target.Id == Guid.Empty && target.KeyAttributes.Count == 0)
-                {
-                    //TODO: use a metadatacache (and share it with caller ?)
-                    RetrieveEntityRequest metadataRequest = new RetrieveEntityRequest { EntityFilters = EntityFilters.Attributes, LogicalName = target.LogicalName };
-                    RetrieveEntityResponse metadataResponse = (RetrieveEntityResponse)Execute(metadataRequest);
-                    AttributeMetadata pkAttribute = metadataResponse.EntityMetadata.Attributes.FirstOrDefault(x => x.IsPrimaryId == true);
-                    target.Id = target.GetAttributeValue<Guid>(pkAttribute.LogicalName);
-
-                    //TODO: check alternate keys
-                }
-
-                targetRef = target.ToEntityReference();
-            }
-            //TODO pour create and update on suppose que l'id de la target est défini
-            //mais théoriquement il pourrait être à null et l'attribut guid de la target défini
-            targetLogicalName = targetLogicalName ?? targetRef?.LogicalName;
             executionTreeNode.Type = ExecutionTreeNodeType.Message;
             executionTreeNode.Title = request.RequestName;
             if (targetLogicalName != null)
             {
                 executionTreeNode.Title += " " + targetLogicalName;
-                stepsToExecute = stepsToExecute?.Where(s => s.PrimaryEntity == targetLogicalName);
             }
 
             this.CurrentContext?.ExecutionTreeRoot.ChildNodes.Add(executionTreeNode);
             if (stepsToExecute?.Any() == true)
             {
-                return Execute(executionTreeNode, request, targetRef, stepsToExecute);
+                return Execute(executionTreeNode, request, stepsToExecute);
             }
             else
             {
@@ -198,25 +125,25 @@ namespace Dataverse.Plugin.Emulator.Services
             }
         }
 
-        private OrganizationResponse Execute(ExecutionTreeNode treeNode, OrganizationRequest request, EntityReference target, IEnumerable<PluginStepDescription> steps)
+        private OrganizationResponse Execute(ExecutionTreeNode treeNode, OrganizationRequest request, IEnumerable<IStepTriggered> steps)
         {
             ParameterCollection sharedVariables = new ParameterCollection();
-            var preValidateSteps = steps.Where(s => s.Stage == 10);
-            var preImages = GetImages(target, steps, 0);
-            foreach (var step in preValidateSteps.OrderBy(s => s.Rank))
+            var preValidateSteps = steps.Where(s => s.StepDescription.Stage == 10);
+            foreach (var step in preValidateSteps.OrderBy(s => s.StepDescription.Rank))
             {
-                ExecuteStep(treeNode, step, request, null, sharedVariables, preImages[step], null, target?.Id ?? Guid.Empty);
+                step.GenerateImages(0, InnerExecute);
+                ExecuteStep(sharedVariables, treeNode, step);
             }
-            var preExecuteSteps = steps.Where(s => s.Stage == 20);
-            foreach (var step in preExecuteSteps.OrderBy(s => s.Rank))
+            var preExecuteSteps = steps.Where(s => s.StepDescription.Stage == 20);
+            foreach (var step in preExecuteSteps.OrderBy(s => s.StepDescription.Rank))
             {
-                ExecuteStep(treeNode, step, request, null, sharedVariables, preImages[step], null, target?.Id ?? Guid.Empty);
+                step.GenerateImages(0, InnerExecute);
+                ExecuteStep(sharedVariables, treeNode, step);
             }
-
 
             treeNode.ChildNodes.Add(new ExecutionTreeNode("30 Execute Operation", ExecutionTreeNodeType.InnerOperation));
+            var operationSteps = steps.Where(s => s.StepDescription.Stage == 30);
             OrganizationResponse response;
-            var operationSteps = steps.Where(s => s.Stage == 30);
             if (operationSteps.Any())
             {
                 response = new OrganizationResponse
@@ -224,68 +151,37 @@ namespace Dataverse.Plugin.Emulator.Services
                     ResponseName = request.RequestName,
                     Results = new ParameterCollection()
                 };
-                foreach (var step in operationSteps.OrderBy(s => s.Rank))
+                foreach (var step in operationSteps.OrderBy(s => s.StepDescription.Rank))
                 {
-                    ExecuteStep(treeNode, step, request, response, sharedVariables, preImages[step], null, target?.Id ?? Guid.Empty);
+                    step.SetOrganizationResponse(response);
+                    ExecuteStep(sharedVariables, treeNode, step);
                 }
             }
             else
             {
                 response = InnerExecute(request);
+                foreach (var step in steps)
+                {
+                    step.SetOrganizationResponse(response);
+                }
             }
 
-
-            if (request is CreateRequest createRequest && response is CreateResponse createResponse)
+            var postExecuteSteps = steps.Where(s => s.StepDescription.Stage == 40);
+            foreach (var step in postExecuteSteps.OrderBy(s => s.StepDescription.IsAsynchronous ? 1 : 0).ThenBy(s => s.StepDescription.Rank))
             {
-                target.Id = createResponse.id;
-                createRequest.Target.Id = createResponse.id;
-            }
-
-            var postExecuteSteps = steps.Where(s => s.Stage == 40);
-            var postImages = GetImages(target, postExecuteSteps, 1);
-            foreach (var step in postExecuteSteps.OrderBy(s => s.IsAsynchronous ? 1 : 0).ThenBy(s => s.Rank))
-            {
-                ExecuteStep(treeNode, step, request, response, sharedVariables, preImages[step], postImages[step], target?.Id ?? Guid.Empty);
+                step.GenerateImages(1, InnerExecute);
+                ExecuteStep(sharedVariables, treeNode, step);
             }
             return response;
         }
 
-        private Dictionary<PluginStepDescription, EntityImageCollection> GetImages(EntityReference target, IEnumerable<PluginStepDescription> steps, int imageType)
-        {
-            var images = new Dictionary<PluginStepDescription, EntityImageCollection>();
-            foreach (var step in steps)
-            {
-                images[step] = new EntityImageCollection();
-                foreach (var image in step.Images.Where(i => i.ImageType == imageType || i.ImageType == 2))
-                {
-                    if (target == null)
-                    {
-                        throw new NotSupportedException();
-                    }
-                    ColumnSet columns;
-                    if (image.Attributes == null || image.Attributes.Length == 0)
-                    {
-                        columns = new ColumnSet(true);
-                    }
-                    else
-                    {
-                        columns = new ColumnSet(image.Attributes);
-                    }
-                    //TODO utiliser InnerExecute
-                    var record = this.InnerService.Retrieve(target.LogicalName, target.Id, columns);
-                    images[step][image.EntityAlias] = record;
-                }
-            }
-            return images;
-        }
-
         [System.Diagnostics.DebuggerStepThrough()]
-        private void ExecuteStep(ExecutionTreeNode executionTreeNode, PluginStepDescription step, OrganizationRequest request, OrganizationResponse response, ParameterCollection sharedVariables, EntityImageCollection preImages, EntityImageCollection postImages, Guid targetId)
+        private void ExecuteStep(ParameterCollection sharedVariables, ExecutionTreeNode executionTreeNode, IStepTriggered step)
         {
-            string title = step.Stage + " " + step.MessageName + " " + (step.IsAsynchronous ? "Async " : " ") + step.EventHandler;
+            string title = step.StepDescription.Stage + " " + step.StepDescription.MessageName + " " + (step.StepDescription.IsAsynchronous ? "Async " : " ") + step.StepDescription.EventHandler;
             var stepExecutionTreeNode = new ExecutionTreeNode(title, ExecutionTreeNodeType.Step);
             executionTreeNode.ChildNodes.Add(stepExecutionTreeNode);
-            var context = GenerateContext(stepExecutionTreeNode, step, request, response, sharedVariables, preImages, postImages, targetId);
+            var context = GenerateContext(sharedVariables, stepExecutionTreeNode, step);
 
             var serviceProvider = new EmulatedPluginServiceProvider();
             serviceProvider.AddService(context);
@@ -295,7 +191,7 @@ namespace Dataverse.Plugin.Emulator.Services
             serviceProvider.AddService(new EmulatedPluginLogger(stepExecutionTreeNode));
             serviceProvider.AddService(new EmulatedServiceEndpointNotificationService());
 
-            var plugin = this.Emulator.PluginCache.GetPlugin(step);
+            var plugin = this.Emulator.PluginCache.GetPlugin(step.StepDescription);
 
             if (this.EmulatorOptions.BreakBeforeExecutingPlugins && Debugger.IsAttached)
             {
@@ -308,7 +204,7 @@ namespace Dataverse.Plugin.Emulator.Services
         }
 
 
-        private EmulatedPluginContext GenerateContext(ExecutionTreeNode executionTreeNode, PluginStepDescription step, OrganizationRequest request, OrganizationResponse response, ParameterCollection sharedVariables, EntityImageCollection preImages, EntityImageCollection postImages, Guid targetId)
+        private EmulatedPluginContext GenerateContext(ParameterCollection sharedVariables, ExecutionTreeNode executionTreeNode, IStepTriggered step)
         {
             var newContext = new EmulatedPluginContext
             {
@@ -316,35 +212,36 @@ namespace Dataverse.Plugin.Emulator.Services
                 CorrelationId = this.CurrentContext == null ? Guid.NewGuid() : this.CurrentContext.CorrelationId,
                 Depth = this.CurrentContext == null ? 1 : this.CurrentContext.Depth + 1,
                 InitiatingUserId = this.CurrentContext == null ? this.WhoAmIResponse.UserId : this.CurrentContext.InitiatingUserId,
-                InputParameters = request.Parameters,
-                Mode = step.IsAsynchronous ? 1 : 0,
-                MessageName = step.MessageName,
-                OrganizationName = this.CurrentOrganization.UniqueName,
+                InputParameters = step.OrganizationRequest.Parameters,
+                Mode = step.StepDescription.IsAsynchronous ? 1 : 0,
+                MessageName = step.StepDescription.MessageName,
+                OrganizationName = CurrentOrganization.UniqueName,
                 OperationCreatedOn = DateTime.UtcNow,
                 OrganizationId = this.WhoAmIResponse.OrganizationId,
-                OutputParameters = MapResponseParameters(response),
-                OwningExtension = new EntityReference("sdkmessageprocessingstep", step.Id),
+                OutputParameters = MapResponseParameters(step.OrganizationResponse),
+                OwningExtension = new EntityReference("sdkmessageprocessingstep", step.StepDescription.Id),
                 ParentContext = this.CurrentContext,
-                PrimaryEntityId = targetId,
-                PostEntityImages = postImages,
-                PreEntityImages = preImages,
-                PrimaryEntityName = step.PrimaryEntity,
+                PrimaryEntityName = step.StepDescription.PrimaryEntity,
                 RequestId = Guid.NewGuid(),
-                SecondaryEntityName = step.SecondaryEntity,
+                SecondaryEntityName = step.StepDescription.SecondaryEntity,
                 SharedVariables = sharedVariables,
-                Stage = step.Stage,
+                Stage = step.StepDescription.Stage,
                 UserId = this.WhoAmIResponse.UserId,
-                IsInTransaction = (this.CurrentContext != null && this.CurrentContext.IsInTransaction) || step.Stage != 10,
+                IsInTransaction = (this.CurrentContext != null && this.CurrentContext.IsInTransaction) || step.StepDescription.Stage != 10,
                 ExecutionTreeRoot = executionTreeNode
             };
-
+            step.FillContext(newContext);
+            newContext.UserAzureActiveDirectoryObjectId = this.Emulator.DataCache.GetAzureADIdFromSystemUserId(newContext.UserId);
+            newContext.InitiatingUserAzureActiveDirectoryObjectId = this.Emulator.DataCache.GetAzureADIdFromSystemUserId(newContext.InitiatingUserId);
             return newContext;
         }
 
         private ParameterCollection MapResponseParameters(OrganizationResponse response)
         {
             if (response == null)
+#pragma warning disable S1168 // Empty arrays and collections should be returned instead of null. We really want return null here
                 return null;
+#pragma warning restore S1168 // Empty arrays and collections should be returned instead of null
             if (!ResponsePropertyMapping.Mapping.TryGetValue(response.GetType(), out var mapping))
                 return response.Results;
             var parameters = new ParameterCollection();

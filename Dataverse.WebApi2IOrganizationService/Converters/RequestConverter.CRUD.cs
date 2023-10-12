@@ -23,7 +23,7 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
             var entity = this.Context.MetadataCache.GetEntityFromSetName(entitySegment.Identifier);
             if (entity == null)
             {
-                throw new ApplicationException("Entity not found: " + entity);
+                throw new NotSupportedException("Entity not found: " + entity);
             }
             DeleteRequest deleteRequest = new DeleteRequest
             {
@@ -39,7 +39,7 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
             var entity = this.Context.MetadataCache.GetEntityFromSetName(entitySegment.Identifier);
             if (entity == null)
             {
-                throw new ApplicationException("Entity not found: " + entity);
+                throw new NotSupportedException("Entity not found: " + entity);
             }
 
             RetrieveRequest retrieveRequest = new RetrieveRequest
@@ -77,7 +77,7 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                 }
                 else
                 {
-                    columnSet.AddColumn(navigationProperty.Name);
+                    columnSet.AddColumn(navigationProperty.Name.ToLowerInvariant());
                 }
             }
             return columnSet;
@@ -133,41 +133,56 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
 
             using (JsonDocument json = JsonDocument.Parse(body))
             {
-                foreach (var node in json.RootElement.EnumerateObject())
-                {
-                    string key = node.Name;
-                    if (key.EndsWith("@OData.Community.Display.V1.FormattedValue"))
-                        continue;
-
-
-                    if (key.EndsWith("@odata.bind"))
-                    {
-                        key = ExtractAttributeNameFromodatabind(entityMetadata, key);
-                    }
-                    else if (key.Contains("@"))
-                    {
-                        throw new ApplicationException("Unknow property key:" + key);
-                    }
-
-                    AttributeMetadata attributeMetadata = entityMetadata.Attributes.FirstOrDefault(a => a.LogicalName == key);
-                    if (attributeMetadata != null)
-                    {
-                        object value = ConvertValueToAttribute(attributeMetadata, node.Value);
-                        record.Attributes.Add(key, value);
-                    }
-                    else
-                    {
-                        var relation = entityMetadata.OneToManyRelationships.FirstOrDefault(r => r.SchemaName == key) ?? throw new NotSupportedException("No attribute nor relation found: " + key);
-                        if (relation.ReferencingEntity != "activityparty")
-                        {
-                            throw new NotSupportedException("Unsupported relation found: " + key);
-                        }
-                        AddActivityParties(record, node.Value);
-                    }
-                }
+                ReadEntityFromJson(entityMetadata, record, json.RootElement);
             }
 
             return request;
+        }
+
+        private void ReadEntityFromJson(EntityMetadata entityMetadata, Entity record, JsonElement json, string primaryKeyPropertyName = null)
+        {
+            foreach (var node in json.EnumerateObject())
+            {
+                string key = node.Name;
+                if (key.EndsWith("@OData.Community.Display.V1.FormattedValue"))
+                    continue;
+
+                if (key.EndsWith("@odata.bind"))
+                {
+                    key = ExtractAttributeNameFromodatabind(entityMetadata, key);
+                }
+                else if (key.Contains("@odata.type"))
+                {
+                    //ignore
+                    //Todo : check if coherent with entitymetadata ?
+                    continue;
+                }
+                else if (key.Contains("@"))
+                {
+                    throw new NotSupportedException("Unknow property key:" + key);
+                }
+
+                AttributeMetadata attributeMetadata = entityMetadata.Attributes.FirstOrDefault(a => a.LogicalName == key);
+                if (attributeMetadata != null)
+                {
+                    object value = ConvertValueToAttribute(attributeMetadata, node.Value);
+                    record.Attributes.Add(key, value);
+                }
+                else if (key == primaryKeyPropertyName)
+                {
+                    attributeMetadata = entityMetadata.Attributes.FirstOrDefault(a => a.IsPrimaryId == true);
+                    record.Id = (Guid)ConvertValueToAttribute(attributeMetadata, node.Value);
+                }
+                else
+                {
+                    var relation = entityMetadata.OneToManyRelationships.FirstOrDefault(r => r.SchemaName == key) ?? throw new NotSupportedException("No attribute nor relation found: " + key);
+                    if (relation.ReferencingEntity != "activityparty")
+                    {
+                        throw new NotSupportedException("Unsupported relation found: " + key);
+                    }
+                    AddActivityParties(record, node.Value);
+                }
+            }
         }
 
         private static string ExtractAttributeNameFromodatabind(EntityMetadata entityMetadata, string odatabindValue)
@@ -210,7 +225,7 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                 }
 
                 var targetAttributeName = GetActivityPartyAttributeName(record.LogicalName, participationTypeMask);
-                EntityCollection collection = record.GetAttributeValue<EntityCollection>(targetAttributeName); ;
+                EntityCollection collection = record.GetAttributeValue<EntityCollection>(targetAttributeName);
                 if (collection == null)
                 {
                     record[targetAttributeName] = collection = new EntityCollection();
@@ -218,7 +233,9 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                 }
                 var party = new Entity("activityparty");
                 //todo:other columns necessary ?
+#pragma warning disable S2583 // Conditionally executed code should be reachable. Justification = false positive. There are some paths where entityReference is null and others where it's not null.
                 party["partyid"] = entityReference ?? throw new NotSupportedException("Target record in activity party list not found!");
+#pragma warning restore S2583 // Conditionally executed code should be reachable
 
                 collection.Entities.Add(party);
             }
@@ -331,7 +348,7 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                 case AttributeTypeCode.Uniqueidentifier:
                     return value.GetGuid();
                 default:
-                    throw new ApplicationException("Unsupported type:" + attributeMetadata.AttributeType);
+                    throw new NotSupportedException("Unsupported type:" + attributeMetadata.AttributeType);
             }
         }
 

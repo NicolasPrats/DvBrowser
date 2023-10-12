@@ -110,7 +110,7 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
 
             void ManagePost3Segment()
             {
-                if (!(path.LastSegment is OperationSegment operationImport))
+                if (!(path.LastSegment is OperationSegment))
                 {
                     throw new NotImplementedException("Post with 3 segments are implemented only for custom api!");
                 }
@@ -125,11 +125,10 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
 
             void ManagePost2Segment()
             {
-                if (!(path.LastSegment is OperationSegment operationImport))
+                if (!(path.LastSegment is OperationSegment))
                 {
                     throw new NotImplementedException("Post with 3 segments are implemented only for custom api!");
                 }
-                var entity = this.Context.MetadataCache.GetEntityFromSetName(path.FirstSegment.Identifier) ?? throw new NotSupportedException($"Entity: {path.FirstSegment.Identifier} not found!");
                 string identifier = path.LastSegment.Identifier;
                 var declaredOperation = this.Context.Model.FindDeclaredOperations(identifier).Single();
 
@@ -157,7 +156,7 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                 {
                     ConvertToExecuteMultipleRequest(result);
                 }
-                else if (path.FirstSegment is OperationImportSegment operationImport)
+                else if (path.FirstSegment is OperationImportSegment)
                 {
                     string identifier = path.FirstSegment.Identifier;
                     var declaredOperation = this.Context.Model.FindDeclaredOperationImports(identifier).Single();

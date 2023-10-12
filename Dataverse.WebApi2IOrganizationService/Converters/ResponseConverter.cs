@@ -104,7 +104,7 @@ $@"{{
             foreach (var property in organizationResponse.Results)
             {
                 var parameter = returnTypeDefinition?.DeclaredProperties?.FirstOrDefault(p => p.Name == property.Key);
-                if (parameter != null)
+                if (parameter != null || returnTypeDefinition?.FullTypeName() == "Microsoft.Dynamics.CRM.crmbaseentity")
                 {
                     AddValueToJsonObject(body, property, null, parameter);
                     bodyIsEmpty = false;
@@ -200,7 +200,7 @@ $@"{{
                         {
                             // Here it's a property of an entity record included in a property response
                             var entityTypeDefinition = (IEdmStructuredType)this.Context.Model.FindDeclaredType("Microsoft.Dynamics.CRM." + currentEntityLogicalName);
-                            var declaredProperty = entityTypeDefinition.DeclaredProperties.Where(p => p.Name == property.Key).Single();
+                            var declaredProperty = entityTypeDefinition.DeclaredProperties.Single(p => p.Name == property.Key);
                             if (declaredProperty.PropertyKind == EdmPropertyKind.Navigation)
                             {
                                 body["_" + property.Key + "_value"] = entityReferenceValue.Id;
@@ -216,7 +216,6 @@ $@"{{
                 case Entity record:
                     {
                         var parameterDefinition = parameter.Type.Definition;
-                        //var recordType = this.Context.Model.FindDeclaredType("Microsoft.Dynamics.CRM." + record.LogicalName);
                         JsonObject recordJson = ConvertEntityToJson(record, parameterDefinition.FullTypeName() == "Microsoft.Dynamics.CRM.crmbaseentity");
                         body[property.Key] = recordJson;
 
@@ -230,6 +229,16 @@ $@"{{
                         {
                             JsonObject recordJson = ConvertEntityToJson(record, true);
                             arrayJson.Add(recordJson);
+                        }
+                    }
+                    break;
+                case Guid[] ids:
+                    {
+                        var arrayJson = new JsonArray();
+                        body[property.Key] = arrayJson;
+                        foreach (var id in ids)
+                        {
+                            arrayJson.Add(id);
                         }
                     }
                     break;

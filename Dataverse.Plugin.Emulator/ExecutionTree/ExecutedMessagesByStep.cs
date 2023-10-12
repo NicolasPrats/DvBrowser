@@ -2,12 +2,12 @@
 
 namespace Dataverse.Plugin.Emulator.ExecutionTree
 {
-    public class TriggeredStep
+    public class ExecutedMessagesByStep
     {
         public string StepName { get; }
         public List<ExecutionTreeNodeType> ExecutedMessages { get; } = new List<ExecutionTreeNodeType>();
 
-        internal TriggeredStep(string stepName)
+        internal ExecutedMessagesByStep(string stepName)
         {
             this.StepName = stepName;
         }
