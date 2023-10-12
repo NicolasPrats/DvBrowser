@@ -42,7 +42,7 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
 
         private object ConvertValueToAttribute(JsonElement value, Entity customApiRequestParameter, IEdmTypeReference edmType)
         {
-            int type = customApiRequestParameter?.GetAttributeValue<OptionSetValue>("type")?.Value ?? GetRequestParameterTypeFromEdmType(edmType); ;
+            int type = customApiRequestParameter?.GetAttributeValue<OptionSetValue>("type")?.Value ?? GetRequestParameterTypeFromEdmType(edmType);
             if (value.ValueKind == JsonValueKind.Null)
                 return null;
             string typeName = edmType.FullName();
@@ -158,18 +158,20 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
             }
             else
             {
-                definition = type?.Definition as IEdmEntityType;
+                definition = type.Definition as IEdmEntityType;
             }
             if (definition == null)
             {
                 throw new NotSupportedException($"IEdmEntityType was expected but not found for type {typeName}!");
             }
+            var record = new Entity(definition.Name);
+            var entityMetadata = this.Context.MetadataCache.GetEntityMetadataWithAttributes(definition.Name);
+            //Special case for team & systemuser entities whose inherits from principal with key =ownerid
+            // whereas ownerid is not a column
             var key = definition.DeclaredKey.FirstOrDefault()?.Name;
-            if (!value.TryGetProperty(key, out var id))
-            {
-                throw new NotSupportedException($"@{key} property must be set!");
-            }
-            return new Entity(definition.Name, new Guid(id.GetString()));
+
+            ReadEntityFromJson(entityMetadata, record, value, key);
+            return record;
         }
     }
 }

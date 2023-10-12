@@ -69,6 +69,7 @@
     <Compile Include="ObjectDumper.cs" />
     <Compile Include="PostOperationnonedvb_TestUnbound.cs" />
     <Compile Include="GenericPlugin.cs" />
+    <Compile Include="PreValidationcontactCreateMultiple.cs" />
     <Compile Include="PreValidationcontactCreate.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PluginBase.cs" />

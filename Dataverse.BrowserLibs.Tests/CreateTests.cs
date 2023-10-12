@@ -96,5 +96,45 @@ namespace Dataverse.BrowserLibs.Tests
                );
             Helper.TestAgainstExpected(this.TestContext, webApiRequest, false);
         }
+
+
+
+        [TestMethod]
+        public void CreateCustomTable_Plugin()
+        {
+            WebApiRequest webApiRequest = WebApiRequest.CreateFromLocalPathWithQuery(
+                "POST",
+                "/api/data/v9.2/dvb_mycustomtables",
+                new System.Collections.Specialized.NameValueCollection()
+                {
+                    {"Content-Type", "application/json" },
+                    {"Prefer" ,"return=representation"},
+                },
+                JsonConvert.SerializeObject(new
+                {
+                    dvb_name = "test"
+                })
+                );
+            Helper.TestAgainstExpected(this.TestContext, webApiRequest);
+        }
+
+        [TestMethod]
+        public void CreateCustomTable_Plugin_error()
+        {
+            WebApiRequest webApiRequest = WebApiRequest.CreateFromLocalPathWithQuery(
+                "POST",
+                "/api/data/v9.2/dvb_mycustomtables",
+                new System.Collections.Specialized.NameValueCollection()
+                {
+                    {"Content-Type", "application/json" },
+                    {"Prefer" ,"return=representation"},
+                },
+                JsonConvert.SerializeObject(new
+                {
+                    dvb_name = (string)null
+                })
+                );
+            Helper.TestAgainstExpected(this.TestContext, webApiRequest, false);
+        }
     }
 }

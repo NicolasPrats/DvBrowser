@@ -133,41 +133,56 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
 
             using (JsonDocument json = JsonDocument.Parse(body))
             {
-                foreach (var node in json.RootElement.EnumerateObject())
-                {
-                    string key = node.Name;
-                    if (key.EndsWith("@OData.Community.Display.V1.FormattedValue"))
-                        continue;
-
-
-                    if (key.EndsWith("@odata.bind"))
-                    {
-                        key = ExtractAttributeNameFromodatabind(entityMetadata, key);
-                    }
-                    else if (key.Contains("@"))
-                    {
-                        throw new ApplicationException("Unknow property key:" + key);
-                    }
-
-                    AttributeMetadata attributeMetadata = entityMetadata.Attributes.FirstOrDefault(a => a.LogicalName == key);
-                    if (attributeMetadata != null)
-                    {
-                        object value = ConvertValueToAttribute(attributeMetadata, node.Value);
-                        record.Attributes.Add(key, value);
-                    }
-                    else
-                    {
-                        var relation = entityMetadata.OneToManyRelationships.FirstOrDefault(r => r.SchemaName == key) ?? throw new NotSupportedException("No attribute nor relation found: " + key);
-                        if (relation.ReferencingEntity != "activityparty")
-                        {
-                            throw new NotSupportedException("Unsupported relation found: " + key);
-                        }
-                        AddActivityParties(record, node.Value);
-                    }
-                }
+                ReadEntityFromJson(entityMetadata, record, json.RootElement);
             }
 
             return request;
+        }
+
+        private void ReadEntityFromJson(EntityMetadata entityMetadata, Entity record, JsonElement json, string primaryKeyPropertyName = null)
+        {
+            foreach (var node in json.EnumerateObject())
+            {
+                string key = node.Name;
+                if (key.EndsWith("@OData.Community.Display.V1.FormattedValue"))
+                    continue;
+
+                if (key.EndsWith("@odata.bind"))
+                {
+                    key = ExtractAttributeNameFromodatabind(entityMetadata, key);
+                }
+                else if (key.Contains("@odata.type"))
+                {
+                    //ignore
+                    //Todo : check if coherent with entitymetadata ?
+                    continue;
+                }
+                else if (key.Contains("@"))
+                {
+                    throw new NotSupportedException("Unknow property key:" + key);
+                }
+
+                AttributeMetadata attributeMetadata = entityMetadata.Attributes.FirstOrDefault(a => a.LogicalName == key);
+                if (attributeMetadata != null)
+                {
+                    object value = ConvertValueToAttribute(attributeMetadata, node.Value);
+                    record.Attributes.Add(key, value);
+                }
+                else if (key == primaryKeyPropertyName)
+                {
+                    attributeMetadata = entityMetadata.Attributes.FirstOrDefault(a => a.IsPrimaryId == true);
+                    record.Id = (Guid)ConvertValueToAttribute(attributeMetadata, node.Value);
+                }
+                else
+                {
+                    var relation = entityMetadata.OneToManyRelationships.FirstOrDefault(r => r.SchemaName == key) ?? throw new NotSupportedException("No attribute nor relation found: " + key);
+                    if (relation.ReferencingEntity != "activityparty")
+                    {
+                        throw new NotSupportedException("Unsupported relation found: " + key);
+                    }
+                    AddActivityParties(record, node.Value);
+                }
+            }
         }
 
         private static string ExtractAttributeNameFromodatabind(EntityMetadata entityMetadata, string odatabindValue)
@@ -210,7 +225,7 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                 }
 
                 var targetAttributeName = GetActivityPartyAttributeName(record.LogicalName, participationTypeMask);
-                EntityCollection collection = record.GetAttributeValue<EntityCollection>(targetAttributeName); ;
+                EntityCollection collection = record.GetAttributeValue<EntityCollection>(targetAttributeName);
                 if (collection == null)
                 {
                     record[targetAttributeName] = collection = new EntityCollection();

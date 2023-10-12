@@ -104,7 +104,7 @@ namespace PowerPlatform.Demo.Plugins
         IOrganizationService SystemUserService { get; }
 
         // IPluginExecutionContext contains information that describes the run-time environment in which the plugin executes, information related to the execution pipeline, and entity business information
-        IPluginExecutionContext PluginExecutionContext { get; }
+        IPluginExecutionContext5 PluginExecutionContext { get; }
 
         // Synchronous registered plugins can post the execution context to the Microsoft Azure Service Bus.
         // It is through this notification service that synchronous plug-ins can send brokered messages to the Microsoft Azure Service Bus
@@ -140,7 +140,7 @@ namespace PowerPlatform.Demo.Plugins
         /// <summary>
         /// IPluginExecutionContext contains information that describes the run-time environment in which the plug-in executes, information related to the execution pipeline, and entity business information.
         /// </summary>
-        public IPluginExecutionContext PluginExecutionContext { get; private set; }
+        public IPluginExecutionContext5 PluginExecutionContext { get; private set; }
 
         /// <summary>
         /// Synchronous registered plug-ins can post the execution context to the Microsoft Azure Service Bus. <br/> 
@@ -165,7 +165,7 @@ namespace PowerPlatform.Demo.Plugins
             }
 
             // Obtain the execution context service from the service provider.
-            PluginExecutionContext = (IPluginExecutionContext)serviceProvider.GetService(typeof(IPluginExecutionContext));
+            PluginExecutionContext = (IPluginExecutionContext5)serviceProvider.GetService(typeof(IPluginExecutionContext5));
 
             // Obtain the tracing service from the service provider.
             TracingService = new LocalTracingService(serviceProvider);
