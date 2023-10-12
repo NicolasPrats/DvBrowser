@@ -108,8 +108,10 @@ namespace Dataverse.Plugin.Emulator.Services
             var stepsToExecute_simple = new List<IStepTriggered>();
             foreach (var target in targets.Entities)
             {
-                CreateRequest fakeRequest = new CreateRequest();
-                fakeRequest.Target = target;
+                CreateRequest fakeRequest = new CreateRequest
+                {
+                    Target = target
+                };
                 stepsToExecute_simple.AddRange(GetStepsToExecute_Simple(false, fakeRequest, out _));
             }
             return stepsToExecute_multiple.Union(stepsToExecute_simple);
@@ -142,8 +144,10 @@ namespace Dataverse.Plugin.Emulator.Services
             var stepsToExecute_simple = new List<IStepTriggered>();
             foreach (var target in targets.Entities)
             {
-                UpsertRequest fakeRequest = new UpsertRequest();
-                fakeRequest.Target = target;
+                UpsertRequest fakeRequest = new UpsertRequest
+                {
+                    Target = target
+                };
                 stepsToExecute_simple.AddRange(GetStepsToExecute_Simple(false, fakeRequest, out _));
             }
             return stepsToExecute_multiple.Union(stepsToExecute_simple);
@@ -184,8 +188,10 @@ namespace Dataverse.Plugin.Emulator.Services
             var stepsToExecute_simple = new List<IStepTriggered>();
             foreach (var target in targets.Entities)
             {
-                UpdateRequest fakeRequest = new UpdateRequest();
-                fakeRequest.Target = target;
+                UpdateRequest fakeRequest = new UpdateRequest
+                {
+                    Target = target
+                };
                 stepsToExecute_simple.AddRange(GetStepsToExecute_Simple(false, fakeRequest, out _));
             }
             return stepsToExecute_multiple.Union(stepsToExecute_simple);
