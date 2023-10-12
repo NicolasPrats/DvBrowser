@@ -13,7 +13,7 @@
     <AssemblyName>PowerPlatform.Demo.Plugins</AssemblyName>
     <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <!--<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>-->
     <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);GetTfmPublishedFiles</TargetsForTfmSpecificBuildOutput>
   </PropertyGroup>
@@ -35,17 +35,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <PackageId>PowerPlatform.Demo.Plugins</PackageId>
-    <IsPackable>True</IsPackable>
-    <PackageVersion>1.0.0</PackageVersion>
-    <PackageOutputPath>bin\outputPackages</PackageOutputPath>
-    <PackageTags>plugin</PackageTags>
-    <Authors>Placeholder</Authors>
-    <Description>
-			Placeholder
-		</Description>
-  </PropertyGroup>
-  <PropertyGroup>
     <SignAssembly>true</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
@@ -61,7 +50,6 @@
     <Reference Include="System.ServiceModel" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Runtime.Serialization" />
-    <PackageReference Include="NuGet.Build.Tasks.Pack" Version="5.2.0" />
     <PackageReference Include="Microsoft.CrmSdk.CoreAssemblies" Version="9.0.2.50" />
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" PrivateAssets="All" />
   </ItemGroup>
