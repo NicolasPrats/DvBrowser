@@ -48,22 +48,22 @@ namespace Dataverse.Plugin.Emulator.Services
             switch (request)
             {
                 case CreateRequest createRequest:
-                    return GetStepsToExecute_Simple(createRequest, out targetLogicalName);
+                    return GetStepsToExecute_Simple(true, createRequest, out targetLogicalName);
                 case UpsertRequest upsertMultipleRequest:
-                    return GetStepsToExecute_Simple(upsertMultipleRequest, out targetLogicalName);
+                    return GetStepsToExecute_Simple(true, upsertMultipleRequest, out targetLogicalName);
                 case UpdateRequest updateRequest:
-                    return GetStepsToExecute_Simple(updateRequest, out targetLogicalName);
+                    return GetStepsToExecute_Simple(true, updateRequest, out targetLogicalName);
                 case DeleteRequest deleteRequest:
-                    return GetStepsToExecute_Simple(deleteRequest, out targetLogicalName);
+                    return GetStepsToExecute_Simple(true, deleteRequest, out targetLogicalName);
                 //TODO : deletemultiple still not implemented in SDK ?
                 case CreateMultipleRequest createMultipleRequest:
-                    return GetStepsToExecute_Multiple(createMultipleRequest, out targetLogicalName);
+                    return GetStepsToExecute_Multiple(true, createMultipleRequest, out targetLogicalName);
                 case UpsertMultipleRequest upsertMultipleRequest:
-                    return GetStepsToExecute_Multiple(upsertMultipleRequest, out targetLogicalName);
+                    return GetStepsToExecute_Multiple(true, upsertMultipleRequest, out targetLogicalName);
                 case UpdateMultipleRequest updateMultipleRequest:
-                    return GetStepsToExecute_Multiple(updateMultipleRequest, out targetLogicalName);
+                    return GetStepsToExecute_Multiple(true, updateMultipleRequest, out targetLogicalName);
                 default:
-                    return GetStepsToExecute_Simple(request, out targetLogicalName);
+                    return GetStepsToExecute_Simple(true, request, out targetLogicalName);
             }
         }
 
@@ -83,7 +83,7 @@ namespace Dataverse.Plugin.Emulator.Services
             return newRequest;
         }
 
-        private IEnumerable<IStepTriggered> GetStepsToExecute_Multiple(CreateMultipleRequest createMultipleRequest, out string targetLogicalName)
+        private IEnumerable<IStepTriggered> GetStepsToExecute_Multiple(bool includeMergedPipeline, CreateMultipleRequest createMultipleRequest, out string targetLogicalName)
         {
             string messageName = GetMessageNameFromRequest(createMultipleRequest);
             var targets = createMultipleRequest.Targets;
@@ -94,16 +94,28 @@ namespace Dataverse.Plugin.Emulator.Services
                 string targetName = targetLogicalName;
                 stepsToExecute = steps.Where(s => s.PrimaryEntity == targetName);
             }
-            //TODO : add simple Create
-            return stepsToExecute?.Select(s => new MultipleStepTriggered()
+            var stepsToExecute_multiple = stepsToExecute?.Select(s => new MultipleStepTriggered()
             {
                 StepDescription = s,
                 OrganizationRequest = createMultipleRequest,
                 Targets = targets
             });
+
+            if (!includeMergedPipeline)
+            {
+                return stepsToExecute_multiple;
+            }
+            var stepsToExecute_simple = new List<IStepTriggered>();
+            foreach (var target in targets.Entities)
+            {
+                CreateRequest fakeRequest = new CreateRequest();
+                fakeRequest.Target = target;
+                stepsToExecute_simple.AddRange(GetStepsToExecute_Simple(false, fakeRequest, out _));
+            }
+            return stepsToExecute_multiple.Union(stepsToExecute_simple);
         }
 
-        private IEnumerable<IStepTriggered> GetStepsToExecute_Multiple(UpsertMultipleRequest upsertMultipleRequest, out string targetLogicalName)
+        private IEnumerable<IStepTriggered> GetStepsToExecute_Multiple(bool includeMergedPipeline, UpsertMultipleRequest upsertMultipleRequest, out string targetLogicalName)
         {
             string messageName = GetMessageNameFromRequest(upsertMultipleRequest);
             var targets = upsertMultipleRequest.Targets;
@@ -117,15 +129,27 @@ namespace Dataverse.Plugin.Emulator.Services
             }
             //TODO : add simple Upserts
             //TODO : in case of update: filtering attributes
-            return stepsToExecute?.Select(s => new MultipleStepTriggered()
+            var stepsToExecute_multiple = stepsToExecute?.Select(s => new MultipleStepTriggered()
             {
                 StepDescription = s,
                 OrganizationRequest = upsertMultipleRequest,
                 Targets = targets
             });
+            if (!includeMergedPipeline)
+            {
+                return stepsToExecute_multiple;
+            }
+            var stepsToExecute_simple = new List<IStepTriggered>();
+            foreach (var target in targets.Entities)
+            {
+                UpsertRequest fakeRequest = new UpsertRequest();
+                fakeRequest.Target = target;
+                stepsToExecute_simple.AddRange(GetStepsToExecute_Simple(false, fakeRequest, out _));
+            }
+            return stepsToExecute_multiple.Union(stepsToExecute_simple);
         }
 
-        private IEnumerable<IStepTriggered> GetStepsToExecute_Multiple(UpdateMultipleRequest updateMultipleRequest, out string targetLogicalName)
+        private IEnumerable<IStepTriggered> GetStepsToExecute_Multiple(bool includeMergedPipeline, UpdateMultipleRequest updateMultipleRequest, out string targetLogicalName)
         {
             string messageName = GetMessageNameFromRequest(updateMultipleRequest);
             var targets = updateMultipleRequest.Targets;
@@ -147,15 +171,27 @@ namespace Dataverse.Plugin.Emulator.Services
             stepsToExecute = stepsToExecute?.Where(s => s.FilteringAttributes == null || s.FilteringAttributes.Length == 0
                     || s.FilteringAttributes.Intersect(attributesInTargets).Any());
             //TODO : add simple update
-            return stepsToExecute?.Select(s => new MultipleStepTriggered()
+            var stepsToExecute_multiple = stepsToExecute?.Select(s => new MultipleStepTriggered()
             {
                 StepDescription = s,
                 OrganizationRequest = updateMultipleRequest,
                 Targets = targets
             });
+            if (!includeMergedPipeline)
+            {
+                return stepsToExecute_multiple;
+            }
+            var stepsToExecute_simple = new List<IStepTriggered>();
+            foreach (var target in targets.Entities)
+            {
+                UpdateRequest fakeRequest = new UpdateRequest();
+                fakeRequest.Target = target;
+                stepsToExecute_simple.AddRange(GetStepsToExecute_Simple(false, fakeRequest, out _));
+            }
+            return stepsToExecute_multiple.Union(stepsToExecute_simple);
         }
 
-        private IEnumerable<IStepTriggered> GetStepsToExecute_Simple(OrganizationRequest request, out string targetLogicalName)
+        private IEnumerable<IStepTriggered> GetStepsToExecute_Simple(bool includeMergedPipeline, OrganizationRequest request, out string targetLogicalName)
         {
             string messageName = GetMessageNameFromRequest(request);
             IEnumerable<IStepTriggered> stepsToExecute_multiple = null;
@@ -176,7 +212,7 @@ namespace Dataverse.Plugin.Emulator.Services
                         RequestName = "CreateMultiple",
                         Targets = new EntityCollection(new[] { target })
                     };
-                    stepsToExecute_multiple = GetStepsToExecute_Multiple(fakeCreateMultipleRequest, out _);
+                    stepsToExecute_multiple = GetStepsToExecute_Multiple(false, fakeCreateMultipleRequest, out _);
                     break;
                 case UpsertRequest upsertRequest:
                     target = upsertRequest.Target;
@@ -185,7 +221,7 @@ namespace Dataverse.Plugin.Emulator.Services
                         RequestName = "UpsertMultiple",
                         Targets = new EntityCollection(new[] { target })
                     };
-                    stepsToExecute_multiple = GetStepsToExecute_Multiple(fakeUpsertMultipleRequest, out _);
+                    stepsToExecute_multiple = GetStepsToExecute_Multiple(false, fakeUpsertMultipleRequest, out _);
                     //TODO : en cas d'update il faudrait appliquer les filtering attributes
                     break;
                 case RetrieveRequest retrieveRequest:
@@ -198,7 +234,7 @@ namespace Dataverse.Plugin.Emulator.Services
                         RequestName = "UpsertMultiple",
                         Targets = new EntityCollection(new[] { target })
                     };
-                    stepsToExecute_multiple = GetStepsToExecute_Multiple(fakeUpdateMultipleRequest, out _);
+                    stepsToExecute_multiple = GetStepsToExecute_Multiple(false, fakeUpdateMultipleRequest, out _);
                     stepDescriptions = stepDescriptions?.Where(s => s.FilteringAttributes == null || s.FilteringAttributes.Length == 0
                     || s.FilteringAttributes.Intersect(updateRequest.Target.Attributes.Select(a => a.Key)).Any());
                     break;
@@ -244,7 +280,7 @@ namespace Dataverse.Plugin.Emulator.Services
                 TargetReference = targetRef,
                 OrganizationRequest = request
             });
-            if (stepsToExecute_multiple == null)
+            if (stepsToExecute_multiple == null || !includeMergedPipeline)
                 return stepsToExecuteSimple;
             return stepsToExecuteSimple.Union(stepsToExecute_multiple);
         }
