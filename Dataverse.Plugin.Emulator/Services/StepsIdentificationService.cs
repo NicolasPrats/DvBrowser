@@ -129,7 +129,6 @@ namespace Dataverse.Plugin.Emulator.Services
                 string targetName = targetLogicalName;
                 stepsToExecute = steps.Where(s => s.PrimaryEntity == targetName);
             }
-            //TODO : add simple Upserts
             //TODO : in case of update: filtering attributes
             var stepsToExecute_multiple = stepsToExecute?.Select(s => new MultipleStepTriggered()
             {
@@ -174,7 +173,6 @@ namespace Dataverse.Plugin.Emulator.Services
             }
             stepsToExecute = stepsToExecute?.Where(s => s.FilteringAttributes == null || s.FilteringAttributes.Length == 0
                     || s.FilteringAttributes.Intersect(attributesInTargets).Any());
-            //TODO : add simple update
             var stepsToExecute_multiple = stepsToExecute?.Select(s => new MultipleStepTriggered()
             {
                 StepDescription = s,

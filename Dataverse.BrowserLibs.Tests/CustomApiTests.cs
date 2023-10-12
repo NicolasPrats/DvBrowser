@@ -28,7 +28,6 @@ namespace Dataverse.BrowserLibs.Tests
             Helper.TestAgainstExpected(this.TestContext, webApiRequest);
         }
 
-        // TODO: when only 1 reponse property of type entity or entitycollection, dataverse doesn't return anything. To investigate
         [TestMethod]
         public void Unbound_1ResponseEntity()
         {

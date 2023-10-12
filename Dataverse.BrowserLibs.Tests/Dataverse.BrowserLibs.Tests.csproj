@@ -160,7 +160,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
-    <None Include="Data\Demo_1_0_0_2.zip" />
+    <None Include="Data\Demo_1_0_0_3.zip" />
     <None Include="testinstance.runsettings" />
     <None Include="config.sample.runsettings" />
     <None Include="packages.config" />

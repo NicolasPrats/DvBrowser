@@ -164,7 +164,6 @@ namespace Dataverse.Plugin.Emulator.Services
                 {
                     step.SetOrganizationResponse(response);
                 }
-                //TODO : merged pipelines
             }
 
             var postExecuteSteps = steps.Where(s => s.StepDescription.Stage == 40);
@@ -240,7 +239,9 @@ namespace Dataverse.Plugin.Emulator.Services
         private ParameterCollection MapResponseParameters(OrganizationResponse response)
         {
             if (response == null)
+#pragma warning disable S1168 // Empty arrays and collections should be returned instead of null. We really want return null here
                 return null;
+#pragma warning restore S1168 // Empty arrays and collections should be returned instead of null
             if (!ResponsePropertyMapping.Mapping.TryGetValue(response.GetType(), out var mapping))
                 return response.Results;
             var parameters = new ParameterCollection();

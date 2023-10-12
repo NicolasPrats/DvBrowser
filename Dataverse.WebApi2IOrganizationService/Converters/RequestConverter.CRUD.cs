@@ -77,7 +77,7 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                 }
                 else
                 {
-                    columnSet.AddColumn(navigationProperty.Name);
+                    columnSet.AddColumn(navigationProperty.Name.ToLowerInvariant());
                 }
             }
             return columnSet;
