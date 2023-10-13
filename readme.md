@@ -22,11 +22,6 @@ Please note that the chosen architecture has some limits which will probably nev
 
 # How to start?
 
-## Warning
-Keep in mind that it is a very first version. There are a lot of known bugs and probably more waiting to be discovered. There is little to no error management. If the application crashes, you will have to check the event viewer to know why. 
-Moreover the UI is very minimalistic and not very beautiful. 
-That said, it still runs quite well on my laptop and it's already a real time saving application. I hope it will be the same for you.
-
 ## Prerequistes
 You need:
 * A PowerPlatform environment with dataverse
