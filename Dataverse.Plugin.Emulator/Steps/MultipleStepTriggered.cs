@@ -98,6 +98,13 @@ namespace Dataverse.Plugin.Emulator.Steps
         public void SetOrganizationResponse(OrganizationResponse response)
         {
             this.OrganizationResponse = response;
+            //TODO: en cas de create, mettre à jour les target 
+        }
+
+        public void SetOrganizationResponse(CreateResponse createResponse, Entity updatedTarget)
+        {
+            SetOrganizationResponse(createResponse);
+            //TODO : throw error?
         }
     }
 }

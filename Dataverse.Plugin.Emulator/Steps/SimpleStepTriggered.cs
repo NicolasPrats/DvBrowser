@@ -64,10 +64,17 @@ namespace Dataverse.Plugin.Emulator.Steps
         public void SetOrganizationResponse(OrganizationResponse response)
         {
             this.OrganizationResponse = response;
-            if (response is CreateResponse createResponse)
+        }
+
+        public void SetOrganizationResponse(CreateResponse createResponse, Entity updatedTarget)
+        {
+            SetOrganizationResponse(createResponse);
+            this.TargetReference.Id = createResponse.id;
+            var target = ((CreateRequest)this.OrganizationRequest).Target;
+            target.Id = createResponse.id;
+            foreach (var attribute in updatedTarget.Attributes)
             {
-                this.TargetReference.Id = createResponse.id;
-                ((CreateRequest)this.OrganizationRequest).Target.Id = createResponse.id;
+                target[attribute.Key] = attribute.Value;
             }
         }
     }

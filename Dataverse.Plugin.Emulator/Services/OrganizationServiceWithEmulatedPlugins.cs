@@ -160,9 +160,31 @@ namespace Dataverse.Plugin.Emulator.Services
             else
             {
                 response = InnerExecute(request);
-                foreach (var step in steps)
+                //TODO merged plugins ?
+                // Il faut soit fusionner les réponses (dans le cas simple -> multiple)
+                // soit splitter les réponses (dans le cas multiple -> simple)
+
+                if (response is CreateResponse createResponse)
                 {
-                    step.SetOrganizationResponse(response);
+                    RetrieveRequest retrieveUpdatedTargetRequest = new RetrieveRequest
+                    {
+                        ColumnSet = new ColumnSet(true),
+                        Target = new EntityReference(((CreateRequest)request).Target.LogicalName, createResponse.id)
+                    };
+                    var retrieveUpdatedTargetResponse = (RetrieveResponse)InnerExecute(retrieveUpdatedTargetRequest);
+                    var updatedTarget = retrieveUpdatedTargetResponse.Entity;
+                    foreach (var step in steps)
+                    {
+                        step.SetOrganizationResponse(createResponse, updatedTarget);
+                    }
+                }
+                else
+                {
+
+                    foreach (var step in steps)
+                    {
+                        step.SetOrganizationResponse(response);
+                    }
                 }
             }
 
