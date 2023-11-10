@@ -109,6 +109,8 @@
     <Compile Include="ExecutionTree\ExecutedMessagesByStep.cs" />
     <Compile Include="ExecutionTree\ExecutionTreeNodeType.cs" />
     <Compile Include="ResponsePropertyMapping.cs" />
+    <Compile Include="Services\EmulatedAssemblyAuthenticationContext.cs" />
+    <Compile Include="Services\EmulatedEnvironmentService.cs" />
     <Compile Include="Services\EmulatedPluginServiceProvider.cs" />
     <Compile Include="Services\EmulatedPluginsServiceFactory.cs" />
     <Compile Include="Services\EmulatedPluginLogger.cs" />
@@ -124,6 +126,7 @@
     <Compile Include="Services\OrganizationServiceWithEmulatedPlugins.cs" />
     <Compile Include="Steps\IStepTriggered.cs" />
     <Compile Include="Steps\SimpleStepTriggered.cs" />
+    <Compile Include="Utils\MessageHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

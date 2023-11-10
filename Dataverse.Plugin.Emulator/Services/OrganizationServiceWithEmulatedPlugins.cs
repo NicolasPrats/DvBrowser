@@ -5,6 +5,7 @@ using System.Linq;
 using Dataverse.Plugin.Emulator.Context;
 using Dataverse.Plugin.Emulator.ExecutionTree;
 using Dataverse.Plugin.Emulator.Steps;
+using Dataverse.Plugin.Emulator.Utils;
 using Microsoft.Crm.Sdk.Messages;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Messages;
@@ -104,6 +105,7 @@ namespace Dataverse.Plugin.Emulator.Services
             {
                 throw new ArgumentException(nameof(executionTreeNode));
             }
+            request = MessageHelper.GetSpecializedMessage(request);
             var stepsIdentificationService = new StepsIdentificationService(this.Emulator);
             var stepsToExecute = stepsIdentificationService.GetStepsToExecute(request, out var targetLogicalName);
 
@@ -159,10 +161,49 @@ namespace Dataverse.Plugin.Emulator.Services
             }
             else
             {
-                response = InnerExecute(request);
-                foreach (var step in steps)
+                response = MessageHelper.GetSpecializedMessage(InnerExecute(request));
+
+
+                if (response is CreateResponse createResponse)
                 {
-                    step.SetOrganizationResponse(response);
+                    RetrieveRequest retrieveUpdatedTargetRequest = new RetrieveRequest
+                    {
+                        ColumnSet = new ColumnSet(true),
+                        Target = new EntityReference(((CreateRequest)request).Target.LogicalName, createResponse.id)
+                    };
+                    var retrieveUpdatedTargetResponse = (RetrieveResponse)InnerExecute(retrieveUpdatedTargetRequest);
+                    var updatedTarget = retrieveUpdatedTargetResponse.Entity;
+                    foreach (var step in steps)
+                    {
+                        step.SetOrganizationResponse(createResponse, updatedTarget);
+                    }
+                }
+                else if (response is CreateMultipleResponse createMultipleResponse)
+                {
+                    //Not very optimal but in a browser it should not be a very frequent case
+                    EntityCollection updatedTargets = new EntityCollection();
+                    string logicalName = ((CreateMultipleRequest)request).Targets.Entities[0].LogicalName;
+                    foreach (var id in createMultipleResponse.Ids)
+                    {
+                        RetrieveRequest retrieveUpdatedTargetRequest = new RetrieveRequest
+                        {
+                            ColumnSet = new ColumnSet(true),
+                            Target = new EntityReference(logicalName, id)
+                        };
+                        var retrieveUpdatedTargetResponse = (RetrieveResponse)InnerExecute(retrieveUpdatedTargetRequest);
+                        updatedTargets.Entities.Add(retrieveUpdatedTargetResponse.Entity);
+                    }
+                    foreach (var step in steps)
+                    {
+                        step.SetOrganizationResponse(createMultipleResponse, updatedTargets);
+                    }
+                }
+                else
+                {
+                    foreach (var step in steps)
+                    {
+                        step.SetOrganizationResponse(response);
+                    }
                 }
             }
 
@@ -190,6 +231,10 @@ namespace Dataverse.Plugin.Emulator.Services
             serviceProvider.AddService(new EmulatedPluginServiceProvider());
             serviceProvider.AddService(new EmulatedPluginLogger(stepExecutionTreeNode));
             serviceProvider.AddService(new EmulatedServiceEndpointNotificationService());
+            serviceProvider.AddService(new EmulatedEnvironmentService());
+            serviceProvider.AddService(new EmulatedAssemblyAuthenticationContext());
+            //TODO : rechercher toutes les interfaces possibles via réflexion ?
+
 
             var plugin = this.Emulator.PluginCache.GetPlugin(step.StepDescription);
 

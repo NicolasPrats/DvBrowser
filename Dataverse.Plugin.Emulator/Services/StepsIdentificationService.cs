@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using Dataverse.Plugin.Emulator.Steps;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Messages;
@@ -44,7 +43,6 @@ namespace Dataverse.Plugin.Emulator.Services
 
         public IEnumerable<IStepTriggered> GetStepsToExecute(OrganizationRequest request, out string targetLogicalName)
         {
-            request = GetSpecializedMessage(request);
             switch (request)
             {
                 case CreateRequest createRequest:
@@ -67,21 +65,6 @@ namespace Dataverse.Plugin.Emulator.Services
             }
         }
 
-        private OrganizationRequest GetSpecializedMessage(OrganizationRequest request)
-        {
-            if (request.GetType() != typeof(OrganizationRequest))
-                return request;
-            string targetTypeName = "Microsoft.Xrm.Sdk.Messages." + request.RequestName + "Request";
-            var assembly = Assembly.GetAssembly(typeof(OrganizationRequest));
-            var targetType = assembly.GetType(targetTypeName);
-            if (targetType == null)
-                return request;
-            var newRequest = (OrganizationRequest)Activator.CreateInstance(targetType);
-            newRequest.ExtensionData = request.ExtensionData;
-            newRequest.RequestId = request.RequestId;
-            newRequest.Parameters = request.Parameters;
-            return newRequest;
-        }
 
         private IEnumerable<IStepTriggered> GetStepsToExecute_Multiple(bool includeMergedPipeline, CreateMultipleRequest createMultipleRequest, out string targetLogicalName)
         {
@@ -106,11 +89,14 @@ namespace Dataverse.Plugin.Emulator.Services
                 return stepsToExecute_multiple;
             }
             var stepsToExecute_simple = new List<IStepTriggered>();
-            foreach (var target in targets.Entities)
+            for (int i = 0; i < targets.Entities.Count; i++)
             {
                 CreateRequest fakeRequest = new CreateRequest
                 {
-                    Target = target
+                    Target = targets.Entities[i],
+                    Parameters = {
+                        { "DvBrowserTargetIndex",i}
+                    }
                 };
                 stepsToExecute_simple.AddRange(GetStepsToExecute_Simple(false, fakeRequest, out _));
             }

@@ -64,10 +64,35 @@ namespace Dataverse.Plugin.Emulator.Steps
         public void SetOrganizationResponse(OrganizationResponse response)
         {
             this.OrganizationResponse = response;
-            if (response is CreateResponse createResponse)
+        }
+
+        public void SetOrganizationResponse(CreateResponse createResponse, Entity updatedTarget)
+        {
+            SetOrganizationResponse(createResponse);
+            this.TargetReference.Id = createResponse.id;
+            var target = ((CreateRequest)this.OrganizationRequest).Target;
+            OverwriteTarget(target, updatedTarget);
+        }
+
+
+
+        public void SetOrganizationResponse(CreateMultipleResponse createMultipleResponse, EntityCollection updatedTargets)
+        {
+            SetOrganizationResponse(createMultipleResponse);
+            if (!this.OrganizationRequest.Parameters.TryGetValue("DvBrowserTargetIndex", out var targetIndex))
             {
-                this.TargetReference.Id = createResponse.id;
-                ((CreateRequest)this.OrganizationRequest).Target.Id = createResponse.id;
+                throw new NotSupportedException("Expected FakeRequest with DvBrowserTargetIndex");
+            }
+            var target = ((CreateRequest)this.OrganizationRequest).Target;
+            OverwriteTarget(target, updatedTargets[(int)targetIndex]);
+        }
+
+        private void OverwriteTarget(Entity currentTarget, Entity updatedTarget)
+        {
+            currentTarget.Id = updatedTarget.Id;
+            foreach (var attribute in updatedTarget.Attributes)
+            {
+                currentTarget[attribute.Key] = attribute.Value;
             }
         }
     }

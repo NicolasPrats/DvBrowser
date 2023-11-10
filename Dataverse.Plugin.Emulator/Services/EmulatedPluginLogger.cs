@@ -10,7 +10,7 @@ namespace Dataverse.Plugin.Emulator.Services
         : ILogger
     {
 
-        private class DummyDisposable : IDisposable
+        private sealed class DummyDisposable : IDisposable
         {
             public void Dispose()
             {

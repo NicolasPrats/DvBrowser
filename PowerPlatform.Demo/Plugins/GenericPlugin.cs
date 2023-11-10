@@ -35,17 +35,17 @@ namespace PowerPlatform.Demo.Plugins
 
         protected override void ExecuteCdsPlugin(ILocalPluginContext localContext)
         {
-            if (localContext == null)
-            {
-                throw new InvalidPluginExecutionException(nameof(localContext));
-            }
+           
+
             // Obtain the tracing service
             ITracingService tracingService = localContext.TracingService;
-            var dump = ObjectDumper.Dump(localContext.PluginExecutionContext);
+            //var dump = ObjectDumper.Dump(localContext.PluginExecutionContext);
+            //tracingService.Trace(dump);
+
+
+            var target = localContext.PluginExecutionContext.InputParameters["Target"];
+            var dump = ObjectDumper.Dump(target);
             tracingService.Trace(dump);
-
-
-
         }
 
 
