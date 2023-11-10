@@ -15,5 +15,6 @@ namespace Dataverse.Plugin.Emulator.Steps
         void GenerateImages(int imageType, Func<OrganizationRequest, OrganizationResponse> innerExecute);
         void SetOrganizationResponse(OrganizationResponse response);
         void SetOrganizationResponse(CreateResponse createResponse, Entity updatedTarget);
+        void SetOrganizationResponse(CreateMultipleResponse createMultipleResponse, EntityCollection updatedTargets);
     }
 }

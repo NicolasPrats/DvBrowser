@@ -97,6 +97,8 @@ namespace PowerPlatform.Demo.Plugins
     //This interface provides an abstraction on top of IServiceProvider for commonly used PowerApps CDS Plugin development constructs
     public interface ILocalPluginContext
     {
+        IEnvironmentService EnvironmentService { get; }
+
         // The PowerApps CDS organization service for current user account
         IOrganizationService CurrentUserService { get; }
 
@@ -124,6 +126,7 @@ namespace PowerPlatform.Demo.Plugins
     {
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode", Justification = "LocalPluginContext")]
         internal IServiceProvider ServiceProvider { get; private set; }
+        public IEnvironmentService EnvironmentService { get; }
 
         /// <summary>
         /// The PowerApps CDS organization service for current user account.
@@ -175,6 +178,8 @@ namespace PowerPlatform.Demo.Plugins
 
             // Obtain the organization factory service from the service provider.
             IOrganizationServiceFactory factory = (IOrganizationServiceFactory)serviceProvider.GetService(typeof(IOrganizationServiceFactory));
+
+            EnvironmentService = (IEnvironmentService)serviceProvider.GetService(typeof(IEnvironmentService));
 
             // Use the factory to generate the organization service.
             CurrentUserService = factory.CreateOrganizationService(PluginExecutionContext.UserId);

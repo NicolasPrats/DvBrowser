@@ -98,13 +98,34 @@ namespace Dataverse.Plugin.Emulator.Steps
         public void SetOrganizationResponse(OrganizationResponse response)
         {
             this.OrganizationResponse = response;
-            //TODO: en cas de create, mettre à jour les target 
         }
 
         public void SetOrganizationResponse(CreateResponse createResponse, Entity updatedTarget)
         {
             SetOrganizationResponse(createResponse);
-            //TODO : throw error?
+            OverwriteTarget(this.Targets.Entities.Single(), updatedTarget);
+        }
+
+        public void SetOrganizationResponse(CreateMultipleResponse createMultipleResponse, EntityCollection updatedTargets)
+        {
+            SetOrganizationResponse(createMultipleResponse);
+            if (updatedTargets.Entities.Count != this.Targets.Entities.Count)
+            {
+                throw new NotSupportedException($"Unexpected number of targets: {updatedTargets.Entities.Count} != {this.Targets.Entities.Count}");
+            }
+            for (int i = 0; i < this.Targets.Entities.Count; i++)
+            {
+                OverwriteTarget(this.Targets[i], updatedTargets[i]);
+            }
+        }
+
+        private void OverwriteTarget(Entity currentTarget, Entity updatedTarget)
+        {
+            currentTarget.Id = updatedTarget.Id;
+            foreach (var attribute in updatedTarget.Attributes)
+            {
+                currentTarget[attribute.Key] = attribute.Value;
+            }
         }
     }
 }

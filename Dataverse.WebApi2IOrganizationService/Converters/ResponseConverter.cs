@@ -67,10 +67,10 @@ $@"{{
                 case DeleteResponse _:
                     return ConvertDeleteResponse();
                 default:
-                    if (response.GetType() != typeof(OrganizationResponse))
-                    {
-                        throw new NotImplementedException("Message has been executed but response is not implemented:" + response.GetType().Name);
-                    }
+                    //if (response.GetType() != typeof(OrganizationResponse))
+                    //{
+                    //    throw new NotImplementedException("Message has been executed but response is not implemented:" + response.GetType().Name);
+                    //}
                     //OrganizationResponse without specialized type are assumed to be CustomApi
                     return ConvertCustomApiResponse(response);
 
