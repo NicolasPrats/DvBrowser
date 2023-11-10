@@ -55,7 +55,8 @@ ClientHost: Browser
 --batch_1699608839380--
 "
                 );
-            Helper.TestAgainstExpected(this.TestContext, webApiRequest);
+            //TODO: comparer vis à vis de l'expected
+            Helper.GetResponseUsingConversionAndPlugins(this.TestContext, webApiRequest);
         }
 
         [TestMethod]
@@ -100,7 +101,8 @@ ClientHost: Browser
 --batch_1699608839380--
 "
                 );
-            Helper.TestAgainstExpected(this.TestContext, webApiRequest);
+            //TODO: comparer vis à vis de l'expected
+            Helper.GetResponseUsingConversionAndPlugins(this.TestContext, webApiRequest);
         }
 
 

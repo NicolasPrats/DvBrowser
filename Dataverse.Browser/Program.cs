@@ -42,22 +42,6 @@ namespace Dataverse.Browser
                 if (context == null)
                     return;
 
-                //var record = new Entity("quote", new Guid("39a0477a-c2d3-ed11-a7c6-0022489bad9d"));
-                //record["statecode"] = new OptionSetValue(2);
-                //record["statuscode"] = new OptionSetValue(4);
-                //UpdateRequest request = new UpdateRequest()
-                //{
-                //    Target = record
-                //};
-                //var treenode = new Plugin.Emulator.ExecutionTree.ExecutionTreeNode();
-                //context.ProxyForWeb.ExecuteWithTree(request, treenode);
-                //context.LastRequests.AddRequest(new Requests.InterceptedWebApiRequest()
-                //{
-                //    Method = "Fake",
-                //    ExecutionTreeRoot = treenode,
-                //    ConvertedRequest = request
-                //}) ;
-
                 StartBrowser(context);
             }
             catch (Exception ex)

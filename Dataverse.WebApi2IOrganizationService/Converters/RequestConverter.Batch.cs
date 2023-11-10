@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IO;
 using System.Net.Http;
@@ -26,6 +27,7 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                 Requests = new OrganizationRequestCollection()
             };
 
+            List<RequestConversionResult> conversionResults = new List<RequestConversionResult>();
             MemoryStream dataStream = AddMissingLF(originRequest);
             using (var content = new StreamContent(dataStream))
             {
@@ -40,6 +42,7 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                     var data = httpContent.ReadAsByteArrayAsync().Result;
                     var innerRequest = CreateSimplifiedRequestFromMimeMessage(data);
                     var convertedRequest = Convert(innerRequest) ?? throw new NotSupportedException("Only web api requests are supported!");
+                    conversionResults.Add(convertedRequest);
                     if (convertedRequest.ConvertedRequest != null)
                     {
                         executeMultipleRequest.Requests.Add(convertedRequest.ConvertedRequest);
@@ -57,6 +60,7 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                 ReturnResponses = true
             };
             conversionResult.ConvertedRequest = executeMultipleRequest;
+            conversionResult.CustomData["InnerConversions"] = conversionResults;
         }
 
         private WebApiRequest CreateSimplifiedRequestFromMimeMessage(byte[] data)
