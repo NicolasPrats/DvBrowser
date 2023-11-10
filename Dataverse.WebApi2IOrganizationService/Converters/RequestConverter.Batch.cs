@@ -40,8 +40,19 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                 foreach (var httpContent in provider.Contents)
                 {
                     var data = httpContent.ReadAsByteArrayAsync().Result;
-                    var innerRequest = CreateSimplifiedRequestFromMimeMessage(data);
-                    var convertedRequest = Convert(innerRequest) ?? throw new NotSupportedException("Only web api requests are supported!");
+                    RequestConversionResult convertedRequest;
+                    if (data.Length > 2 && data[0] == '-' && data[1] == '-')
+                    {
+                        //Contains a changeset = embedded executemultiple
+
+                        convertedRequest = CreateMultipleRequestFromMimeMessage(httpContent.Headers, data);
+                    }
+                    else
+                    {
+                        //contains a single request
+                        var innerRequest = CreateSimplifiedRequestFromMimeMessage(data);
+                        convertedRequest = Convert(innerRequest) ?? throw new NotSupportedException("Only web api requests are supported!");
+                    }
                     conversionResults.Add(convertedRequest);
                     if (convertedRequest.ConvertedRequest != null)
                     {
@@ -51,6 +62,7 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                     {
                         throw new NotSupportedException("One inner request could not be converted:" + convertedRequest.ConvertFailureMessage);
                     }
+
                 }
 
             }
@@ -61,6 +73,18 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
             };
             conversionResult.ConvertedRequest = executeMultipleRequest;
             conversionResult.CustomData["InnerConversions"] = conversionResults;
+        }
+
+        private RequestConversionResult CreateMultipleRequestFromMimeMessage(HttpContentHeaders headers, byte[] data)
+        {
+            NameValueCollection headersCollection = new NameValueCollection();
+            foreach (var header in headers)
+            {
+                string headerValue = string.Join(", ", header.Value);
+                headersCollection.Add(header.Key, headerValue);
+            }
+            WebApiRequest request = new WebApiRequest("POST", "/api/data/v9.2/$batch", headersCollection, Encoding.UTF8.GetString(data));
+            return Convert(request);
         }
 
         private WebApiRequest CreateSimplifiedRequestFromMimeMessage(byte[] data)

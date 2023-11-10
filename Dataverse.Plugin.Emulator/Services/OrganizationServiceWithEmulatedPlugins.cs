@@ -92,7 +92,9 @@ namespace Dataverse.Plugin.Emulator.Services
 
         public OrganizationResponse Execute(OrganizationRequest request)
         {
-            return ExecuteWithTree(request, new ExecutionTreeNode());
+            var executionTreeNode = new ExecutionTreeNode();
+            this.CurrentContext?.ExecutionTreeRoot.ChildNodes.Add(executionTreeNode);
+            return ExecuteWithTree(request, executionTreeNode);
         }
 
         public OrganizationResponse ExecuteWithTree(OrganizationRequest request, ExecutionTreeNode executionTreeNode)
@@ -106,17 +108,34 @@ namespace Dataverse.Plugin.Emulator.Services
                 throw new ArgumentException(nameof(executionTreeNode));
             }
             request = MessageHelper.GetSpecializedMessage(request);
-            var stepsIdentificationService = new StepsIdentificationService(this.Emulator);
-            var stepsToExecute = stepsIdentificationService.GetStepsToExecute(request, out var targetLogicalName);
-
             executionTreeNode.Type = ExecutionTreeNodeType.Message;
             executionTreeNode.Title = request.RequestName;
+            //TODO : les erreurs des enfants devraient être interceptées
+            if (request is ExecuteMultipleRequest executeMultipleRequest)
+            {
+                ExecuteMultipleResponse response = new ExecuteMultipleResponse();
+                response.Results = new ParameterCollection();
+                response.Results["Responses"] = new ExecuteMultipleResponseItemCollection();
+                foreach (var innerRequest in executeMultipleRequest.Requests)
+                {
+                    var innerNode = new ExecutionTreeNode();
+                    executionTreeNode.ChildNodes.Add(innerNode);
+                    var innerResponse = ExecuteWithTree(innerRequest, innerNode);
+                    response.Responses.Add(new ExecuteMultipleResponseItem()
+                    {
+                        Response = innerResponse
+                    });
+                }
+                return response;
+            }
+
+            var stepsIdentificationService = new StepsIdentificationService(this.Emulator);
+            var stepsToExecute = stepsIdentificationService.GetStepsToExecute(request, out var targetLogicalName);
             if (targetLogicalName != null)
             {
                 executionTreeNode.Title += " " + targetLogicalName;
             }
 
-            this.CurrentContext?.ExecutionTreeRoot.ChildNodes.Add(executionTreeNode);
             if (stepsToExecute?.Any() == true)
             {
                 return Execute(executionTreeNode, request, stepsToExecute);
