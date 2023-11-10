@@ -12,7 +12,7 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
 {
     public partial class RequestConverter
     {
-        private OrganizationRequest ConvertToExecuteMultipleRequest(RequestConversionResult conversionResult)
+        private void ConvertToExecuteMultipleRequest(RequestConversionResult conversionResult)
         {
             var originRequest = conversionResult.SrcRequest;
             string contentType = originRequest.Headers["Content-Type"];
@@ -35,17 +35,11 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
 
                 MultipartMemoryStreamProvider provider = content.ReadAsMultipartAsync().Result;
 
-                //TODO changesets
                 foreach (var httpContent in provider.Contents)
                 {
                     var data = httpContent.ReadAsByteArrayAsync().Result;
                     var innerRequest = CreateSimplifiedRequestFromMimeMessage(data);
-                    var convertedRequest = Convert(innerRequest);
-                    if (convertedRequest == null)
-                    {
-                        throw new NotSupportedException("Only web api requests are supported!");
-                    }
-                    else
+                    var convertedRequest = Convert(innerRequest) ?? throw new NotSupportedException("Only web api requests are supported!");
                     if (convertedRequest.ConvertedRequest != null)
                     {
                         executeMultipleRequest.Requests.Add(convertedRequest.ConvertedRequest);
@@ -57,29 +51,40 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                 }
 
             }
-            return executeMultipleRequest;
+            executeMultipleRequest.Settings = new ExecuteMultipleSettings()
+            {
+                ContinueOnError = true,
+                ReturnResponses = true
+            };
+            conversionResult.ConvertedRequest = executeMultipleRequest;
         }
 
         private WebApiRequest CreateSimplifiedRequestFromMimeMessage(byte[] data)
         {
-            int index = Array.FindIndex(data, b => b == (byte)'\r');
-            if (index == -1)
-            {
-                throw new NotSupportedException("Unable to parse data, no \\r found!");
-            }
-            string firstLine = Encoding.UTF8.GetString(data, 0, index);
-            if (!firstLine.StartsWith("GET"))
-            {
-                throw new ApplicationException("Unable to parse first line: " + firstLine);
+            string requestString = Encoding.ASCII.GetString(data);
+            // Split the request string into lines
+            string[] requestLines = requestString.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
 
-            }
-            string url = firstLine.Substring(4);
-            if (url.EndsWith("HTTP/1.1"))
+            // First line contains the request method, URL, and HTTP version
+            string[] firstLineParts = requestLines[0].Split(' ');
+            string method = firstLineParts[0];
+            string url = firstLineParts[1];
+
+            // Parse headers starting from the second line
+            int bodyIndex = Array.IndexOf(requestLines, ""); // Find the index of the empty line that separates headers and body
+            NameValueCollection headers = new NameValueCollection();
+            for (int i = 1; i < bodyIndex; i++)
             {
-                url = url.Substring(0, url.Length - 8);
+                string[] headerParts = requestLines[i].Split(':');
+                string headerName = headerParts[0].Trim();
+                string headerValue = headerParts[1].Trim();
+                headers.Add(headerName, headerValue);
             }
-            var request = new WebApiRequest("GET", url, new NameValueCollection(), null);
-            //TODO : body and headers
+
+            // Extract and display the body.
+            // TODO: \r may have be stripped here
+            string body = string.Join("\n", requestLines, bodyIndex + 1, requestLines.Length - bodyIndex - 1);
+            var request = new WebApiRequest(method, url, headers, body);
             return request;
         }
 
