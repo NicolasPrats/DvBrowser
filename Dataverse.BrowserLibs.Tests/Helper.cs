@@ -138,7 +138,17 @@ namespace Dataverse.BrowserLibs.Tests
                 httpRequest.Content = new StringContent(webApiRequest.Body);
                 if (contentType != null)
                 {
-                    httpRequest.Content.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+                    if (contentType.Contains(";"))
+                    {
+                        //For batch requests
+                        httpRequest.Content.Headers.Remove("Content-Type");
+                        httpRequest.Content.Headers.TryAddWithoutValidation("Content-Type", contentType);
+                    }
+                    else
+                    {
+                        httpRequest.Content.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+                    }
+
                 }
             }
             var converters = Helper.GetConverters(testContext);

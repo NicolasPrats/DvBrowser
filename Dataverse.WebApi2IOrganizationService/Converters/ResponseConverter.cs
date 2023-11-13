@@ -23,17 +23,13 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
             this.Context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
-        public WebApiResponse Convert(Exception ex)
+        private static WebApiResponse ConvertError(int errorCode, string errorText, string errorDetails)
         {
-
-            var errorText = JavaScriptEncoder.UnsafeRelaxedJsonEscaping.Encode(ex.Message);
-            var errorDetails = JavaScriptEncoder.UnsafeRelaxedJsonEscaping.Encode(ex.ToString());
-
             byte[] body = Encoding.UTF8.GetBytes(
-$@"{{
+            $@"{{
                 ""error"":
                     {{
-                    ""code"":""0x80040265"",
+                    ""code"":""0x{errorCode:X}"",
                     ""message"":""{errorText}""
                     //""@Microsoft.PowerApps.CDS.ErrorDetails.HttpStatusCode"":""400"",
                     //""@Microsoft.PowerApps.CDS.InnerError"":""{errorText}"",
@@ -54,6 +50,14 @@ $@"{{
             };
         }
 
+        public WebApiResponse Convert(Exception ex)
+        {
+            var errorText = JavaScriptEncoder.UnsafeRelaxedJsonEscaping.Encode(ex.Message);
+            var errorDetails = JavaScriptEncoder.UnsafeRelaxedJsonEscaping.Encode(ex.ToString());
+            return ConvertError(-2147220891, errorText, errorDetails); //ISVAborted
+        }
+
+
         public WebApiResponse Convert(RequestConversionResult conversionResult, OrganizationResponse response)
         {
             switch (response)
@@ -66,6 +70,8 @@ $@"{{
                     return ConvertRetrieveResponse(conversionResult);
                 case DeleteResponse _:
                     return ConvertDeleteResponse();
+                case ExecuteMultipleResponse executeMultipleResponse:
+                    return ConvertExecuteMultipleResponse(conversionResult, executeMultipleResponse);
                 default:
                     //if (response.GetType() != typeof(OrganizationResponse))
                     //{
@@ -75,6 +81,67 @@ $@"{{
                     return ConvertCustomApiResponse(response);
 
             }
+        }
+
+        private WebApiResponse ConvertExecuteMultipleResponse(RequestConversionResult conversionResult, ExecuteMultipleResponse executeMultipleResponse)
+        {
+            var innerConversionResults = conversionResult.CustomData["InnerConversions"] as List<RequestConversionResult>;
+            StringBuilder bodyBuilder = new StringBuilder();
+            if (innerConversionResults.Count != executeMultipleResponse.Responses.Count)
+                throw new NotSupportedException($"Expected same number of responses: {innerConversionResults.Count} != {executeMultipleResponse.Responses.Count}");
+            string delimiter = "batchresponse_dvbrowser" + Guid.NewGuid();
+            for (int i = 0; i < innerConversionResults.Count; i++)
+            {
+                var requestConversionResult = innerConversionResults[i];
+                var responseItem = executeMultipleResponse.Responses[i];
+                if (responseItem.Fault == null && responseItem.Response == null)
+                {
+                    continue;
+                }
+                WebApiResponse convertedResponse;
+                if (responseItem.Fault != null)
+                {
+                    convertedResponse = ConvertError(responseItem.Fault.ErrorCode, responseItem.Fault.Message, responseItem.Fault.ToString());
+                }
+                else
+                {
+                    convertedResponse = Convert(requestConversionResult, responseItem.Response);
+                }
+                bodyBuilder.Append("--").AppendLine(delimiter);
+
+                if (!(responseItem.Response is ExecuteMultipleResponse))
+                {
+
+                    bodyBuilder.AppendLine("Content-Type: application/http");
+                    bodyBuilder.AppendLine("Content-Transfer-Encoding: binary");
+                    bodyBuilder.AppendLine("Content-ID: " + (i + 1));
+                    bodyBuilder.AppendLine();
+                    bodyBuilder.Append("HTTP/1.1 ").Append(convertedResponse.StatusCode).Append(" N/A").AppendLine();
+                    foreach (string header in convertedResponse.Headers.Keys)
+                    {
+                        bodyBuilder.Append(header).Append(": ").Append(convertedResponse.Headers[header]).AppendLine();
+                    }
+                }
+                else
+                {
+                    bodyBuilder.Append("Content-Type").Append(": ").Append(convertedResponse.Headers["Content-Type"]).AppendLine();
+                }
+
+                bodyBuilder.AppendLine();
+                if (convertedResponse.Body != null)
+                {
+                    bodyBuilder.AppendLine(Encoding.UTF8.GetString(convertedResponse.Body));
+                }
+                bodyBuilder.AppendLine();
+            }
+            bodyBuilder.Append("--").Append(delimiter).Append("--");
+
+            return new WebApiResponse()
+            {
+                Body = Encoding.UTF8.GetBytes(bodyBuilder.ToString()),
+                StatusCode = 200,
+                Headers = new NameValueCollection() { { "OData-Version", "4.0" }, { "Content-Type", $"multipart/mixed; boundary={delimiter}" } }
+            };
         }
 
         private WebApiResponse ConvertCustomApiResponse(OrganizationResponse organizationResponse)
