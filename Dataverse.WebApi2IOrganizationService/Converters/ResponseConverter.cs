@@ -98,11 +98,6 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                 {
                     continue;
                 }
-                bodyBuilder.Append("--").AppendLine(delimiter);
-                bodyBuilder.AppendLine("Content-Type: application/http");
-                bodyBuilder.AppendLine("Content-Transfer-Encoding: binary");
-                bodyBuilder.AppendLine();
-
                 WebApiResponse convertedResponse;
                 if (responseItem.Fault != null)
                 {
@@ -112,24 +107,40 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                 {
                     convertedResponse = Convert(requestConversionResult, responseItem.Response);
                 }
-                bodyBuilder.AppendLine("HTTP/1.1 ").Append(convertedResponse.StatusCode).AppendLine();
-                foreach (string header in convertedResponse.Headers.Keys)
+                bodyBuilder.Append("--").AppendLine(delimiter);
+
+                if (!(responseItem.Response is ExecuteMultipleResponse))
                 {
-                    bodyBuilder.Append(header).Append(": ").Append(convertedResponse.Headers[header]).AppendLine();
+
+                    bodyBuilder.AppendLine("Content-Type: application/http");
+                    bodyBuilder.AppendLine("Content-Transfer-Encoding: binary");
+                    bodyBuilder.AppendLine("Content-ID: " + (i + 1));
+                    bodyBuilder.AppendLine();
+                    bodyBuilder.Append("HTTP/1.1 ").Append(convertedResponse.StatusCode).Append(" N/A").AppendLine();
+                    foreach (string header in convertedResponse.Headers.Keys)
+                    {
+                        bodyBuilder.Append(header).Append(": ").Append(convertedResponse.Headers[header]).AppendLine();
+                    }
                 }
+                else
+                {
+                    bodyBuilder.Append("Content-Type").Append(": ").Append(convertedResponse.Headers["Content-Type"]).AppendLine();
+                }
+
                 bodyBuilder.AppendLine();
                 if (convertedResponse.Body != null)
                 {
                     bodyBuilder.AppendLine(Encoding.UTF8.GetString(convertedResponse.Body));
                 }
+                bodyBuilder.AppendLine();
             }
-            bodyBuilder.Append("--").Append(delimiter).AppendLine("--");
+            bodyBuilder.Append("--").Append(delimiter).Append("--");
 
             return new WebApiResponse()
             {
                 Body = Encoding.UTF8.GetBytes(bodyBuilder.ToString()),
                 StatusCode = 200,
-                Headers = new NameValueCollection() { { "OData-Version", "4.0" } }
+                Headers = new NameValueCollection() { { "OData-Version", "4.0" }, { "Content-Type", $"multipart/mixed; boundary={delimiter}" } }
             };
         }
 
