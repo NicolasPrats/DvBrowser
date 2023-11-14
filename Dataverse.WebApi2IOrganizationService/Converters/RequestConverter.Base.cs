@@ -35,7 +35,10 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
             ODataPath path;
             try
             {
-                parser = new ODataUriParser(this.Context.Model, new Uri(request.LocalPathWithQuery.Substring(15), UriKind.Relative))
+                var apiRelativeUri = request.LocalPathWithQuery;
+                if (apiRelativeUri.StartsWith("/api"))
+                    apiRelativeUri = apiRelativeUri.Substring(15);
+                parser = new ODataUriParser(this.Context.Model, new Uri(apiRelativeUri, UriKind.Relative))
                 {
                     Resolver = new AlternateKeysODataUriResolver(this.Context.Model)
                 };
