@@ -118,6 +118,8 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
 
         private static MemoryStream AddMissingLF(WebApiRequest request)
         {
+            if (request.Body == null)
+                throw new NotSupportedException("Body is empty!");
             // Les requêtes batch de CRM contiennent uniquement des LF en séparateurs de lignes et pas de CR
             var data = Encoding.UTF8.GetBytes(request.Body);
             MemoryStream dataStream = new MemoryStream();

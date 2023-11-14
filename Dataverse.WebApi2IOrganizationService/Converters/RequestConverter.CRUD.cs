@@ -53,9 +53,10 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
         private ColumnSet GetColumnSet(ODataUriParser parser)
         {
             var selectAndExpand = parser.ParseSelectAndExpand();
-            if (selectAndExpand == null || selectAndExpand.AllSelected)
+            if (selectAndExpand == null)
+            {
                 return new ColumnSet(true);
-            ColumnSet columnSet = new ColumnSet();
+            }
             foreach (var item in selectAndExpand.SelectedItems)
             {
                 if (!(item is PathSelectItem pathSelectItem))
@@ -69,6 +70,16 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                     throw new NotSupportedException("Only 1 segment was expected");
                 if (!(pathSelectItem.SelectedPath.FirstSegment is PropertySegment propertySegment))
                     throw new NotSupportedException("Only property segment are supported");
+            }
+            if (selectAndExpand.AllSelected)
+            {
+                return new ColumnSet(true);
+            }
+            ColumnSet columnSet = new ColumnSet();
+            foreach (var item in selectAndExpand.SelectedItems)
+            {
+                var pathSelectItem = (PathSelectItem)item;
+                var propertySegment = (PropertySegment)pathSelectItem.SelectedPath.FirstSegment;
                 var navigationProperties = propertySegment.Property.DeclaringType.NavigationProperties();
                 var navigationProperty = navigationProperties.FirstOrDefault(p => p.ReferentialConstraint != null && p.ReferentialConstraint.PropertyPairs.Any(rc => rc.DependentProperty?.Name == propertySegment.Identifier));
                 if (navigationProperty == null)
