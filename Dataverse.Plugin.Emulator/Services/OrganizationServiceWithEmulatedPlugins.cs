@@ -113,8 +113,10 @@ namespace Dataverse.Plugin.Emulator.Services
             //TODO : les erreurs des enfants devraient être interceptées
             if (request is ExecuteMultipleRequest executeMultipleRequest)
             {
-                ExecuteMultipleResponse response = new ExecuteMultipleResponse();
-                response.Results = new ParameterCollection();
+                ExecuteMultipleResponse response = new ExecuteMultipleResponse
+                {
+                    Results = new ParameterCollection()
+                };
                 response.Results["Responses"] = new ExecuteMultipleResponseItemCollection();
                 foreach (var innerRequest in executeMultipleRequest.Requests)
                 {
