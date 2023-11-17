@@ -113,8 +113,10 @@ namespace Dataverse.Plugin.Emulator.Services
             //TODO : les erreurs des enfants devraient être interceptées
             if (request is ExecuteMultipleRequest executeMultipleRequest)
             {
-                ExecuteMultipleResponse response = new ExecuteMultipleResponse();
-                response.Results = new ParameterCollection();
+                ExecuteMultipleResponse response = new ExecuteMultipleResponse
+                {
+                    Results = new ParameterCollection()
+                };
                 response.Results["Responses"] = new ExecuteMultipleResponseItemCollection();
                 foreach (var innerRequest in executeMultipleRequest.Requests)
                 {
@@ -229,6 +231,7 @@ namespace Dataverse.Plugin.Emulator.Services
             var postExecuteSteps = steps.Where(s => s.StepDescription.Stage == 40);
             foreach (var step in postExecuteSteps.OrderBy(s => s.StepDescription.IsAsynchronous ? 1 : 0).ThenBy(s => s.StepDescription.Rank))
             {
+                step.GenerateImages(1, InnerExecute);
                 step.GenerateImages(1, InnerExecute);
                 ExecuteStep(sharedVariables, treeNode, step);
             }
