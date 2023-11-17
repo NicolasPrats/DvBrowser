@@ -219,9 +219,9 @@ namespace Dataverse.Plugin.Emulator.Services
                     break;
                 case UpdateRequest updateRequest:
                     target = updateRequest.Target;
-                    var fakeUpdateMultipleRequest = new UpsertMultipleRequest()
+                    var fakeUpdateMultipleRequest = new UpdateMultipleRequest()
                     {
-                        RequestName = "UpsertMultiple",
+                        RequestName = "UpdateMultiple",
                         Targets = new EntityCollection(new[] { target })
                     };
                     stepsToExecute_multiple = GetStepsToExecute_Multiple(false, fakeUpdateMultipleRequest, out _);

@@ -230,6 +230,7 @@ namespace Dataverse.Plugin.Emulator.Services
             foreach (var step in postExecuteSteps.OrderBy(s => s.StepDescription.IsAsynchronous ? 1 : 0).ThenBy(s => s.StepDescription.Rank))
             {
                 step.GenerateImages(1, InnerExecute);
+                step.GenerateImages(1, InnerExecute);
                 ExecuteStep(sharedVariables, treeNode, step);
             }
             return response;
