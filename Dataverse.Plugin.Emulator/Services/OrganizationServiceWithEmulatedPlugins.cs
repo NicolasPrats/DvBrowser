@@ -150,19 +150,25 @@ namespace Dataverse.Plugin.Emulator.Services
 
         private OrganizationResponse Execute(ExecutionTreeNode treeNode, OrganizationRequest request, IEnumerable<IStepTriggered> steps)
         {
+            steps = steps.ToList(); // To freeze steps as the IEnumerable contains some select new()
             ParameterCollection sharedVariables = new ParameterCollection();
+
+            foreach (var step in steps)
+            {
+                step.GenerateImages(0, InnerExecute);
+            }
+
             var preValidateSteps = steps.Where(s => s.StepDescription.Stage == 10);
             foreach (var step in preValidateSteps.OrderBy(s => s.StepDescription.Rank))
             {
-                step.GenerateImages(0, InnerExecute);
                 ExecuteStep(sharedVariables, treeNode, step);
             }
             var preExecuteSteps = steps.Where(s => s.StepDescription.Stage == 20);
             foreach (var step in preExecuteSteps.OrderBy(s => s.StepDescription.Rank))
             {
-                step.GenerateImages(0, InnerExecute);
                 ExecuteStep(sharedVariables, treeNode, step);
             }
+
 
             treeNode.ChildNodes.Add(new ExecutionTreeNode("30 Execute Operation", ExecutionTreeNodeType.InnerOperation));
             var operationSteps = steps.Where(s => s.StepDescription.Stage == 30);
@@ -231,7 +237,6 @@ namespace Dataverse.Plugin.Emulator.Services
             var postExecuteSteps = steps.Where(s => s.StepDescription.Stage == 40);
             foreach (var step in postExecuteSteps.OrderBy(s => s.StepDescription.IsAsynchronous ? 1 : 0).ThenBy(s => s.StepDescription.Rank))
             {
-                step.GenerateImages(1, InnerExecute);
                 step.GenerateImages(1, InnerExecute);
                 ExecuteStep(sharedVariables, treeNode, step);
             }
