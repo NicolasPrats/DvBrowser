@@ -116,7 +116,6 @@ namespace Dataverse.Plugin.Emulator.Services
                 string targetName = targetLogicalName;
                 stepsToExecute = steps.Where(s => string.Equals(s.PrimaryEntity, targetName, StringComparison.OrdinalIgnoreCase));
             }
-            //TODO : in case of update: filtering attributes
             var stepsToExecute_multiple = stepsToExecute?.Select(s => new MultipleStepTriggered()
             {
                 StepDescription = s,
@@ -215,7 +214,6 @@ namespace Dataverse.Plugin.Emulator.Services
                         Targets = new EntityCollection(new[] { target })
                     };
                     stepsToExecute_multiple = GetStepsToExecute_Multiple(false, fakeUpsertMultipleRequest, out _);
-                    //TODO : en cas d'update il faudrait appliquer les filtering attributes
                     break;
                 case RetrieveRequest retrieveRequest:
                     targetRef = retrieveRequest.Target;
