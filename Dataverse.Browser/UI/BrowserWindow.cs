@@ -312,10 +312,45 @@ namespace Dataverse.Browser.UI
                 this.Text = this.ViewModel.PluginsEnabled 
                     ? "Dataverse Browser - Plugins Enabled" 
                     : "Dataverse Browser - Plugins Disabled";
+                
+                // Update status bar
+                this.toolStripStatusLabel1.Text = this.ViewModel.PluginsEnabled 
+                    ? "Plugins Enabled" 
+                    : "Plugins Disabled";
             }
             else if (e.PropertyName == nameof(BrowserViewModel.StatusMessage))
             {
-                // Could update a status bar if we add one
+                // Update status bar with ViewModel message
+                if (!string.IsNullOrEmpty(this.ViewModel.StatusMessage))
+                {
+                    this.toolStripStatusLabel1.Text = this.ViewModel.StatusMessage;
+                }
+            }
+        }
+
+        private void BrowserWindow_KeyDown(object sender, KeyEventArgs e)
+        {
+            // Keyboard shortcuts
+            if (e.Control && e.KeyCode == Keys.L)
+            {
+                // Ctrl+L: Clear history
+                e.Handled = true;
+                if (this.ViewModel.ClearHistoryCommand.CanExecute(null))
+                {
+                    this.ViewModel.ClearHistoryCommand.Execute(null);
+                }
+            }
+            else if (e.Control && e.KeyCode == Keys.D)
+            {
+                // Ctrl+D: Attach debugger
+                e.Handled = true;
+                BtnDebugger_Click(sender, e);
+            }
+            else if (e.KeyCode == Keys.F5)
+            {
+                // F5: Refresh/reload
+                e.Handled = true;
+                this.toolStripStatusLabel1.Text = "Refreshing...";
             }
         }
     }
