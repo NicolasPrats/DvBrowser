@@ -22,7 +22,6 @@ namespace Dataverse.Browser.Requests
         private readonly CoreWebView2Environment environment;
         private readonly ExtensionsRequestHandler extensions;
         private readonly WebApiRequestHandler webApiRequestHandler;
-        private readonly string tracePath;
 
         public WebViewRequestRouter(BrowserContext context, CoreWebView2Environment environment)
         {
@@ -30,7 +29,6 @@ namespace Dataverse.Browser.Requests
             this.environment = environment ?? throw new ArgumentNullException(nameof(environment));
             this.extensions = new ExtensionsRequestHandler();
             this.webApiRequestHandler = new WebApiRequestHandler(context);
-            this.tracePath = Path.Combine(context.CachePath, "webview.log");
         }
 
         public void HandleWebResourceRequested(object sender, CoreWebView2WebResourceRequestedEventArgs e)
@@ -44,20 +42,7 @@ namespace Dataverse.Browser.Requests
             // Then handle intercepted Dataverse Web API calls.
             if (this.webApiRequestHandler.TryHandle(e, this.environment))
             {
-                LogToFile("[WebView2] handled Web API via emulator");
                 return;
-            }
-        }
-
-        private void LogToFile(string message)
-        {
-            try
-            {
-                File.AppendAllText(this.tracePath, $"{DateTime.Now:O} {message}{Environment.NewLine}");
-            }
-            catch
-            {
-                // ignore logging failures
             }
         }
     }

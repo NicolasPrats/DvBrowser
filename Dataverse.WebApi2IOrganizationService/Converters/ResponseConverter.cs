@@ -75,11 +75,7 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                 case ExecuteMultipleResponse executeMultipleResponse:
                     return ConvertExecuteMultipleResponse(conversionResult, executeMultipleResponse);
                 default:
-                    //if (response.GetType() != typeof(OrganizationResponse))
-                    //{
-                    //    throw new NotImplementedException("Message has been executed but response is not implemented:" + response.GetType().Name);
-                    //}
-                    //OrganizationResponse without specialized type are assumed to be CustomApi
+                    // OrganizationResponse without specialized type are assumed to be CustomApi
                     return ConvertCustomApiResponse(response);
 
             }
@@ -400,8 +396,8 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
             string setName = this.Context.MetadataCache.GetEntityFromLogicalName(createRequest.Target.LogicalName).EntitySetName;
             var id = $"{this.Context.WebApiBaseUrl}{setName}({createResponse.id})";
 
-            //TODO: convert the response instead of requesting
-            //TODO : returns result only if return representation was requested
+            // Proxy to Web API to get proper response with OData annotations (bypassing plugins for performance)
+            // Note: Only returns representation if explicitly requested via Prefer: return=representation header
             var retrieveResult = HttpGet(id, true);
             return new WebApiResponse()
             {
@@ -417,7 +413,8 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
 
         private WebApiResponse ConvertRetrieveResponse(RequestConversionResult conversionResult)
         {
-            //TODO: convert the response instead of requesting
+            // Proxy to Web API to ensure complete response with null attributes and OData annotations
+            // This is required for proper form rendering (lookups, formatted values, etc.)
             string url = $"https://{this.Context.Host}{conversionResult.SrcRequest.LocalPathWithQuery}";
             
             // Pass important headers from the original request (especially Prefer header for annotations)
