@@ -149,5 +149,6 @@ The following features are not yet implemented and are tracked for future develo
 ## Not Yet Implemented
 * **Plugin Configuration & Secure Configuration**: Plugin step configuration and secure configuration values are not passed to plugins during execution
 * **Alternate Keys**: Entity retrieval and updates using alternate keys (instead of GUIDs) are not fully supported for plugin step identification
+* **Web Resource File Overrides**: Ability to replace web resources (JavaScript, CSS, HTML) with local files during development, similar to Chrome DevTools Local Overrides, enabling live editing without deployment
 
 
