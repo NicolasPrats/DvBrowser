@@ -53,7 +53,8 @@ namespace Dataverse.BrowserLibs.Tests
             }
             );
             emulator.AddPluginAssembly(@"../../../PowerPlatform.Demo/Plugins/bin/debug/PowerPlatform.Demo.Plugins.dll");
-            MetadataCache metadataCache = new MetadataCache(client);
+            // Pass null for cachePath to disable disk caching in tests (always fetch fresh)
+            MetadataCache metadataCache = new MetadataCache(client, cachePath: null, forceRefresh: true);
             var context = new DataverseContext()
             {
                 CrmServiceClient = client,
