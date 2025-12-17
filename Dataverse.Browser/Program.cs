@@ -1,9 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Windows.Forms;
-using CefSharp;
-using CefSharp.WinForms;
 using Dataverse.Browser.Configuration;
 using Dataverse.Browser.Context;
 using Dataverse.Browser.UI;
@@ -27,12 +26,12 @@ namespace Dataverse.Browser
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-
             EnvironnementConfiguration selectedEnvironment = null;
             BrowserContext context = null;
             try
             {
                 EnsureApplicationPathExists();
+                ClearLogFiles();
                 var configuration = ConfigurationManager.LoadConfiguration();
                 selectedEnvironment = SelectEnvironment(configuration);
                 if (selectedEnvironment == null)
@@ -109,24 +108,71 @@ namespace Dataverse.Browser
             }
         }
 
+        private static void ClearLogFiles()
+        {
+            try
+            {
+                var appDataPath = ConfigurationManager.GetApplicationDataPath();
+                if (!Directory.Exists(appDataPath))
+                {
+                    return;
+                }
+
+                var logFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var file in Directory.EnumerateFiles(appDataPath, "*.log", SearchOption.AllDirectories))
+                {
+                    logFiles.Add(file);
+                }
+                foreach (var file in Directory.EnumerateFiles(appDataPath, "log.txt", SearchOption.AllDirectories))
+                {
+                    logFiles.Add(file);
+                }
+
+                foreach (var logFile in logFiles)
+                {
+                    TryDeleteOrClear(logFile);
+                }
+            }
+            catch
+            {
+                // ignore cleanup failures
+            }
+        }
+
+        private static void TryDeleteOrClear(string logFile)
+        {
+            try
+            {
+                File.Delete(logFile);
+            }
+            catch (IOException)
+            {
+                TryTruncate(logFile);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                TryTruncate(logFile);
+            }
+            catch
+            {
+                // ignore cleanup failures
+            }
+        }
+
+        private static void TryTruncate(string logFile)
+        {
+            try
+            {
+                File.WriteAllText(logFile, string.Empty);
+            }
+            catch
+            {
+                // ignore cleanup failures
+            }
+        }
 
         private static void StartBrowser(BrowserContext context)
         {
-#if ANYCPU
-            CefRuntime.SubscribeAnyCpuAssemblyResolver();
-#endif
-
-            var settings = new CefSettings()
-            {
-                CachePath = Path.Combine(context.CachePath, "browser"),
-                PersistSessionCookies = true,
-                LogFile = Path.Combine(context.CachePath, "cefdebug.log"),
-
-            };
-
-            Cef.Initialize(settings, performDependencyCheck: true, browserProcessHandler: null);
-
-
             Application.Run(new UI.BrowserWindow(context));
         }
     }

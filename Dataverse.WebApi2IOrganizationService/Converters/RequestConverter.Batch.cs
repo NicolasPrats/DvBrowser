@@ -22,17 +22,28 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                 throw new NotImplementedException("ContentType " + contentType + " is not supported for batch requests");
             }
 
+            System.Diagnostics.Trace.WriteLine($"[Batch] Processing batch request with {originRequest.Body?.Length ?? 0} bytes");
+
             ExecuteMultipleRequest executeMultipleRequest = new ExecuteMultipleRequest()
             {
                 Requests = new OrganizationRequestCollection()
             };
 
+            // Check for odata.continue-on-error preference
+            bool continueOnError = true; // Default to true for backward compatibility
+            var preferHeader = originRequest.Headers?["Prefer"];
+            if (preferHeader != null)
+            {
+                if (preferHeader.Contains("odata.continue-on-error=false"))
+                {
+                    continueOnError = false;
+                }
+            }
+
             List<RequestConversionResult> conversionResults = new List<RequestConversionResult>();
             MemoryStream dataStream = AddMissingLF(originRequest);
             using (var content = new StreamContent(dataStream))
             {
-                //TODO support des changesets
-                //TODO support des continue on error
                 content.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
 
                 MultipartMemoryStreamProvider provider = content.ReadAsMultipartAsync().Result;
@@ -43,32 +54,57 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                     RequestConversionResult convertedRequest;
                     if (data.Length > 2 && data[0] == '-' && data[1] == '-')
                     {
-                        //Contains a changeset = embedded executemultiple
-
+                        // Contains a changeset = embedded ExecuteMultiple with transactional behavior
+                        // Changesets ensure all-or-nothing execution
                         convertedRequest = CreateMultipleRequestFromMimeMessage(httpContent.Headers, data);
+                        
+                        // Mark the inner ExecuteMultiple to use transactional mode
+                        if (convertedRequest.ConvertedRequest is ExecuteMultipleRequest innerExecuteMultiple)
+                        {
+                            // Changesets are transactional - if one fails, all fail
+                            innerExecuteMultiple.Settings.ContinueOnError = false;
+                        }
                     }
                     else
                     {
                         //contains a single request
-                        var innerRequest = CreateSimplifiedRequestFromMimeMessage(data);
-                        convertedRequest = Convert(innerRequest) ?? throw new NotSupportedException("Only web api requests are supported!");
+                        WebApiRequest innerRequest;
+                        try
+                        {
+                            innerRequest = CreateSimplifiedRequestFromMimeMessage(data);
+                        }
+                        catch (Exception ex)
+                        {
+                            conversionResult.ConvertFailureMessage = "One inner request could not be converted:" + ex.Message;
+                            conversionResult.ConvertedRequest = null;
+                            conversionResult.CustomData["InnerConversions"] = conversionResults;
+                            return;
+                        }
+                        if (innerRequest == null)
+                        {
+                            conversionResult.ConvertFailureMessage = "One inner request could not be converted: not a Web API request";
+                            conversionResult.ConvertedRequest = null;
+                            conversionResult.CustomData["InnerConversions"] = conversionResults;
+                            return;
+                        }
+                        convertedRequest = Convert(innerRequest);
                     }
                     conversionResults.Add(convertedRequest);
-                    if (convertedRequest.ConvertedRequest != null)
+                    if (convertedRequest.ConvertedRequest == null)
                     {
-                        executeMultipleRequest.Requests.Add(convertedRequest.ConvertedRequest);
+                        conversionResult.ConvertFailureMessage = "One inner request could not be converted:" + convertedRequest.ConvertFailureMessage;
+                        conversionResult.ConvertedRequest = null;
+                        conversionResult.CustomData["InnerConversions"] = conversionResults;
+                        return;
                     }
-                    else
-                    {
-                        throw new NotSupportedException("One inner request could not be converted:" + convertedRequest.ConvertFailureMessage);
-                    }
+                    executeMultipleRequest.Requests.Add(convertedRequest.ConvertedRequest);
 
                 }
 
             }
             executeMultipleRequest.Settings = new ExecuteMultipleSettings()
             {
-                ContinueOnError = true,
+                ContinueOnError = continueOnError,
                 ReturnResponses = true
             };
             conversionResult.ConvertedRequest = executeMultipleRequest;
@@ -95,25 +131,38 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
 
             // First line contains the request method, URL, and HTTP version
             string[] firstLineParts = requestLines[0].Split(' ');
+            if (firstLineParts.Length < 2)
+            {
+                throw new NotSupportedException("Invalid batch item request line: " + requestLines[0]);
+            }
             string method = firstLineParts[0];
             string url = firstLineParts[1];
 
             // Parse headers starting from the second line
             int bodyIndex = Array.IndexOf(requestLines, ""); // Find the index of the empty line that separates headers and body
+            if (bodyIndex == -1)
+            {
+                throw new NotSupportedException("Batch part does not contain a blank line separating headers and body.");
+            }
             NameValueCollection headers = new NameValueCollection();
             for (int i = 1; i < bodyIndex; i++)
             {
-                string[] headerParts = requestLines[i].Split(':');
-                string headerName = headerParts[0].Trim();
-                string headerValue = headerParts[1].Trim();
+                var headerLine = requestLines[i];
+                int colonIndex = headerLine.IndexOf(':');
+                if (colonIndex <= 0)
+                {
+                    continue;
+                }
+                string headerName = headerLine.Substring(0, colonIndex).Trim();
+                string headerValue = headerLine.Substring(colonIndex + 1).Trim();
                 headers.Add(headerName, headerValue);
             }
 
             // Extract and display the body.
             // TODO: \r may have be stripped here
             string body = string.Join("\n", requestLines, bodyIndex + 1, requestLines.Length - bodyIndex - 1);
-            var request = new WebApiRequest(method, url, headers, body);
-            return request;
+            // Use the helper to normalize absolute URLs into local Web API paths.
+            return WebApiRequest.Create(method, url, headers, body);
         }
 
         private static MemoryStream AddMissingLF(WebApiRequest request)

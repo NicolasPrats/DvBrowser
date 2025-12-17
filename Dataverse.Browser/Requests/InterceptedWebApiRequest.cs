@@ -9,6 +9,7 @@ namespace Dataverse.Browser.Requests
         public ExecutionTreeNode ExecutionTreeRoot { get; internal set; }
         public RequestConversionResult ConversionResult { get; internal set; }
         public Exception ExecuteException { get; internal set; }
+        public bool Proxied { get; internal set; }
 
 
         public InterceptedWebApiRequest(RequestConversionResult conversionResult)

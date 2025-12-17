@@ -138,12 +138,16 @@ namespace Dataverse.Plugin.Emulator.Services
                 executionTreeNode.Title += " " + targetLogicalName;
             }
 
-            if (stepsToExecute?.Any() == true)
+            if (stepsToExecute?.Any() ?? false)
             {
                 return Execute(executionTreeNode, request, stepsToExecute);
             }
             else
             {
+                // No local plugin steps; still surface that the request was sent.
+                var innerNode = new ExecutionTreeNode("30 Execute Operation", ExecutionTreeNodeType.InnerOperation);
+                innerNode.Trace.Append("Sent to Dataverse (no local steps executed).");
+                executionTreeNode.ChildNodes.Add(innerNode);
                 return InnerExecute(request);
             }
         }

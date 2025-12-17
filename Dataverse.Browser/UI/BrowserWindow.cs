@@ -65,9 +65,21 @@ namespace Dataverse.Browser.UI
             }
             if (this.Nodes.TryGetValue(request, out var node))
             {
+                // Update icon based on latest state (proxied/converted/exceptions).
+                var index = Icons.RequestNotAnalyzed;
+                if (request.ConversionResult.ConvertedRequest != null || request.Proxied)
+                {
+                    index = request.ExecuteException == null ? Icons.RequestAnalyzed : Icons.RequestAnalyzedWithError;
+                }
+                node.ImageIndex = node.SelectedImageIndex = (int)index;
+
                 if (request.ExecuteException != null)
                 {
                     node.ToolTipText = request.ExecuteException.Message;
+                }
+                else if (string.IsNullOrEmpty(node.ToolTipText) && request.ConversionResult.ConvertFailureMessage != null)
+                {
+                    node.ToolTipText = request.ConversionResult.ConvertFailureMessage;
                 }
                 BuildTree(node, request.ExecutionTreeRoot);
                 if (request.ExecuteException != null)
@@ -108,7 +120,7 @@ namespace Dataverse.Browser.UI
                 return;
             }
             var index = Icons.RequestNotAnalyzed;
-            if (request.ConversionResult.ConvertedRequest != null)
+            if (request.ConversionResult.ConvertedRequest != null || request.Proxied)
             {
                 index = request.ExecuteException == null ? Icons.RequestAnalyzed : Icons.RequestNotAnalyzed;
             }

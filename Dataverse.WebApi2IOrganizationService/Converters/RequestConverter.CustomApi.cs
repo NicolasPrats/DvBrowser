@@ -78,6 +78,12 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                 case CustomApiRequestParameterType.Money:
                     return new Money(value.GetDecimal());
                 case CustomApiRequestParameterType.Picklist:
+                    // Some system Custom APIs (e.g. msdyn_FieldServiceSystemAction) declare picklist parameters
+                    // but expect a plain Int32 at execution time. Use the EDM hint to keep the expected shape.
+                    if (edmType is IEdmPrimitiveTypeReference primitive && primitive.PrimitiveKind() == EdmPrimitiveTypeKind.Int32)
+                    {
+                        return value.GetInt32();
+                    }
                     return new OptionSetValue(value.GetInt32());
                 case CustomApiRequestParameterType.String:
                     return value.GetString();

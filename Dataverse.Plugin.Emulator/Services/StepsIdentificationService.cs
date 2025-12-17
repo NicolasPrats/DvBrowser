@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Dataverse.Plugin.Emulator.Steps;
 using Microsoft.Xrm.Sdk;
@@ -75,7 +76,7 @@ namespace Dataverse.Plugin.Emulator.Services
             if (this.Emulator.PluginSteps.TryGetValue(messageName, out var steps))
             {
                 string targetName = targetLogicalName;
-                stepsToExecute = steps.Where(s => s.PrimaryEntity == targetName);
+                stepsToExecute = steps.Where(s => string.Equals(s.PrimaryEntity, targetName, StringComparison.OrdinalIgnoreCase));
             }
             var stepsToExecute_multiple = stepsToExecute?.Select(s => new MultipleStepTriggered()
             {
@@ -113,7 +114,7 @@ namespace Dataverse.Plugin.Emulator.Services
             {
 
                 string targetName = targetLogicalName;
-                stepsToExecute = steps.Where(s => s.PrimaryEntity == targetName);
+                stepsToExecute = steps.Where(s => string.Equals(s.PrimaryEntity, targetName, StringComparison.OrdinalIgnoreCase));
             }
             //TODO : in case of update: filtering attributes
             var stepsToExecute_multiple = stepsToExecute?.Select(s => new MultipleStepTriggered()
@@ -147,9 +148,9 @@ namespace Dataverse.Plugin.Emulator.Services
             if (this.Emulator.PluginSteps.TryGetValue(messageName, out var steps))
             {
                 string targetName = targetLogicalName;
-                stepsToExecute = steps.Where(s => s.PrimaryEntity == targetName);
+                stepsToExecute = steps.Where(s => string.Equals(s.PrimaryEntity, targetName, StringComparison.OrdinalIgnoreCase));
             }
-            var attributesInTargets = new HashSet<string>();
+            var attributesInTargets = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var target in targets.Entities)
             {
                 foreach (var attribute in target.Attributes)
@@ -158,7 +159,7 @@ namespace Dataverse.Plugin.Emulator.Services
                 }
             }
             stepsToExecute = stepsToExecute?.Where(s => s.FilteringAttributes == null || s.FilteringAttributes.Length == 0
-                    || s.FilteringAttributes.Intersect(attributesInTargets).Any());
+                    || s.FilteringAttributes.Intersect(attributesInTargets, StringComparer.OrdinalIgnoreCase).Any());
             var stepsToExecute_multiple = stepsToExecute?.Select(s => new MultipleStepTriggered()
             {
                 StepDescription = s,
@@ -186,12 +187,14 @@ namespace Dataverse.Plugin.Emulator.Services
             string messageName = GetMessageNameFromRequest(request);
             IEnumerable<IStepTriggered> stepsToExecute_multiple = null;
             IEnumerable<PluginStepDescription> stepDescriptions = null;
+            int stepsForMessageCount = 0;
             EntityReference targetRef = null;
             Entity target = null;
             targetLogicalName = null;
             if (this.Emulator.PluginSteps.TryGetValue(messageName, out var steps))
             {
                 stepDescriptions = steps;
+                stepsForMessageCount = steps.Count;
             }
             switch (request)
             {
@@ -225,8 +228,10 @@ namespace Dataverse.Plugin.Emulator.Services
                         Targets = new EntityCollection(new[] { target })
                     };
                     stepsToExecute_multiple = GetStepsToExecute_Multiple(false, fakeUpdateMultipleRequest, out _);
+                    var updateAttributes = updateRequest.Target.Attributes.Select(a => a.Key).ToArray();
+                    var beforeFilterCount = stepDescriptions?.Count() ?? 0;
                     stepDescriptions = stepDescriptions?.Where(s => s.FilteringAttributes == null || s.FilteringAttributes.Length == 0
-                    || s.FilteringAttributes.Intersect(updateRequest.Target.Attributes.Select(a => a.Key)).Any());
+                    || s.FilteringAttributes.Intersect(updateAttributes, StringComparer.OrdinalIgnoreCase).Any());
                     break;
                 case DeleteRequest deleteRequest:
                     targetRef = deleteRequest.Target;
@@ -262,7 +267,7 @@ namespace Dataverse.Plugin.Emulator.Services
             if (targetLogicalName != null)
             {
                 string logicalName = targetLogicalName;
-                stepDescriptions = stepDescriptions?.Where(s => s.PrimaryEntity == logicalName);
+                stepDescriptions = stepDescriptions?.Where(s => string.Equals(s.PrimaryEntity, logicalName, StringComparison.OrdinalIgnoreCase));
             }
             var stepsToExecuteSimple = stepDescriptions?.Select(s => (IStepTriggered)new SimpleStepTriggered()
             {
@@ -270,9 +275,10 @@ namespace Dataverse.Plugin.Emulator.Services
                 TargetReference = targetRef,
                 OrganizationRequest = request
             });
+            var stepsList = stepsToExecuteSimple?.ToList() ?? new List<IStepTriggered>();
             if (stepsToExecute_multiple == null || !includeMergedPipeline)
-                return stepsToExecuteSimple;
-            return stepsToExecuteSimple.Union(stepsToExecute_multiple);
+                return stepsList;
+            return stepsList.Union(stepsToExecute_multiple);
         }
 
 

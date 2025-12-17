@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Messages;
@@ -11,6 +12,8 @@ namespace Dataverse.Utils
     {
         private IOrganizationService Service { get; }
         private EntityMetadata[] EntityMetadata { get; }
+        private Dictionary<string, EntityMetadata> EntityByLogicalName { get; }
+        private Dictionary<string, EntityMetadata> EntityBySetName { get; }
         private Dictionary<string, EntityMetadata> EntityMetadataWithAttributes { get; }
         private Dictionary<string, Entity> CustomApiRequestParameters { get; }
 
@@ -21,6 +24,8 @@ namespace Dataverse.Utils
             RetrieveAllEntitiesRequest request = new RetrieveAllEntitiesRequest();
             var result = (RetrieveAllEntitiesResponse)this.Service.Execute(request);
             this.EntityMetadata = result.EntityMetadata;
+            this.EntityByLogicalName = this.EntityMetadata.ToDictionary(e => e.LogicalName, StringComparer.OrdinalIgnoreCase);
+            this.EntityBySetName = this.EntityMetadata.ToDictionary(e => e.EntitySetName, StringComparer.OrdinalIgnoreCase);
             this.EntityMetadataWithAttributes = new Dictionary<string, EntityMetadata>();
             this.CustomApiRequestParameters = new Dictionary<string, Entity>();
         }
@@ -44,12 +49,14 @@ namespace Dataverse.Utils
 
         public EntityMetadata GetEntityFromLogicalName(string logicalName)
         {
-            return this.EntityMetadata.FirstOrDefault(e => e.LogicalName == logicalName);
+            this.EntityByLogicalName.TryGetValue(logicalName, out var entity);
+            return entity;
         }
 
         public EntityMetadata GetEntityFromSetName(string setName)
         {
-            return this.EntityMetadata.FirstOrDefault(e => e.EntitySetName == setName);
+            this.EntityBySetName.TryGetValue(setName, out var entity);
+            return entity;
         }
 
         public EntityMetadata GetEntityMetadataWithAttributes(string entityLogicalName)

@@ -1,23 +1,25 @@
-﻿using System.Collections.Generic;
+using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Xml;
-using CefSharp;
+using Microsoft.Web.WebView2.Core;
 
 namespace Dataverse.Browser.Requests
 {
     internal class ExtensionsRequestHandler
-        : IRequestHandler
     {
         public const string FakeIdentifier = "dvbrowser_fakewr_";
 
-
         private Dictionary<string, MemoryStream> WebResources { get; } = new Dictionary<string, MemoryStream>();
-
 
         public ExtensionsRequestHandler()
         {
+            if (!Directory.Exists("Extensions"))
+            {
+                return;
+            }
             foreach (var zipFile in Directory.GetFiles("Extensions"))
             {
                 LoadWebResources(zipFile);
@@ -26,15 +28,18 @@ namespace Dataverse.Browser.Requests
 
         private void LoadWebResources(string zipFile)
         {
-            using (var archive = System.IO.Compression.ZipFile.OpenRead(zipFile))
+            using (var archive = ZipFile.OpenRead(zipFile))
             {
-                var customisations = archive.Entries.FirstOrDefault(e => e.FullName.ToLowerInvariant() == "customizations.xml");
+                var customisations = archive.Entries.FirstOrDefault(e => e.FullName.Equals("customizations.xml", StringComparison.OrdinalIgnoreCase));
+                if (customisations == null)
+                {
+                    return;
+                }
                 using (var stream = customisations.Open())
                 {
                     LoadWebResources(archive, stream);
                 }
             }
-
         }
 
         private void LoadWebResources(ZipArchive archive, Stream custosStream)
@@ -54,28 +59,58 @@ namespace Dataverse.Browser.Requests
                 {
                     var memoryStream = new MemoryStream();
                     fileStream.CopyTo(memoryStream);
+                    memoryStream.Position = 0;
                     this.WebResources[name] = memoryStream;
                 }
 
             }
         }
 
-        public IResourceRequestHandler GetResourceRequestHandler(IWebBrowser chromiumWebBrowser, IBrowser browser, IFrame frame, IRequest request, bool isNavigation, bool isDownload, string requestInitiator, ref bool disableDefaultHandling)
+        public bool TryHandle(CoreWebView2WebResourceRequestedEventArgs e, CoreWebView2Environment environment)
         {
-            int index = request.Url.IndexOf(FakeIdentifier);
+            int index = e.Request.Uri.IndexOf(FakeIdentifier, StringComparison.OrdinalIgnoreCase);
             if (index == -1)
-                return null;
-            string wrName = request.Url.Substring(index + FakeIdentifier.Length + 1);
-            index = wrName.IndexOf("?");
+                return false;
+            string wrName = e.Request.Uri.Substring(index + FakeIdentifier.Length + 1);
+            index = wrName.IndexOf("?", StringComparison.Ordinal);
             if (index != -1)
             {
                 wrName = wrName.Substring(0, index);
             }
             if (this.WebResources.TryGetValue(wrName, out var webresource))
             {
-                return new ExtensionsResourceRequestHandler(webresource);
+                webresource.Position = 0;
+                var headers = $"Content-Type: {GetContentType(wrName)}\r\n";
+                e.Response = environment.CreateWebResourceResponse(webresource, 200, "OK", headers);
+                return true;
             }
-            return null;
+            return false;
+        }
+
+        private static string GetContentType(string name)
+        {
+            var ext = Path.GetExtension(name)?.ToLowerInvariant();
+            switch (ext)
+            {
+                case ".html":
+                case ".htm":
+                    return "text/html";
+                case ".js":
+                    return "application/javascript";
+                case ".css":
+                    return "text/css";
+                case ".json":
+                    return "application/json";
+                case ".png":
+                    return "image/png";
+                case ".jpg":
+                case ".jpeg":
+                    return "image/jpeg";
+                case ".svg":
+                    return "image/svg+xml";
+                default:
+                    return "application/octet-stream";
+            }
         }
     }
 }

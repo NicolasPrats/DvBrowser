@@ -6,6 +6,8 @@ using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Metadata;
+using System.Web;
+using Microsoft.Crm.Sdk.Messages;
 
 namespace Dataverse.WebApi2IOrganizationService.Converters
 {
@@ -27,6 +29,23 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
         {
             if (request == null)
                 return null;
+                
+            // Skip conversion for system metadata functions that don't need plugin emulation
+            var skipFunctions = new[] 
+            { 
+                "GetClientMetadata", 
+                "RetrieveMetadataChanges", 
+                "RetrieveAllEntities",
+                "RetrieveEntity",
+                "RetrieveAttribute"
+            };
+            
+            if (skipFunctions.Any(func => request.LocalPathWithQuery.IndexOf($"/{func}(", StringComparison.OrdinalIgnoreCase) >= 0))
+            {
+                // Return null to indicate no conversion needed - let the request pass through
+                return null;
+            }
+            
             RequestConversionResult result = new RequestConversionResult()
             {
                 SrcRequest = request
@@ -89,6 +108,13 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                             case 2:
                                 ConvertToRetrieveRequest(result, parser, path);
                                 break;
+                            case 3:
+                                if (path.LastSegment is OperationSegment operationSegment)
+                                {
+                                    ConvertToBoundFunction(result, path, operationSegment);
+                                    break;
+                                }
+                                throw new NotSupportedException("Unexpected number of segments:" + path.Count);
                             default:
                                 throw new NotSupportedException("Unexpected number of segments:" + path.Count);
                         }
@@ -207,6 +233,125 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
             {
                 keys[key.Key] = key.Value;
             }
+        }
+
+        private void ConvertToBoundFunction(RequestConversionResult conversionResult, ODataPath path, OperationSegment operationSegment)
+        {
+            // Support for RetrievePrincipalAccess bound function
+            if (string.Equals(operationSegment.Identifier, "Microsoft.Dynamics.CRM.RetrievePrincipalAccess", StringComparison.OrdinalIgnoreCase))
+            {
+                var entitySegment = path.FirstSegment as EntitySetSegment ?? throw new NotSupportedException("First segment should be entity set");
+                var keySegment = path.Skip(1).First() as KeySegment ?? throw new NotSupportedException("Second segment should be key");
+
+                // The entity in the URL path is the PRINCIPAL (systemuser or team)
+                var principalEntity = this.Context.MetadataCache.GetEntityFromSetName(entitySegment.Identifier) ?? throw new NotSupportedException("Entity not found: " + entitySegment.Identifier);
+                var principalRef = GetEntityReferenceFromKeySegment(principalEntity, keySegment);
+
+                var uri = new Uri("http://localhost" + conversionResult.SrcRequest.LocalPathWithQuery);
+                var query = HttpUtility.ParseQueryString(uri.Query);
+                
+                // The Target parameter contains the target entity reference
+                var targetRaw = query["@Target"] ?? query["Target"];
+                
+                if (string.IsNullOrEmpty(targetRaw))
+                {
+                    throw new NotSupportedException("RetrievePrincipalAccess missing Target parameter");
+                }
+
+                // Parse the Target JSON: {"@odata.id":"entityset(guid)"}
+                EntityReference targetRef;
+                try
+                {
+                    var targetJson = System.Text.Json.JsonDocument.Parse(targetRaw);
+                    var odataId = targetJson.RootElement.GetProperty("@odata.id").GetString();
+                    
+                    // Parse "entityset(guid)" format
+                    var match = System.Text.RegularExpressions.Regex.Match(odataId, @"^([^(]+)\(([^)]+)\)$");
+                    if (!match.Success)
+                    {
+                        throw new NotSupportedException($"Invalid @odata.id format: {odataId}");
+                    }
+                    
+                    var entitySetName = match.Groups[1].Value;
+                    var guidStr = match.Groups[2].Value;
+                    
+                    var targetEntity = this.Context.MetadataCache.GetEntityFromSetName(entitySetName);
+                    if (targetEntity == null)
+                    {
+                        throw new NotSupportedException($"Entity not found for set name: {entitySetName}");
+                    }
+                    
+                    if (!Guid.TryParse(guidStr, out var targetId))
+                    {
+                        throw new NotSupportedException($"Invalid GUID in Target: {guidStr}");
+                    }
+                    
+                    targetRef = new EntityReference(targetEntity.LogicalName, targetId);
+                }
+                catch (Exception ex)
+                {
+                    throw new NotSupportedException($"Failed to parse Target parameter: {ex.Message}");
+                }
+
+                conversionResult.ConvertedRequest = new RetrievePrincipalAccessRequest
+                {
+                    Principal = principalRef,
+                    Target = targetRef
+                };
+                return;
+            }
+
+            // Support for RetrievePrincipalAccessInfo bound function (legacy)
+            if (string.Equals(operationSegment.Identifier, "Microsoft.Dynamics.CRM.RetrievePrincipalAccessInfo", StringComparison.OrdinalIgnoreCase))
+            {
+
+            var entitySegment = path.FirstSegment as EntitySetSegment ?? throw new NotSupportedException("First segment should be entity set");
+            var keySegment = path.Skip(1).First() as KeySegment ?? throw new NotSupportedException("Second segment should be key");
+
+            var principalEntity = this.Context.MetadataCache.GetEntityFromSetName(entitySegment.Identifier) ?? throw new NotSupportedException("Entity not found: " + entitySegment.Identifier);
+            var principalRef = GetEntityReferenceFromKeySegment(principalEntity, keySegment);
+
+            var uri = new Uri("http://localhost" + conversionResult.SrcRequest.LocalPathWithQuery);
+            var query = HttpUtility.ParseQueryString(uri.Query);
+            var objectIdRaw = query["@ObjectId"] ?? query["ObjectId"];
+            var entityName = TrimQuotes(query["@EntityName"] ?? query["EntityName"]);
+            if (string.IsNullOrEmpty(objectIdRaw) || string.IsNullOrEmpty(entityName))
+            {
+                throw new NotSupportedException("RetrievePrincipalAccessInfo missing parameters");
+            }
+
+            var targetEntity = this.Context.MetadataCache.GetEntityFromSetName(entityName) ?? this.Context.MetadataCache.GetEntityFromLogicalName(entityName);
+            if (targetEntity == null)
+            {
+                throw new NotSupportedException("Entity not found: " + entityName);
+            }
+
+            if (!Guid.TryParse(objectIdRaw, out var targetId))
+            {
+                throw new NotSupportedException("RetrievePrincipalAccessInfo ObjectId is not a Guid: " + objectIdRaw);
+            }
+            var targetRef = new EntityReference(targetEntity.LogicalName, targetId);
+
+            conversionResult.ConvertedRequest = new RetrievePrincipalAccessRequest
+            {
+                Principal = principalRef,
+                Target = targetRef
+            };
+                return;
+            }
+
+            throw new NotSupportedException("Bound function not supported: " + operationSegment.Identifier);
+        }
+
+        private static string TrimQuotes(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return value;
+            if (value.Length >= 2 && value.StartsWith("'") && value.EndsWith("'"))
+            {
+                return value.Substring(1, value.Length - 2);
+            }
+            return value;
         }
 
 

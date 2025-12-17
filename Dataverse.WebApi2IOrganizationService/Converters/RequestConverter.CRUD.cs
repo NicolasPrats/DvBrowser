@@ -42,55 +42,84 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                 throw new NotSupportedException("Entity not found: " + entity);
             }
 
+            var columnSet = GetColumnSet(parser, entity);
+            System.Diagnostics.Trace.WriteLine($"[RetrieveRequest] Entity={entity.LogicalName}, ID={keySegment.Keys.First().Value}, AllColumns={columnSet.AllColumns}, Columns={string.Join(",", columnSet.Columns)}");
+
             RetrieveRequest retrieveRequest = new RetrieveRequest
             {
                 Target = GetEntityReferenceFromKeySegment(entity, keySegment),
-                ColumnSet = GetColumnSet(parser)
+                ColumnSet = columnSet
             };
             conversionResult.ConvertedRequest = retrieveRequest;
         }
 
-        private ColumnSet GetColumnSet(ODataUriParser parser)
+        private ColumnSet GetColumnSet(ODataUriParser parser, EntityMetadata entityMetadata = null)
         {
             var selectAndExpand = parser.ParseSelectAndExpand();
             if (selectAndExpand == null)
             {
                 return new ColumnSet(true);
             }
-            foreach (var item in selectAndExpand.SelectedItems)
-            {
-                if (!(item is PathSelectItem pathSelectItem))
-                {
-                    throw new NotImplementedException("Item not supported:" + item.GetType().Name);
-                }
-                if (pathSelectItem.HasOptions)
-                    throw new NotSupportedException("Options are not supported");
 
-                if (pathSelectItem.SelectedPath.Count != 1)
-                    throw new NotSupportedException("Only 1 segment was expected");
-                if (!(pathSelectItem.SelectedPath.FirstSegment is PropertySegment propertySegment))
-                    throw new NotSupportedException("Only property segment are supported");
+            // If we see anything more complex than simple property selects (e.g., $expand), just fall back to all columns
+            if (selectAndExpand.SelectedItems.Any(si => !(si is PathSelectItem pathSelectItem) || pathSelectItem.HasOptions || pathSelectItem.SelectedPath.Count != 1 || !(pathSelectItem.SelectedPath.FirstSegment is PropertySegment)))
+            {
+                return new ColumnSet(true);
             }
+
             if (selectAndExpand.AllSelected)
             {
                 return new ColumnSet(true);
             }
+
             ColumnSet columnSet = new ColumnSet();
+            
+            // Cache metadata lookup and suffix string to avoid repeated operations
+            EntityMetadata entityMetadataWithAttributes = null;
+            string entitySuffix = null;
+            if (entityMetadata != null)
+            {
+                entityMetadataWithAttributes = this.Context.MetadataCache.GetEntityMetadataWithAttributes(entityMetadata.LogicalName);
+                entitySuffix = "_" + entityMetadata.LogicalName;
+            }
+            
             foreach (var item in selectAndExpand.SelectedItems)
             {
                 var pathSelectItem = (PathSelectItem)item;
                 var propertySegment = (PropertySegment)pathSelectItem.SelectedPath.FirstSegment;
                 var navigationProperties = propertySegment.Property.DeclaringType.NavigationProperties();
                 var navigationProperty = navigationProperties.FirstOrDefault(p => p.ReferentialConstraint != null && p.ReferentialConstraint.PropertyPairs.Any(rc => rc.DependentProperty?.Name == propertySegment.Identifier));
+                
+                string columnName;
                 if (navigationProperty == null)
                 {
-                    columnSet.AddColumn(propertySegment.Identifier);
+                    columnName = propertySegment.Identifier;
                 }
                 else
                 {
-                    columnSet.AddColumn(navigationProperty.Name.ToLowerInvariant());
+                    columnName = navigationProperty.Name.ToLowerInvariant();
                 }
+                
+                // Trim entity suffix if present (e.g., hds_originatingpricelist_pricelevel -> hds_originatingpricelist)
+                // Only trim if we can verify the trimmed name exists in metadata to avoid false positives
+                if (entitySuffix != null && columnName.EndsWith(entitySuffix, StringComparison.OrdinalIgnoreCase))
+                {
+                    var trimmedName = columnName.Substring(0, columnName.Length - entitySuffix.Length);
+                    var attributeExists = entityMetadataWithAttributes.Attributes.Any(a => string.Equals(a.LogicalName, trimmedName, StringComparison.OrdinalIgnoreCase));
+                    
+                    if (attributeExists)
+                    {
+                        columnName = trimmedName;
+                    }
+                    else
+                    {
+                        System.Diagnostics.Trace.WriteLine($"[DvBrowser] WARNING: Column '{columnName}' has entity suffix but trimmed name '{trimmedName}' not found in metadata");
+                    }
+                }
+                
+                columnSet.AddColumn(columnName);
             }
+            
             return columnSet;
         }
 
@@ -147,11 +176,41 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                 ReadEntityFromJson(entityMetadata, record, json.RootElement);
             }
 
+            // Final normalization: remove any trailing "_<entity>" suffix from attribute names (e.g., hds_lookup_pricelevel -> hds_lookup).
+            // Only trim if the trimmed attribute exists in metadata to avoid false positives.
+            var entitySuffix = "_" + record.LogicalName;
+            var keysToTrim = record.Attributes.Keys
+                .Where(k => k.EndsWith(entitySuffix, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            
+            if (keysToTrim.Count > 0)
+            {
+                foreach (var key in keysToTrim)
+                {
+                    var trimmedKey = key.Substring(0, key.Length - entitySuffix.Length);
+                    
+                    // Only trim if the trimmed attribute exists in metadata or if it doesn't already exist in the record
+                    var attributeMetadata = entityMetadata.Attributes.FirstOrDefault(a => string.Equals(a.LogicalName, trimmedKey, StringComparison.OrdinalIgnoreCase));
+                    if (attributeMetadata != null && !record.Attributes.Contains(trimmedKey))
+                    {
+                        record[trimmedKey] = record[key];
+                        record.Attributes.Remove(key);
+                    }
+                    else if (attributeMetadata == null)
+                    {
+                        System.Diagnostics.Trace.WriteLine($"[DvBrowser] WARNING: Attribute '{key}' has entity suffix but trimmed name '{trimmedKey}' not found in metadata");
+                    }
+                }
+            }
+
             return request;
         }
 
         private void ReadEntityFromJson(EntityMetadata entityMetadata, Entity record, JsonElement json, string primaryKeyPropertyName = null)
         {
+            // Cache entity suffix to avoid repeated string concatenation
+            var entitySuffix = "_" + record.LogicalName;
+            
             foreach (var node in json.EnumerateObject())
             {
                 string key = node.Name;
@@ -179,6 +238,23 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                     object value = ConvertValueToAttribute(attributeMetadata, node.Value);
                     record.Attributes.Add(key, value);
                 }
+                else if (key.EndsWith(entitySuffix, StringComparison.OrdinalIgnoreCase))
+                {
+                    // Fallback: remove the entity suffix if present (e.g., *_pricelevel) and retry.
+                    var trimmedKey = key.Substring(0, key.Length - entitySuffix.Length);
+                    attributeMetadata = entityMetadata.Attributes.FirstOrDefault(a => string.Equals(a.LogicalName, trimmedKey, StringComparison.OrdinalIgnoreCase));
+                    if (attributeMetadata != null)
+                    {
+                        object value = ConvertValueToAttribute(attributeMetadata, node.Value);
+                        record.Attributes.Add(trimmedKey, value);
+                        continue;
+                    }
+                    else
+                    {
+                        // Attribute not found even after trimming - log warning
+                        System.Diagnostics.Trace.WriteLine($"[DvBrowser] WARNING: Attribute '{key}' (trimmed: '{trimmedKey}') not found in entity '{record.LogicalName}'");
+                    }
+                }
                 else if (key == primaryKeyPropertyName)
                 {
                     attributeMetadata = entityMetadata.Attributes.FirstOrDefault(a => a.IsPrimaryId == true);
@@ -198,12 +274,39 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
 
         private static string ExtractAttributeNameFromodatabind(EntityMetadata entityMetadata, string odatabindValue)
         {
-            string key = odatabindValue.Substring(0, odatabindValue.Length - "@odata.bind".Length).ToLowerInvariant();
-            var relation = entityMetadata.ManyToOneRelationships.FirstOrDefault(r => r.ReferencingEntityNavigationPropertyName == key);
+            const string odataBindSuffix = "@odata.bind";
+            string key = odatabindValue.Substring(0, odatabindValue.Length - odataBindSuffix.Length).ToLowerInvariant();
+            var relation = entityMetadata.ManyToOneRelationships.FirstOrDefault(r =>
+                string.Equals(r.ReferencingEntityNavigationPropertyName, key, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(r.ReferencedEntityNavigationPropertyName, key, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(r.SchemaName, key, StringComparison.OrdinalIgnoreCase));
+
+            // Some nav property names coming from the client include the entity logical name suffix (e.g., *_pricelevel).
+            // If we didn't find a relation, try trimming the current entity logical name suffix and retry.
+            var entitySuffix = "_" + entityMetadata.LogicalName;
+            if (relation == null && key.EndsWith(entitySuffix, StringComparison.OrdinalIgnoreCase))
+            {
+                var trimmedKey = key.Substring(0, key.Length - entitySuffix.Length);
+                relation = entityMetadata.ManyToOneRelationships.FirstOrDefault(r =>
+                    string.Equals(r.ReferencingEntityNavigationPropertyName, trimmedKey, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(r.ReferencedEntityNavigationPropertyName, trimmedKey, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(r.SchemaName, trimmedKey, StringComparison.OrdinalIgnoreCase));
+                if (relation != null)
+                {
+                    key = trimmedKey;
+                }
+                else
+                {
+                    // No relation found, but still trim the suffix to fall back to the lookup attribute name.
+                    key = trimmedKey;
+                }
+            }
+            
             if (relation != null)
             {
                 key = relation.ReferencingAttribute;
             }
+            
             return key;
         }
 

@@ -8,9 +8,11 @@ using System.Text.Encodings.Web;
 using System.Text.Json.Nodes;
 using Dataverse.Utils;
 using Dataverse.WebApi2IOrganizationService.Model;
+using Microsoft.Crm.Sdk.Messages;
 using Microsoft.OData.Edm;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Messages;
+using Microsoft.Xrm.Sdk.Query;
 
 namespace Dataverse.WebApi2IOrganizationService.Converters
 {
@@ -63,10 +65,10 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
             switch (response)
             {
                 case CreateResponse createResponse:
-                    return ConvertCreateResponse((CreateRequest)conversionResult.ConvertedRequest, createResponse);
-                case UpdateResponse _:
+                    return ConvertCreateResponse((CreateRequest)conversionResult.ConvertedRequest, createResponse, conversionResult);
+                case UpdateResponse updateResponse:
                     return ConvertUpdateResponse((UpdateRequest)conversionResult.ConvertedRequest);
-                case RetrieveResponse _:
+                case RetrieveResponse retrieveResponse:
                     return ConvertRetrieveResponse(conversionResult);
                 case DeleteResponse _:
                     return ConvertDeleteResponse();
@@ -102,6 +104,11 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                 if (responseItem.Fault != null)
                 {
                     convertedResponse = ConvertError(responseItem.Fault.ErrorCode, responseItem.Fault.Message, responseItem.Fault.ToString());
+                }
+                else if (responseItem.Response is RetrieveResponse)
+                {
+                    // For retrieve responses in batch, use HttpGet to get proper null values and annotations
+                    convertedResponse = ConvertRetrieveResponse(requestConversionResult);
                 }
                 else
                 {
@@ -164,8 +171,8 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
             {
                 ["@odata.context"] = $"https://{this.Context.Host}/api/data/v9.2/$metadata#Microsoft.Dynamics.CRM.{organizationResponse.ResponseName}Response"
             };
-            var operation = this.Context.Model.FindDeclaredOperations("Microsoft.Dynamics.CRM." + organizationResponse.ResponseName).Single();
-            var returnTypeDefinition = operation.ReturnType.Definition as IEdmStructuredType;
+            var operation = this.Context.Model.FindDeclaredOperations("Microsoft.Dynamics.CRM." + organizationResponse.ResponseName).FirstOrDefault();
+            var returnTypeDefinition = operation?.ReturnType?.Definition as IEdmStructuredType;
 
             bool bodyIsEmpty = true;
             foreach (var property in organizationResponse.Results)
@@ -256,10 +263,12 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                             }
                             else
                             {
-                                var value = new JsonObject
+                                var keyProperty = definition.DeclaredKey.FirstOrDefault();
+                                var value = new JsonObject();
+                                if (keyProperty != null)
                                 {
-                                    [definition.DeclaredKey.Single().Name] = entityReferenceValue.Id
-                                };
+                                    value[keyProperty.Name] = entityReferenceValue.Id;
+                                }
                                 body[property.Key] = value;
                             }
                         }
@@ -267,8 +276,8 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                         {
                             // Here it's a property of an entity record included in a property response
                             var entityTypeDefinition = (IEdmStructuredType)this.Context.Model.FindDeclaredType("Microsoft.Dynamics.CRM." + currentEntityLogicalName);
-                            var declaredProperty = entityTypeDefinition.DeclaredProperties.Single(p => p.Name == property.Key);
-                            if (declaredProperty.PropertyKind == EdmPropertyKind.Navigation)
+                            var declaredProperty = entityTypeDefinition?.DeclaredProperties?.FirstOrDefault(p => p.Name == property.Key);
+                            if (declaredProperty?.PropertyKind == EdmPropertyKind.Navigation)
                             {
                                 body["_" + property.Key + "_value"] = entityReferenceValue.Id;
                             }
@@ -309,8 +318,24 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
                         }
                     }
                     break;
+                case BooleanManagedProperty booleanManagedProperty:
+                    body[property.Key] = booleanManagedProperty.Value;
+                    break;
+                case AccessRights accessRights:
+                    // AccessRights is a Flags enum - serialize as string
+                    body[property.Key] = accessRights.ToString();
+                    break;
+                case AliasedValue aliasedValue:
+                    // AliasedValue is used in aggregate queries and linked entities
+                    // Recursively convert the inner value
+                    AddValueToJsonObject(body, new KeyValuePair<string, object>(property.Key, aliasedValue.Value), currentEntityLogicalName, parameter);
+                    break;
+                case Enum enumValue:
+                    // Handle other enums generically
+                    body[property.Key] = enumValue.ToString();
+                    break;
                 default:
-                    throw new NotImplementedException($"Message has been executed but response cannot be generated. Parameter:{property.Key}={property.Value}");
+                    throw new NotImplementedException($"Message has been executed but response cannot be generated. Parameter:{property.Key}={property.Value?.GetType().FullName}");
             }
         }
 
@@ -370,7 +395,7 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
             };
         }
 
-        private WebApiResponse ConvertCreateResponse(CreateRequest createRequest, CreateResponse createResponse)
+        private WebApiResponse ConvertCreateResponse(CreateRequest createRequest, CreateResponse createResponse, RequestConversionResult conversionResult)
         {
             string setName = this.Context.MetadataCache.GetEntityFromLogicalName(createRequest.Target.LogicalName).EntitySetName;
             var id = $"{this.Context.WebApiBaseUrl}{setName}({createResponse.id})";
@@ -394,27 +419,41 @@ namespace Dataverse.WebApi2IOrganizationService.Converters
         {
             //TODO: convert the response instead of requesting
             string url = $"https://{this.Context.Host}{conversionResult.SrcRequest.LocalPathWithQuery}";
-            HttpResponseMessage retrieveResult = HttpGet(url, false);
+            
+            // Pass important headers from the original request (especially Prefer header for annotations)
+            var preferHeader = conversionResult.SrcRequest.Headers["Prefer"];
+            
+            HttpResponseMessage retrieveResult = HttpGet(url, false, preferHeader);
+            var bodyBytes = retrieveResult.Content.ReadAsByteArrayAsync().Result;
             NameValueCollection headers = new NameValueCollection();
             foreach (var header in retrieveResult.Headers)
             {
                 headers.Add(header.Key, String.Concat(header.Value, ","));
             }
+            // Also copy content headers like Content-Type
+            foreach (var header in retrieveResult.Content.Headers)
+            {
+                headers.Add(header.Key, String.Concat(header.Value, ","));
+            }
             return new WebApiResponse()
             {
-                Body = retrieveResult.Content.ReadAsByteArrayAsync().Result,
+                Body = bodyBytes,
                 Headers = headers,
                 StatusCode = 200
             };
         }
 
-        private HttpResponseMessage HttpGet(string url, bool bypassPLugins)
+        private HttpResponseMessage HttpGet(string url, bool bypassPlugins, string preferHeader = null)
         {
             HttpRequestMessage retrieveMessage = new HttpRequestMessage(HttpMethod.Get, url);
             this.Context.AddAuthorizationHeaders(retrieveMessage);
-            if (bypassPLugins)
+            if (bypassPlugins)
             {
                 retrieveMessage.Headers.Add("MSCRM.BypassCustomPluginExecution", "true");
+            }
+            if (!string.IsNullOrEmpty(preferHeader))
+            {
+                retrieveMessage.Headers.Add("Prefer", preferHeader);
             }
             var retrieveResult = this.Context.HttpClient.SendAsync(retrieveMessage).Result;
             return retrieveResult;

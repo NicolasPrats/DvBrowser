@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Reflection;
+using System.Linq;
 using Dataverse.Plugin.Emulator.Context;
 using Dataverse.Plugin.Emulator.Services;
 using Microsoft.Xrm.Sdk;
@@ -16,21 +18,43 @@ namespace Dataverse.Plugin.Emulator.Steps
         internal DataCache DataCache { get; }
 
         private Func<Guid, IOrganizationService> ProxyFactory { get; }
-        internal Dictionary<string, List<PluginStepDescription>> PluginSteps { get; } = new Dictionary<string, List<PluginStepDescription>>();
+        internal Dictionary<string, List<PluginStepDescription>> PluginSteps { get; } = new Dictionary<string, List<PluginStepDescription>>(StringComparer.OrdinalIgnoreCase);
         private List<PluginStepDescription> AsynchronousSteps { get; } = new List<PluginStepDescription>();
 
         internal PluginInstanceCache PluginCache { get; } = new PluginInstanceCache();
+
+        private static bool assemblyResolverRegistered = false;
 
         public PluginEmulator(Func<Guid, IOrganizationService> proxyFactory)
         {
             this.ProxyFactory = proxyFactory ?? throw new ArgumentNullException(nameof(proxyFactory));
             this.InnerServiceProxy = this.ProxyFactory(Guid.Empty);
             this.DataCache = new DataCache(this.InnerServiceProxy);
+
+            // Ensure plugin assemblies can resolve Xrm dependencies to the versions already loaded by the host.
+            if (!assemblyResolverRegistered)
+            {
+                AppDomain.CurrentDomain.AssemblyResolve += (sender, args) =>
+                {
+                    if (args.Name.StartsWith("Microsoft.Xrm.Sdk", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return typeof(IOrganizationService).Assembly;
+                    }
+                    if (args.Name.StartsWith("Microsoft.Crm.Sdk.Proxy", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return AppDomain.CurrentDomain.GetAssemblies()
+                            .FirstOrDefault(a => a.FullName.StartsWith("Microsoft.Crm.Sdk.Proxy", StringComparison.OrdinalIgnoreCase));
+                    }
+                    return null;
+                };
+                assemblyResolverRegistered = true;
+            }
         }
 
         public bool AddPluginAssembly(string pluginPath)
         {
             bool allStepsHaveBeenLoaded = true;
+            int loadedSteps = 0;
 
             if (pluginPath == null)
             {
@@ -77,9 +101,13 @@ namespace Dataverse.Plugin.Emulator.Steps
             foreach (var step in result.Entities)
             {
 
+                var pluginTypeName = step.GetAttributeValue<AliasedValue>("plugintype.name")?.Value;
+                var messageName = step.GetAttributeValue<AliasedValue>("sdkmessage.name")?.Value;
+
                 if (step.Contains("configuration")
                     || step.Contains("sdkmessageprocessingstepsecureconfigid"))
                 {
+                    System.Diagnostics.Trace.WriteLine($"Skipping step {pluginTypeName} on message {messageName} because it uses configuration or secure configuration (not supported).");
                     allStepsHaveBeenLoaded = false;
                     continue;
                     //throw new NotImplementedException("configuration in step is not implemented!");
@@ -87,6 +115,7 @@ namespace Dataverse.Plugin.Emulator.Steps
 
                 if (step.Contains("impersonatinguserid") && step.GetAttributeValue<EntityReference>("impersonatinguserid").Id != Guid.Empty)
                 {
+                    System.Diagnostics.Trace.WriteLine($"Skipping step {pluginTypeName} on message {messageName} because it uses impersonation (not supported).");
                     allStepsHaveBeenLoaded = false;
                     continue;
                     //throw new NotImplementedException("Impersonation in step is not implemented!");
@@ -99,7 +128,10 @@ namespace Dataverse.Plugin.Emulator.Steps
                     MessageName = (string)step.GetAttributeValue<AliasedValue>("sdkmessage.name")?.Value,
                     Stage = step.GetAttributeValue<OptionSetValue>("stage").Value,
                     Rank = step.GetAttributeValue<int>("rank"),
-                    FilteringAttributes = step.GetAttributeValue<string>("filteringattributes")?.Split(','),
+                    FilteringAttributes = step.GetAttributeValue<string>("filteringattributes")?
+                        .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                        .Select(a => a.Trim().ToLowerInvariant())
+                        .ToArray(),
                     EventHandler = (string)step.GetAttributeValue<AliasedValue>("plugintype.name")?.Value,
                     IsAsynchronous = step.GetAttributeValue<OptionSetValue>("mode")?.Value == 1,
                     PrimaryEntity = (string)step.GetAttributeValue<AliasedValue>("filter.primaryobjecttypecode")?.Value,
@@ -107,6 +139,7 @@ namespace Dataverse.Plugin.Emulator.Steps
                 };
                 if (stepDescription.SecondaryEntity != null && stepDescription.SecondaryEntity != "none")
                 {
+                    System.Diagnostics.Trace.WriteLine($"Skipping step {stepDescription.EventHandler} on message {stepDescription.MessageName} because it has a secondary entity ({stepDescription.SecondaryEntity}) which is not supported.");
                     allStepsHaveBeenLoaded = false;
                     continue;
                     //throw new NotImplementedException("SecondaryEntity in step is not implemented!");
@@ -135,6 +168,7 @@ namespace Dataverse.Plugin.Emulator.Steps
                 {
                     this.AsynchronousSteps.Add(stepDescription);
                 }
+                loadedSteps++;
             }
             return allStepsHaveBeenLoaded;
         }

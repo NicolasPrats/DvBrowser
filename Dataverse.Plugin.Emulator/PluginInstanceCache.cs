@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using Microsoft.Xrm.Sdk;
 
 namespace Dataverse.Plugin.Emulator.Steps
@@ -13,18 +15,31 @@ namespace Dataverse.Plugin.Emulator.Steps
 
             if (!this.Cache.TryGetValue(key, out var plugin))
             {
-                var type = step.Assembly.GetType(step.EventHandler);
-                if (type.GetConstructor(new Type[] { }) != null)
+                try
                 {
-                    plugin = (IPlugin)Activator.CreateInstance(type);
+                    var type = step.Assembly?.GetType(step.EventHandler, throwOnError: true) ?? Type.GetType(step.EventHandler, throwOnError: true);
+
+                    if (type.GetConstructor(Type.EmptyTypes) != null)
+                    {
+                        plugin = (IPlugin)Activator.CreateInstance(type);
+                    }
+                    else if (type.GetConstructor(new Type[] { typeof(string), typeof(string) }) != null)
+                    {
+                        plugin = (IPlugin)Activator.CreateInstance(type, null, (string)null);
+                    }
+                    else
+                    {
+                        throw new NotSupportedException("No constructor found for plugin: " + step.EventHandler);
+                    }
                 }
-                else if (type.GetConstructor(new Type[] { typeof(string), typeof(string) }) != null)
+                catch (ReflectionTypeLoadException ex)
                 {
-                    plugin = (IPlugin)Activator.CreateInstance(type, null, (string)null);
+                    var loaderMessages = ex.LoaderExceptions?.Select(e => e.Message).ToArray() ?? Array.Empty<string>();
+                    throw new NotSupportedException($"Plugin type '{step.EventHandler}' could not be loaded from assembly '{step.Assembly?.FullName ?? "(null)"}'. LoaderExceptions: {string.Join(" | ", loaderMessages)}", ex);
                 }
-                else
+                catch (Exception ex)
                 {
-                    throw new NotSupportedException("No constructor found for plugin: " + step.EventHandler);
+                    throw new NotSupportedException($"Plugin type '{step.EventHandler}' not found in assembly '{step.Assembly?.FullName ?? "(null)"}'.", ex);
                 }
                 this.Cache[key] = plugin;
             }

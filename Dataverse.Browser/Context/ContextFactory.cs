@@ -48,7 +48,16 @@ namespace Dataverse.Browser.Context
             {
                 NotifyProgress("Initializing traces");
                 TraceControlSettings.TraceLevel = SourceLevels.All;
-                TraceControlSettings.AddTraceListener(new TextWriterTraceListener(Path.Combine(this.SelectedEnvironment.GetWorkingDirectory(), "log.txt")));
+                Trace.AutoFlush = true;
+                string logPath = Path.Combine(this.SelectedEnvironment.GetWorkingDirectory(), "log.txt");
+                // Capture both CrmServiceClient traces and our own progress traces in the same file.
+                const string BrowserTraceListenerName = "DvBrowserLog";
+                var listener = new TextWriterTraceListener(logPath) { Name = BrowserTraceListenerName };
+                TraceControlSettings.AddTraceListener(listener);
+                if (!Trace.Listeners.OfType<TextWriterTraceListener>().Any(l => string.Equals(l.Name, BrowserTraceListenerName, StringComparison.OrdinalIgnoreCase)))
+                {
+                    Trace.Listeners.Add(listener);
+                }
                 OnNewProgress += ContextFactory_OnNewProgress;
                 OnError += ContextFactory_OnError;
 
@@ -275,7 +284,15 @@ namespace Dataverse.Browser.Context
             if (environnementConfiguration.DisableAsyncSteps)
             {
                 NotifyProgress("Disabling async steps");
-                emulator.DisableAyncSteps();
+                try
+                {
+                    emulator.DisableAyncSteps();
+                }
+                catch (Exception ex)
+                {
+                    // Keep going even if the org refuses the update (e.g. network/firewall/timeouts).
+                    NotifyProgress("Could not disable async steps: " + ex.Message);
+                }
             }
             return emulator;
         }
