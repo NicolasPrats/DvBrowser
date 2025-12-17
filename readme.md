@@ -15,9 +15,10 @@ The browser now supports:
 * **Custom API**: Custom actions and bound functions (e.g., RetrievePrincipalAccess)
 * **Lookup fields**: Full OData annotations support for formatted values and logical names via Prefer header forwarding
 
-For retrieve operations, the emulator proxies requests to the Dataverse Web API to ensure complete responses with null attributes and OData annotations, which are essential for proper form rendering in Model Driven Apps.
+**Important Note on Retrieve Operations**: For retrieve operations (Retrieve, RetrieveMultiple), the emulator proxies requests directly to the Dataverse Web API instead of using SDK conversion. This ensures complete responses with null attributes and OData annotations, which are essential for proper form rendering in Model Driven Apps. As a consequence, **Retrieve and RetrieveMultiple plugins are executed server-side and cannot be debugged locally**. All other operations (Create, Update, Delete, Custom API) run plugins locally and can be debugged.
 
 Please note that the chosen architecture has some limits which will probably never be fixed by this project:
+* **Retrieve plugin debugging**: Retrieve and RetrieveMultiple plugins run server-side (not locally) to ensure proper form rendering with OData annotations
 * There is no support for transactions (except within batch changesets)
 * When plugins are triggered because of a server side operation, they will not be run locally
 * For many reasons, behavior will never be perfectly similar to the one when plugins are executed on server side.
