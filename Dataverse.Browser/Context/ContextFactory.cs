@@ -88,6 +88,52 @@ namespace Dataverse.Browser.Context
                     return;
                 }
 
+                // Check for orphaned lock file from previous crash
+                string workingDirectory = this.SelectedEnvironment.GetWorkingDirectory();
+                var orphanedStepIds = Dataverse.Plugin.Emulator.Steps.PluginEmulator.CheckForOrphanedLockFile(workingDirectory);
+                if (orphanedStepIds != null && orphanedStepIds.Count > 0)
+                {
+                    NotifyProgress($"Found {orphanedStepIds.Count} async steps that were disabled by a previous session");
+                    var recoveryResult = System.Windows.MessageBox.Show(
+                        $"DvBrowser detected that {orphanedStepIds.Count} asynchronous plugin steps were disabled by a previous session that did not close properly.\n\n" +
+                        "Would you like to re-enable them now?\n\n" +
+                        "Click YES to re-enable the steps.\n" +
+                        "Click NO to leave them disabled (you can re-enable them manually later).",
+                        "Recover Disabled Async Steps",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Question);
+
+                    if (recoveryResult == MessageBoxResult.Yes)
+                    {
+                        NotifyProgress("Re-enabling async steps from previous session...");
+                        try
+                        {
+                            // Create a temporary emulator just to re-enable the steps
+                            var tempEmulator = new Dataverse.Plugin.Emulator.Steps.PluginEmulator((callerId) =>
+                            {
+                                var svc = new CrmServiceClient(GetConnectionString(false));
+                                if (!svc.IsReady)
+                                    svc = new CrmServiceClient(GetConnectionString(true));
+                                svc.CallerId = callerId;
+                                return svc;
+                            });
+                            tempEmulator.SetCacheDirectory(workingDirectory);
+                            tempEmulator.ReenableAsyncStepsByIds(orphanedStepIds);
+                            NotifyProgress("Successfully re-enabled async steps");
+                        }
+                        catch (Exception ex)
+                        {
+                            NotifyProgress("Warning: Could not re-enable async steps: " + ex.Message);
+                            System.Windows.MessageBox.Show(
+                                $"Failed to re-enable async steps: {ex.Message}\n\n" +
+                                "You may need to re-enable them manually in your Dataverse environment.",
+                                "Recovery Failed",
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Warning);
+                        }
+                    }
+                }
+
                 var emulator = InitializePluginEmulator(this.SelectedEnvironment, connectionString);
 
                 NotifyProgress("Initializing metadata cache...");
@@ -286,6 +332,7 @@ namespace Dataverse.Browser.Context
                 NotifyProgress("Disabling async steps");
                 try
                 {
+                    emulator.SetCacheDirectory(environnementConfiguration.GetWorkingDirectory());
                     emulator.DisableAyncSteps();
                 }
                 catch (Exception ex)

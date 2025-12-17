@@ -80,6 +80,68 @@ When you need to make code changes while debugging:
 
 At the right bottom of the list, the trash icon allows you to clear the history of requests.
 
+## Asynchronous Plugin Testing
+
+The Dataverse Browser fully supports testing **asynchronous plugins** with special handling to prevent duplicate execution:
+
+### How It Works
+
+* **Async plugins execute locally**: Just like synchronous plugins, async plugins run in the browser emulator with `Mode = 1` context
+* **Execution order preserved**: Async steps execute after sync steps in Post-Operation stage, maintaining proper plugin pipeline order
+* **Immediate execution**: Unlike server-side async plugins (which queue), emulated async plugins run immediately in the same process
+
+### "Disable Asynchronous Steps" Feature
+
+The environment settings include a **"Disable asynchronous steps"** checkbox that prevents double execution of async plugins:
+
+**⚠️ IMPORTANT BEHAVIOR:**
+* When enabled, **ALL asynchronous plugin steps from your loaded plugin assembly are disabled on the server**
+* This affects **every async step** in the assembly, not just specific plugins
+* Synchronous steps from the same assembly remain active
+* Async steps from other assemblies are NOT affected
+
+**Example:** If your assembly contains:
+- Plugin A: Create Account (Sync) - **Remains Active**
+- Plugin B: Update Contact (Async) - **Disabled on Server**
+- Plugin C: Delete Lead (Async) - **Disabled on Server**
+
+All async steps (B and C) will be disabled when the checkbox is checked.
+
+**Why Use This Feature:**
+Without this option, async plugins would execute twice:
+1. Once locally in the browser (for debugging)
+2. Once on the server after the request completes
+
+This can cause unwanted side effects like duplicate emails, duplicate records, or double processing.
+
+### Crash Recovery
+
+The browser includes robust recovery mechanisms for unexpected shutdowns:
+
+**Lock File Tracking:**
+* When async steps are disabled, a lock file (`disabled_async_steps.lock`) is created with the specific step IDs
+* This file is automatically deleted on normal exit
+* Tracks only the steps that were actually disabled by the browser
+
+**Exit Handlers:**
+* ProcessExit, ApplicationExit, and UnhandledException handlers attempt to re-enable steps even during crashes
+* Multiple redundant handlers ensure cleanup happens in most failure scenarios
+
+**Startup Recovery:**
+* On next startup, if an orphaned lock file is detected, a dialog offers to re-enable the steps
+* Shows exactly how many steps were left disabled
+* Gives you the choice to recover or leave them disabled
+* Only re-enables the specific steps that were disabled (not all disabled steps in the environment)
+
+**Manual Recovery:**
+If automatic recovery fails:
+1. Open your Dataverse environment
+2. Navigate to Settings → Customizations → Customize the System → SDK Message Processing Steps
+3. Find the disabled steps (Status = Inactive) from your plugin assembly
+4. Manually activate them
+
+Or simply uncheck the "Disable asynchronous steps" option and run the browser normally once.
+
 # Known Limitations and Future Work
 
 The following features are not yet implemented and are tracked for future development:

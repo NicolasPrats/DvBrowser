@@ -11,6 +11,8 @@ namespace Dataverse.Browser
 {
     internal static class Program
     {
+        private static EnvironnementConfiguration selectedEnvironment = null;
+        private static BrowserContext context = null;
 
         /// <summary>
         /// The main entry point for the application.
@@ -26,8 +28,11 @@ namespace Dataverse.Browser
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            EnvironnementConfiguration selectedEnvironment = null;
-            BrowserContext context = null;
+            // Register exit handlers to ensure async steps are re-enabled even on unexpected shutdown
+            AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
+            Application.ApplicationExit += OnApplicationExit;
+            AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
+
             try
             {
                 EnsureApplicationPathExists();
@@ -49,10 +54,37 @@ namespace Dataverse.Browser
             }
             finally
             {
+                CleanupAsyncSteps();
+            }
+        }
+
+        private static void OnProcessExit(object sender, EventArgs e)
+        {
+            CleanupAsyncSteps();
+        }
+
+        private static void OnApplicationExit(object sender, EventArgs e)
+        {
+            CleanupAsyncSteps();
+        }
+
+        private static void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            CleanupAsyncSteps();
+        }
+
+        private static void CleanupAsyncSteps()
+        {
+            try
+            {
                 if (selectedEnvironment?.DisableAsyncSteps == true)
                 {
                     context?.PluginsEmulator.ReenableAsyncSteps();
                 }
+            }
+            catch
+            {
+                // Suppress exceptions during cleanup to avoid crashing during shutdown
             }
         }
 

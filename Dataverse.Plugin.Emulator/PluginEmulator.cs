@@ -228,15 +228,123 @@ namespace Dataverse.Plugin.Emulator.Steps
             return new OrganizationServiceWithEmulatedPlugins(service, this, context, this.EmulatorOptions);
         }
 
-        public void ReenableAsyncSteps()
+        /// <summary>
+        /// Gets the path to the lock file that tracks disabled async steps
+        /// </summary>
+        private string GetAsyncStepsLockFilePath()
         {
-            SetAsyncStepsState(true);
+            if (string.IsNullOrEmpty(this.cacheDirectory))
+                return null;
+            return Path.Combine(this.cacheDirectory, "disabled_async_steps.lock");
         }
 
+        /// <summary>
+        /// Re-enables async steps that were previously disabled by this application
+        /// </summary>
+        public void ReenableAsyncSteps()
+        {
+            string lockFilePath = GetAsyncStepsLockFilePath();
+            if (!string.IsNullOrEmpty(lockFilePath) && File.Exists(lockFilePath))
+            {
+                try
+                {
+                    // Read the lock file to get the specific steps we disabled
+                    var disabledStepIds = ReadLockFile(lockFilePath);
+                    if (disabledStepIds != null && disabledStepIds.Count > 0)
+                    {
+                        SetAsyncStepsStateByIds(disabledStepIds, true);
+                    }
+                    // Delete the lock file after successfully re-enabling
+                    File.Delete(lockFilePath);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Trace.WriteLine($"[PluginEmulator] Error re-enabling async steps from lock file: {ex.Message}");
+                    // Try the fallback method
+                    SetAsyncStepsState(true);
+                }
+            }
+            else
+            {
+                // Fallback: re-enable all steps in AsynchronousSteps collection
+                SetAsyncStepsState(true);
+            }
+        }
+
+        /// <summary>
+        /// Disables async steps and creates a lock file to track which steps were disabled
+        /// </summary>
         public void DisableAyncSteps()
         {
+            var disabledStepIds = new List<Guid>();
+            foreach (var stepDescription in this.AsynchronousSteps)
+            {
+                disabledStepIds.Add(stepDescription.Id);
+            }
+
             SetAsyncStepsState(false);
-            //TODO : il reste un layer unmanaged si les étapes étaient managed
+
+            // Create lock file with the list of disabled step IDs
+            string lockFilePath = GetAsyncStepsLockFilePath();
+            if (!string.IsNullOrEmpty(lockFilePath))
+            {
+                try
+                {
+                    WriteLockFile(lockFilePath, disabledStepIds);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Trace.WriteLine($"[PluginEmulator] Warning: Could not create lock file: {ex.Message}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Checks for orphaned lock file from previous crash and offers to recover
+        /// </summary>
+        public static List<Guid> CheckForOrphanedLockFile(string cacheDirectory)
+        {
+            if (string.IsNullOrEmpty(cacheDirectory))
+                return null;
+
+            string lockFilePath = Path.Combine(cacheDirectory, "disabled_async_steps.lock");
+            if (!File.Exists(lockFilePath))
+                return null;
+
+            try
+            {
+                return ReadLockFile(lockFilePath);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.WriteLine($"[PluginEmulator] Error reading orphaned lock file: {ex.Message}");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Re-enables specific async steps by their IDs (used for crash recovery)
+        /// </summary>
+        public void ReenableAsyncStepsByIds(List<Guid> stepIds)
+        {
+            if (stepIds == null || stepIds.Count == 0)
+                return;
+
+            SetAsyncStepsStateByIds(stepIds, true);
+
+            // Delete the lock file after recovery
+            string lockFilePath = GetAsyncStepsLockFilePath();
+            if (!string.IsNullOrEmpty(lockFilePath) && File.Exists(lockFilePath))
+            {
+                try
+                {
+                    File.Delete(lockFilePath);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Trace.WriteLine($"[PluginEmulator] Warning: Could not delete lock file: {ex.Message}");
+                }
+            }
         }
 
         private void SetAsyncStepsState(bool enabled)
@@ -247,6 +355,51 @@ namespace Dataverse.Plugin.Emulator.Steps
                 step["statecode"] = new OptionSetValue(enabled ? 0 : 1);
                 this.InnerServiceProxy.Update(step);
             }
+        }
+
+        private void SetAsyncStepsStateByIds(List<Guid> stepIds, bool enabled)
+        {
+            foreach (var stepId in stepIds)
+            {
+                try
+                {
+                    Entity step = new Entity("sdkmessageprocessingstep", stepId);
+                    step["statecode"] = new OptionSetValue(enabled ? 0 : 1);
+                    this.InnerServiceProxy.Update(step);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Trace.WriteLine($"[PluginEmulator] Error updating step {stepId}: {ex.Message}");
+                }
+            }
+        }
+
+        private void WriteLockFile(string filePath, List<Guid> stepIds)
+        {
+            var lines = new List<string>
+            {
+                $"# DvBrowser Disabled Async Steps Lock File",
+                $"# Created: {DateTime.UtcNow:O}",
+                $"# Count: {stepIds.Count}"
+            };
+            lines.AddRange(stepIds.Select(id => id.ToString()));
+            File.WriteAllLines(filePath, lines);
+        }
+
+        private static List<Guid> ReadLockFile(string filePath)
+        {
+            var stepIds = new List<Guid>();
+            var lines = File.ReadAllLines(filePath);
+            foreach (var line in lines)
+            {
+                if (string.IsNullOrWhiteSpace(line) || line.StartsWith("#"))
+                    continue;
+                if (Guid.TryParse(line.Trim(), out Guid stepId))
+                {
+                    stepIds.Add(stepId);
+                }
+            }
+            return stepIds;
         }
 
         internal OrganizationResponse InnerExecute(OrganizationRequest request)
