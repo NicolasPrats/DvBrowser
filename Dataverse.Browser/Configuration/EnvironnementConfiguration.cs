@@ -16,10 +16,10 @@ namespace Dataverse.Browser.Configuration
 
         public string GetWorkingDirectory()
         {
-            string hostname = this.DataverseHost;
+            string hostname = this.DataverseHost ?? "";
             StringBuilder directoryNameBuilder = new StringBuilder();
             directoryNameBuilder.Append(this.Id).Append("-");
-            var invalidChars = Path.GetInvalidFileNameChars(); ;
+            var invalidChars = Path.GetInvalidFileNameChars();
             foreach (var c in hostname)
             {
                 if (!invalidChars.Contains(c))
@@ -31,9 +31,17 @@ namespace Dataverse.Browser.Configuration
                     directoryNameBuilder.Append(Convert.ToByte(c).ToString("x2"));
                 }
             }
-            string workingDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Dataverse.Browser", directoryNameBuilder.ToString());
+            string baseDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Dataverse.Browser");
+            string workingDirectory = Path.Combine(baseDirectory, directoryNameBuilder.ToString());
+            
+            // Ensure base directory exists
+            if (!Directory.Exists(baseDirectory))
+                Directory.CreateDirectory(baseDirectory);
+            
+            // Ensure working directory exists
             if (!Directory.Exists(workingDirectory))
                 Directory.CreateDirectory(workingDirectory);
+                
             return workingDirectory;
         }
 

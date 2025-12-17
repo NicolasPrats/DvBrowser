@@ -91,7 +91,8 @@ namespace Dataverse.Browser.Context
                 var emulator = InitializePluginEmulator(this.SelectedEnvironment, connectionString);
 
                 NotifyProgress("Initializing metadata cache...");
-                MetadataCache metadataCache = new MetadataCache(client);
+                string cachePath = this.SelectedEnvironment.GetWorkingDirectory();
+                MetadataCache metadataCache = new MetadataCache(client, cachePath, forceRefresh: false);
                 NotifyProgress("Creating context...");
                 BrowserContext context = new BrowserContext
                 {
