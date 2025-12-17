@@ -6,8 +6,6 @@ using Dataverse.Browser.Context;
 using Dataverse.Browser.Requests;
 using Dataverse.Plugin.Emulator.ExecutionTree;
 
-
-
 namespace Dataverse.Browser.UI
 {
     internal partial class BrowserWindow : Form

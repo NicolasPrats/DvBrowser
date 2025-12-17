@@ -60,10 +60,12 @@
             // 
             // splitContainer1.Panel1
             // 
+            this.splitContainer1.Panel1.BackColor = System.Drawing.Color.White;
             this.splitContainer1.Panel1.Controls.Add(this.groupBoxLeft);
             // 
             // splitContainer1.Panel2
             // 
+            this.splitContainer1.Panel2.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(250)))), ((int)(((byte)(250)))), ((int)(((byte)(250)))));
             this.splitContainer1.Panel2.Controls.Add(this.groupBoxRight);
             this.splitContainer1.Size = new System.Drawing.Size(800, 450);
             this.splitContainer1.SplitterDistance = 476;
@@ -71,8 +73,10 @@
             // 
             // groupBoxLeft
             // 
+            this.groupBoxLeft.BackColor = System.Drawing.Color.White;
             this.groupBoxLeft.Controls.Add(this.tabControl1);
             this.groupBoxLeft.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.groupBoxLeft.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.groupBoxLeft.Location = new System.Drawing.Point(0, 0);
             this.groupBoxLeft.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.groupBoxLeft.Name = "groupBoxLeft";
@@ -87,7 +91,6 @@
             this.tabControl1.Controls.Add(this.tabPage2);
             this.tabControl1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tabControl1.Location = new System.Drawing.Point(3, 17);
-            this.tabControl1.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
             this.tabControl1.Size = new System.Drawing.Size(470, 431);
@@ -117,11 +120,13 @@
             // 
             // groupBoxRight
             // 
+            this.groupBoxRight.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(250)))), ((int)(((byte)(250)))), ((int)(((byte)(250)))));
             this.groupBoxRight.Controls.Add(this.btnClear);
             this.groupBoxRight.Controls.Add(this.treeView1);
             this.groupBoxRight.Controls.Add(this.btnDebugger);
             this.groupBoxRight.Controls.Add(this.ComboBoxBehavior);
             this.groupBoxRight.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.groupBoxRight.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.groupBoxRight.Location = new System.Drawing.Point(0, 0);
             this.groupBoxRight.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.groupBoxRight.Name = "groupBoxRight";
@@ -133,14 +138,17 @@
             // btnClear
             // 
             this.btnClear.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnClear.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
+            this.btnClear.FlatAppearance.BorderSize = 0;
+            this.btnClear.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnClear.ForeColor = System.Drawing.Color.White;
             this.btnClear.Image = ((System.Drawing.Image)(resources.GetObject("btnClear.Image")));
-            this.btnClear.Location = new System.Drawing.Point(271, 389);
-            this.btnClear.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.btnClear.Location = new System.Drawing.Point(264, 425);
             this.btnClear.Name = "btnClear";
-            this.btnClear.Size = new System.Drawing.Size(37, 34);
+            this.btnClear.Size = new System.Drawing.Size(44, 40);
             this.btnClear.TabIndex = 3;
             this.toolTipButtons.SetToolTip(this.btnClear, "Clear the history of requests");
-            this.btnClear.UseVisualStyleBackColor = true;
+            this.btnClear.UseVisualStyleBackColor = false;
             this.btnClear.Click += new System.EventHandler(this.BtnClear_Click);
             // 
             // treeView1
@@ -148,14 +156,18 @@
             this.treeView1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.treeView1.BackColor = System.Drawing.Color.White;
+            this.treeView1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.treeView1.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.treeView1.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(33)))), ((int)(((byte)(33)))), ((int)(((byte)(33)))));
             this.treeView1.ImageIndex = 0;
             this.treeView1.ImageList = this.imageList1;
-            this.treeView1.Location = new System.Drawing.Point(5, 42);
+            this.treeView1.Location = new System.Drawing.Point(8, 50);
             this.treeView1.Margin = new System.Windows.Forms.Padding(0);
             this.treeView1.Name = "treeView1";
             this.treeView1.SelectedImageIndex = 0;
             this.treeView1.ShowNodeToolTips = true;
-            this.treeView1.Size = new System.Drawing.Size(305, 405);
+            this.treeView1.Size = new System.Drawing.Size(302, 370);
             this.treeView1.TabIndex = 2;
             // 
             // imageList1
@@ -171,32 +183,36 @@
             // 
             // btnDebugger
             // 
+            this.btnDebugger.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
+            this.btnDebugger.FlatAppearance.BorderSize = 0;
+            this.btnDebugger.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnDebugger.ForeColor = System.Drawing.Color.White;
             this.btnDebugger.Image = ((System.Drawing.Image)(resources.GetObject("btnDebugger.Image")));
-            this.btnDebugger.Location = new System.Drawing.Point(5, 7);
-            this.btnDebugger.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.btnDebugger.Location = new System.Drawing.Point(8, 10);
             this.btnDebugger.Name = "btnDebugger";
-            this.btnDebugger.Size = new System.Drawing.Size(32, 32);
+            this.btnDebugger.Size = new System.Drawing.Size(36, 36);
             this.btnDebugger.TabIndex = 4;
             this.toolTipButtons.SetToolTip(this.btnDebugger, "Attach a debugger");
-            this.btnDebugger.UseVisualStyleBackColor = true;
+            this.btnDebugger.UseVisualStyleBackColor = false;
             this.btnDebugger.Click += new System.EventHandler(this.BtnDebugger_Click);
             // 
             // ComboBoxBehavior
             // 
             this.ComboBoxBehavior.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.ComboBoxBehavior.CausesValidation = false;
+            this.ComboBoxBehavior.BackColor = System.Drawing.Color.White;
             this.ComboBoxBehavior.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.ComboBoxBehavior.Font = new System.Drawing.Font("Microsoft Sans Serif", 11.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.ComboBoxBehavior.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.ComboBoxBehavior.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.ComboBoxBehavior.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(33)))), ((int)(((byte)(33)))), ((int)(((byte)(33)))));
             this.ComboBoxBehavior.FormattingEnabled = true;
             this.ComboBoxBehavior.Items.AddRange(new object[] {
             "🚫Do not intercept requests",
             "▶️  Intercept requests and execute plugins locally",
             "⏯️Intercept requests and execute plugins locally with auto break"});
-            this.ComboBoxBehavior.Location = new System.Drawing.Point(43, 7);
-            this.ComboBoxBehavior.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.ComboBoxBehavior.Location = new System.Drawing.Point(50, 13);
             this.ComboBoxBehavior.Name = "ComboBoxBehavior";
-            this.ComboBoxBehavior.Size = new System.Drawing.Size(268, 32);
+            this.ComboBoxBehavior.Size = new System.Drawing.Size(265, 31);
             this.ComboBoxBehavior.TabIndex = 5;
             this.ComboBoxBehavior.SelectedIndexChanged += new System.EventHandler(this.ComboBoxBehavior_SelectedIndexChanged);
             // 
@@ -204,6 +220,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(250)))), ((int)(((byte)(250)))), ((int)(((byte)(250)))));
             this.ClientSize = new System.Drawing.Size(800, 450);
             this.Controls.Add(this.splitContainer1);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
