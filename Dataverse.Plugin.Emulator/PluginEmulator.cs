@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Reflection;
 using System.Linq;
+using System.Timers;
 using Dataverse.Plugin.Emulator.Context;
 using Dataverse.Plugin.Emulator.Services;
 using Microsoft.Xrm.Sdk;
@@ -22,6 +24,15 @@ namespace Dataverse.Plugin.Emulator.Steps
         private List<PluginStepDescription> AsynchronousSteps { get; } = new List<PluginStepDescription>();
 
         internal PluginInstanceCache PluginCache { get; } = new PluginInstanceCache();
+
+        // Hot reload infrastructure
+        private string originalPluginPath;
+        private string cacheDirectory;
+        private FileSystemWatcher fileWatcher;
+        private Timer reloadDebounceTimer;
+        private bool isReloading = false;
+
+        public event EventHandler<PluginReloadEventArgs> PluginAssemblyReloaded;
 
         private static bool assemblyResolverRegistered = false;
 
@@ -61,7 +72,29 @@ namespace Dataverse.Plugin.Emulator.Steps
                 throw new ArgumentNullException(nameof(pluginPath));
             }
 
-            Assembly assembly = Assembly.LoadFrom(pluginPath);
+            // Store the original path for hot reload
+            this.originalPluginPath = pluginPath;
+
+            // Load assembly from bytes to completely avoid locking files
+            // Use FileShare.ReadWrite to allow rebuilds while DvBrowser is running
+            byte[] assemblyBytes = ReadFileWithoutLocking(pluginPath);
+            byte[] pdbBytes = null;
+            string pdbPath = Path.ChangeExtension(pluginPath, ".pdb");
+            if (File.Exists(pdbPath))
+            {
+                try
+                {
+                    pdbBytes = ReadFileWithoutLocking(pdbPath);
+                }
+                catch (IOException)
+                {
+                    // PDB might be locked or in use, continue without it
+                }
+            }
+
+            Assembly assembly = pdbBytes != null 
+                ? Assembly.Load(assemblyBytes, pdbBytes) 
+                : Assembly.Load(assemblyBytes);
 
             QueryExpression querySteps = new QueryExpression("sdkmessageprocessingstep")
             {
@@ -94,7 +127,6 @@ namespace Dataverse.Plugin.Emulator.Steps
                 EntityAlias = "filter"
             };
             querySteps.LinkEntities.Add(linkToFilter);
-
 
             var result = this.InnerServiceProxy.RetrieveMultiple(querySteps);
 
@@ -170,6 +202,13 @@ namespace Dataverse.Plugin.Emulator.Steps
                 }
                 loadedSteps++;
             }
+
+            // Setup file watcher for hot reload (only if not already reloading)
+            if (!isReloading)
+            {
+                SetupFileWatcher();
+            }
+
             return allStepsHaveBeenLoaded;
         }
 
@@ -214,6 +253,227 @@ namespace Dataverse.Plugin.Emulator.Steps
         {
             request.Parameters.Add("BypassCustomPluginExecution", true);
             return this.InnerServiceProxy.Execute(request);
+        }
+
+        /// <summary>
+        /// Sets the cache directory for shadow copies. Should be called before AddPluginAssembly.
+        /// </summary>
+        public void SetCacheDirectory(string cacheDirectory)
+        {
+            this.cacheDirectory = cacheDirectory;
+            CleanupOldShadowCopies();
+        }
+
+        /// <summary>
+        /// Cleans up old shadow copy directories from previous sessions.
+        /// </summary>
+        private void CleanupOldShadowCopies()
+        {
+            if (string.IsNullOrEmpty(cacheDirectory))
+                return;
+
+            string shadowRoot = Path.Combine(cacheDirectory, "PluginShadows");
+            if (Directory.Exists(shadowRoot))
+            {
+                try
+                {
+                    Directory.Delete(shadowRoot, recursive: true);
+                }
+                catch
+                {
+                    // Some files might be locked, ignore
+                }
+            }
+        }
+
+        /// <summary>
+        /// Copies the plugin assembly to a shadow location to avoid file locks.
+        /// </summary>
+        private string CopyToShadowLocation(string originalPath)
+        {
+            if (string.IsNullOrEmpty(cacheDirectory))
+            {
+                // If no cache directory set, load directly (backward compatibility)
+                return originalPath;
+            }
+
+            // Create unique temp directory
+            string shadowDir = Path.Combine(
+                cacheDirectory,
+                "PluginShadows",
+                Guid.NewGuid().ToString()
+            );
+            Directory.CreateDirectory(shadowDir);
+
+            // Copy DLL
+            string shadowDll = Path.Combine(shadowDir, Path.GetFileName(originalPath));
+            File.Copy(originalPath, shadowDll, overwrite: true);
+
+            // Copy PDB for debugging support
+            string pdbPath = Path.ChangeExtension(originalPath, ".pdb");
+            if (File.Exists(pdbPath))
+            {
+                string shadowPdb = Path.ChangeExtension(shadowDll, ".pdb");
+                File.Copy(pdbPath, shadowPdb, overwrite: true);
+            }
+
+            Trace.WriteLine($"[PluginEmulator] Copied plugin to shadow location: {shadowDll}");
+            return shadowDll;
+        }
+
+        /// <summary>
+        /// Reads a file without locking it, allowing other processes to write/delete it.
+        /// </summary>
+        private static byte[] ReadFileWithoutLocking(string filePath)
+        {
+            using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+            {
+                byte[] buffer = new byte[stream.Length];
+                stream.Read(buffer, 0, buffer.Length);
+                return buffer;
+            }
+        }
+
+        /// <summary>
+        /// Sets up a FileSystemWatcher to monitor the plugin assembly for changes.
+        /// </summary>
+        private void SetupFileWatcher()
+        {
+            if (string.IsNullOrEmpty(originalPluginPath) || !File.Exists(originalPluginPath))
+                return;
+
+            // Clean up existing watcher if any
+            if (fileWatcher != null)
+            {
+                fileWatcher.EnableRaisingEvents = false;
+                fileWatcher.Dispose();
+            }
+
+            string directory = Path.GetDirectoryName(originalPluginPath);
+            string fileName = Path.GetFileName(originalPluginPath);
+
+            fileWatcher = new FileSystemWatcher(directory, fileName);
+            fileWatcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size;
+            fileWatcher.Changed += OnPluginFileChanged;
+            fileWatcher.EnableRaisingEvents = true;
+
+            // Debounce timer (VS builds can trigger multiple events)
+            reloadDebounceTimer = new Timer(2000); // 2 seconds
+            reloadDebounceTimer.Elapsed += (s, e) => ReloadPluginAssembly();
+            reloadDebounceTimer.AutoReset = false;
+
+            Trace.WriteLine($"[PluginEmulator] File watcher enabled for: {originalPluginPath}");
+        }
+
+        /// <summary>
+        /// Handles file change events with debouncing.
+        /// </summary>
+        private void OnPluginFileChanged(object sender, FileSystemEventArgs e)
+        {
+            Trace.WriteLine($"[PluginEmulator] Plugin file changed: {e.FullPath}");
+            
+            // Restart debounce timer
+            reloadDebounceTimer.Stop();
+            reloadDebounceTimer.Start();
+        }
+
+        /// <summary>
+        /// Reloads the plugin assembly after detecting file changes.
+        /// </summary>
+        private void ReloadPluginAssembly()
+        {
+            if (isReloading)
+            {
+                Trace.WriteLine("[PluginEmulator] Reload already in progress, skipping...");
+                return;
+            }
+
+            isReloading = true;
+
+            try
+            {
+                Trace.WriteLine("[PluginEmulator] Starting plugin reload...");
+
+                // Temporarily disable file watcher during reload
+                if (fileWatcher != null)
+                {
+                    fileWatcher.EnableRaisingEvents = false;
+                }
+
+                // Wait for file to be fully written (build might still be writing)
+                if (!WaitForFileUnlock(originalPluginPath, TimeSpan.FromSeconds(10)))
+                {
+                    PluginAssemblyReloaded?.Invoke(this, new PluginReloadEventArgs
+                    {
+                        Success = false,
+                        Error = new IOException("File is locked"),
+                        ReloadTime = DateTime.Now,
+                        AssemblyPath = originalPluginPath
+                    });
+                    return;
+                }
+
+                // Clear all caches
+                PluginCache.Clear();
+                PluginSteps.Clear();
+                AsynchronousSteps.Clear();
+
+                // Re-load the plugin assembly
+                bool success = AddPluginAssembly(originalPluginPath);
+
+                // Notify success
+                PluginAssemblyReloaded?.Invoke(this, new PluginReloadEventArgs
+                {
+                    Success = success,
+                    ReloadTime = DateTime.Now,
+                    AssemblyPath = originalPluginPath
+                });
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"[PluginEmulator] Plugin reload failed: {ex}");
+                PluginAssemblyReloaded?.Invoke(this, new PluginReloadEventArgs
+                {
+                    Success = false,
+                    Error = ex,
+                    ReloadTime = DateTime.Now,
+                    AssemblyPath = originalPluginPath
+                });
+            }
+            finally
+            {
+                isReloading = false;
+
+                // Re-enable file watcher after reload
+                if (fileWatcher != null)
+                {
+                    fileWatcher.EnableRaisingEvents = true;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Waits for a file to be unlocked by other processes.
+        /// </summary>
+        private bool WaitForFileUnlock(string path, TimeSpan timeout)
+        {
+            DateTime start = DateTime.Now;
+            while (DateTime.Now - start < timeout)
+            {
+                try
+                {
+                    // Try to open with exclusive access
+                    using (var fs = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.None))
+                    {
+                        return true; // Successfully opened exclusively
+                    }
+                }
+                catch (IOException)
+                {
+                    System.Threading.Thread.Sleep(100);
+                }
+            }
+            return false;
         }
 
     }

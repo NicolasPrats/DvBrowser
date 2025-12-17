@@ -49,6 +49,35 @@ At the top right of the window, you have 2 icons and a checkbox:
 * Second icon is to automatically attach a debugger to the browser. Before to use it, it's recommended to open your plugin solution in a Visual Studio instance. When a popup asks you to select a Visual Studio instance, choose this one. 
 * If the checkbox is selected, then plugins are run locally and can be debugged in Visual Studio. If not they are run on server side, as with any other browser.
 
+## Hot Reload
+
+The Dataverse Browser supports **hot reload** of plugin assemblies, enabling rapid development iteration without restarting the application:
+
+* Make changes to your plugin code in Visual Studio
+* Build your solution (F6 or Ctrl+Shift+B)
+* The browser automatically detects the change and reloads the assembly
+* A notification appears confirming the reload was successful
+* Continue debugging with your updated code immediately
+
+**Workflow with Debugger:**
+
+When you need to make code changes while debugging:
+1. **Detach the debugger** (or close the debugging session in Visual Studio)
+2. Make your code changes
+3. Build the solution (F6) - hot reload happens automatically
+4. **Re-attach the debugger** using the attach icon in the browser
+5. Debug your new code
+
+*Note: While .NET Framework supports basic "Edit and Continue" for small method changes, hot reload requires detaching and re-attaching the debugger for structural changes. You can build while the debugger is attached (no file locks!), but you'll need to re-attach to actually debug the new code.*
+
+**Technical Details:**
+* Uses FileSystemWatcher to monitor the plugin DLL for changes
+* 2-second debounce timer handles multiple file system events during build
+* Assembly.Load from bytes ensures no file locking - Visual Studio can rebuild while browser is running
+* Plugin instance cache and step registrations are cleared and reloaded automatically
+* Old assembly versions remain in memory (cannot be unloaded in .NET Framework) but are no longer used
+* IOrganizationService proxy is recreated to use the new plugin instances
+
 At the right bottom of the list, the trash icon allows you to clear the history of requests.
 
 # Known Limitations and Future Work

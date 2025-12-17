@@ -45,5 +45,16 @@ namespace Dataverse.Plugin.Emulator.Steps
             }
             return plugin;
         }
+
+        /// <summary>
+        /// Clears all cached plugin instances. Used when reloading plugin assemblies.
+        /// </summary>
+        public void Clear()
+        {
+            lock (this.Cache)
+            {
+                this.Cache.Clear();
+            }
+        }
     }
 }

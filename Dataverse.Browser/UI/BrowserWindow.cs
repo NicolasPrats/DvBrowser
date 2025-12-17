@@ -47,6 +47,12 @@ namespace Dataverse.Browser.UI
             context.LastRequests.OnHistoryCleared += LastRequests_OnHistoryCleared;
             context.LastRequests.OnRequestUpdated += LastRequests_OnRequestUpdated;
 
+            // Subscribe to plugin reload events
+            if (context.PluginsEmulator != null)
+            {
+                context.PluginsEmulator.PluginAssemblyReloaded += OnPluginReloaded;
+            }
+
             this.ComboBoxBehavior.SelectedIndex = 1;
         }
 
@@ -119,6 +125,11 @@ namespace Dataverse.Browser.UI
                 this.treeView1.Invoke(d, request);
                 return;
             }
+            
+            // Null safety after hot reload
+            if (request?.ConversionResult?.SrcRequest == null)
+                return;
+                
             var index = Icons.RequestNotAnalyzed;
             if (request.ConversionResult.ConvertedRequest != null || request.Proxied)
             {
@@ -207,6 +218,49 @@ namespace Dataverse.Browser.UI
             }
             this.toolTipButtons.Hide(this.ComboBoxBehavior);
             this.toolTipButtons.Show(text, this.ComboBoxBehavior, -100, this.ComboBoxBehavior.Height + 10, 5000);
+        }
+
+        private void OnPluginReloaded(object sender, Plugin.Emulator.PluginReloadEventArgs e)
+        {
+            if (InvokeRequired)
+            {
+                Invoke(new Action(() => OnPluginReloaded(sender, e)));
+                return;
+            }
+
+            string message;
+            MessageBoxIcon icon;
+
+            // Consider it success if steps were loaded, even if not all of them
+            // (some steps might be skipped due to unsupported features like configuration)
+            if (e.Error == null)
+            {
+                // Recreate the proxy to use the new plugin instances
+                try
+                {
+                    this.DataverseContext.ProxyWithEmulator = this.DataverseContext.PluginsEmulator.CreateNewProxy();
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Trace.WriteLine($"[BrowserWindow] Failed to recreate proxy after reload: {ex}");
+                }
+                
+                message = $"✓ Plugin assembly reloaded successfully!\n\nTime: {e.ReloadTime:HH:mm:ss}\nPath: {System.IO.Path.GetFileName(e.AssemblyPath)}\n\nYour latest code changes are now active.";
+                
+                if (!e.Success)
+                {
+                    message += "\n\nNote: Some plugin steps were skipped (e.g., steps using configuration/secure configuration).";
+                }
+                
+                icon = MessageBoxIcon.Information;
+            }
+            else
+            {
+                message = $"✗ Plugin reload failed!\n\nTime: {e.ReloadTime:HH:mm:ss}\nError: {e.Error.Message}\n\nPlease check the log file for details.";
+                icon = MessageBoxIcon.Error;
+            }
+
+            MessageBox.Show(this, message, "Hot Reload", MessageBoxButtons.OK, icon);
         }
     }
 }

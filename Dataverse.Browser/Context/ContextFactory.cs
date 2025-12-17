@@ -266,6 +266,9 @@ namespace Dataverse.Browser.Context
             }
             );
 
+            // Set cache directory for shadow copies
+            emulator.SetCacheDirectory(environnementConfiguration.GetWorkingDirectory());
+
             foreach (var pluginPath in environnementConfiguration.PluginAssemblies)
             {
                 NotifyProgress("Loading plugins: " + pluginPath);

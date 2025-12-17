@@ -43,15 +43,31 @@ namespace Dataverse.Browser.Requests
             {
                 return false;
             }
-            LogToFile($"[WebApi] {webApiRequest.Method} {webApiRequest.LocalPathWithQuery}");
 
             var conversionResult = this.RequestConverter.Convert(webApiRequest);
+            
+            // RequestConverter.Convert can return null for system metadata functions
+            if (conversionResult == null)
+            {
+                var proxyResponse = ProxyToDataverse(e.Request);
+                e.Response = BuildWebViewResponse(environment, proxyResponse);
+                return true;
+            }
+            
             var interceptedRequest = new InterceptedWebApiRequest(conversionResult);
+            
+            // Add null safety for Context and LastRequests (defensive programming)
+            if (this.Context?.LastRequests == null)
+            {
+                var proxyResponse = ProxyToDataverse(e.Request);
+                e.Response = BuildWebViewResponse(environment, proxyResponse);
+                return true;
+            }
+            
             this.Context.LastRequests.AddRequest(interceptedRequest);
 
             if (conversionResult.ConvertedRequest == null || !this.Context.IsEnabled)
             {
-                LogToFile($"[WebViewIntercept] not converted: {conversionResult.ConvertFailureMessage ?? "no conversion"} (enabled={this.Context.IsEnabled}) src={webApiRequest.LocalPathWithQuery}");
                 var proxyResponse = ProxyToDataverse(e.Request);
                 interceptedRequest.Proxied = true;
                 e.Response = BuildWebViewResponse(environment, proxyResponse);
@@ -59,14 +75,21 @@ namespace Dataverse.Browser.Requests
                 return true;
             }
 
-            LogToFile($"[WebApiTryHandle] enabled={this.Context.IsEnabled} converted={(conversionResult.ConvertedRequest != null)} failure='{conversionResult.ConvertFailureMessage}' src={webApiRequest.LocalPathWithQuery}");
-
             WebApiResponse response;
             try
             {
+                // Check if proxy is available (might be null during hot reload)
+                if (this.Context.ProxyWithEmulator == null)
+                {
+                    var proxyResponse = ProxyToDataverse(e.Request);
+                    interceptedRequest.Proxied = true;
+                    e.Response = BuildWebViewResponse(environment, proxyResponse);
+                    this.Context.LastRequests.TriggerUpdateRequest(interceptedRequest);
+                    return true;
+                }
+                
                 interceptedRequest.ExecutionTreeRoot = new ExecutionTreeNode();
                 var orgResponse = this.Context.ProxyWithEmulator.ExecuteWithTree(conversionResult.ConvertedRequest, interceptedRequest.ExecutionTreeRoot);
-                LogToFile($"[WebApiResponse] Response Type: {orgResponse?.GetType().Name ?? "null"}");
                 response = this.ResponseConverter.Convert(conversionResult, orgResponse);
                 this.Context.LastRequests.TriggerUpdateRequest(interceptedRequest);
             }

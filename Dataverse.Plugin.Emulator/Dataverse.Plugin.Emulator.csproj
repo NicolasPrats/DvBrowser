@@ -117,6 +117,7 @@
     <Compile Include="Services\EmulatedPluginTracingService.cs" />
     <Compile Include="PluginEmulator.cs" />
     <Compile Include="PluginInstanceCache.cs" />
+    <Compile Include="PluginReloadEventArgs.cs" />
     <Compile Include="Services\EmulatedServiceEndpointNotificationService.cs" />
     <Compile Include="Services\StepsIdentificationService.cs" />
     <Compile Include="Steps\MultipleStepTriggered.cs" />
