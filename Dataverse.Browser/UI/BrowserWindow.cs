@@ -353,5 +353,51 @@ namespace Dataverse.Browser.UI
                 this.toolStripStatusLabel1.Text = "Refreshing...";
             }
         }
+
+        #region Context Menu Handlers
+
+        private void CopyUrlMenuItem_Click(object sender, EventArgs e)
+        {
+            if (this.treeView1.SelectedNode != null)
+            {
+                var nodeText = this.treeView1.SelectedNode.Text;
+                // Extract URL part (after method name)
+                var parts = nodeText.Split(new[] { ' ' }, 2);
+                if (parts.Length == 2)
+                {
+                    Clipboard.SetText(parts[1]);
+                    this.toolStripStatusLabel1.Text = "URL copied to clipboard";
+                }
+            }
+        }
+
+        private void CopyMethodMenuItem_Click(object sender, EventArgs e)
+        {
+            if (this.treeView1.SelectedNode != null)
+            {
+                var nodeText = this.treeView1.SelectedNode.Text;
+                // Extract method (before first space)
+                var parts = nodeText.Split(new[] { ' ' }, 2);
+                if (parts.Length > 0)
+                {
+                    Clipboard.SetText(parts[0]);
+                    this.toolStripStatusLabel1.Text = "HTTP method copied to clipboard";
+                }
+            }
+        }
+
+        private void ExpandAllMenuItem_Click(object sender, EventArgs e)
+        {
+            this.treeView1.ExpandAll();
+            this.toolStripStatusLabel1.Text = "All nodes expanded";
+        }
+
+        private void CollapseAllMenuItem_Click(object sender, EventArgs e)
+        {
+            this.treeView1.CollapseAll();
+            this.toolStripStatusLabel1.Text = "All nodes collapsed";
+        }
+
+        #endregion
     }
 }

@@ -44,6 +44,12 @@
             this.toolTipButtons = new System.Windows.Forms.ToolTip(this.components);
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
+            this.contextMenuTreeView = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.copyUrlMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.copyMethodMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
+            this.expandAllMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.collapseAllMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
@@ -160,6 +166,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.treeView1.BackColor = System.Drawing.Color.White;
             this.treeView1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.treeView1.ContextMenuStrip = this.contextMenuTreeView;
             this.treeView1.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.treeView1.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(33)))), ((int)(((byte)(33)))), ((int)(((byte)(33)))));
             this.treeView1.ImageIndex = 0;
@@ -235,6 +242,52 @@
             this.toolStripStatusLabel1.Size = new System.Drawing.Size(49, 20);
             this.toolStripStatusLabel1.Text = "Ready";
             // 
+            // contextMenuTreeView
+            // 
+            this.contextMenuTreeView.ImageScalingSize = new System.Drawing.Size(20, 20);
+            this.contextMenuTreeView.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.copyUrlMenuItem,
+            this.copyMethodMenuItem,
+            this.toolStripSeparator1,
+            this.expandAllMenuItem,
+            this.collapseAllMenuItem});
+            this.contextMenuTreeView.Name = "contextMenuTreeView";
+            this.contextMenuTreeView.Size = new System.Drawing.Size(181, 130);
+            // 
+            // copyUrlMenuItem
+            // 
+            this.copyUrlMenuItem.Name = "copyUrlMenuItem";
+            this.copyUrlMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.C)));
+            this.copyUrlMenuItem.Size = new System.Drawing.Size(180, 24);
+            this.copyUrlMenuItem.Text = "Copy URL";
+            this.copyUrlMenuItem.Click += new System.EventHandler(this.CopyUrlMenuItem_Click);
+            // 
+            // copyMethodMenuItem
+            // 
+            this.copyMethodMenuItem.Name = "copyMethodMenuItem";
+            this.copyMethodMenuItem.Size = new System.Drawing.Size(180, 24);
+            this.copyMethodMenuItem.Text = "Copy Method";
+            this.copyMethodMenuItem.Click += new System.EventHandler(this.CopyMethodMenuItem_Click);
+            // 
+            // toolStripSeparator1
+            // 
+            this.toolStripSeparator1.Name = "toolStripSeparator1";
+            this.toolStripSeparator1.Size = new System.Drawing.Size(177, 6);
+            // 
+            // expandAllMenuItem
+            // 
+            this.expandAllMenuItem.Name = "expandAllMenuItem";
+            this.expandAllMenuItem.Size = new System.Drawing.Size(180, 24);
+            this.expandAllMenuItem.Text = "Expand All";
+            this.expandAllMenuItem.Click += new System.EventHandler(this.ExpandAllMenuItem_Click);
+            // 
+            // collapseAllMenuItem
+            // 
+            this.collapseAllMenuItem.Name = "collapseAllMenuItem";
+            this.collapseAllMenuItem.Size = new System.Drawing.Size(180, 24);
+            this.collapseAllMenuItem.Text = "Collapse All";
+            this.collapseAllMenuItem.Click += new System.EventHandler(this.CollapseAllMenuItem_Click);
+            // 
             // BrowserWindow
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
@@ -280,6 +333,12 @@
         private System.Windows.Forms.TabPage tabPage2;
         private System.Windows.Forms.StatusStrip statusStrip1;
         private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel1;
+        private System.Windows.Forms.ContextMenuStrip contextMenuTreeView;
+        private System.Windows.Forms.ToolStripMenuItem copyUrlMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem copyMethodMenuItem;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
+        private System.Windows.Forms.ToolStripMenuItem expandAllMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem collapseAllMenuItem;
     }
 }
 
