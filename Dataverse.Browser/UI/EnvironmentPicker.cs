@@ -22,7 +22,7 @@ namespace Dataverse.Browser.UI
                 string jsonPath = Path.Combine(ConfigurationManager.GetApplicationDataPath(), "autoupdater.json");
                 AutoUpdater.PersistenceProvider = new JsonFilePersistenceProvider(jsonPath);
                 AutoUpdater.ClearAppDirectory = true;
-                AutoUpdater.Start("https://nicolasprats.github.io/pages/dvbrowser/autoupdate.xml");
+                AutoUpdater.Start("https://vanhinthem.github.io/pages/dvbrowser/autoupdate.xml");
             }
 
             InitializeComponent();
