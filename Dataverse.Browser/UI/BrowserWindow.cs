@@ -4,6 +4,8 @@ using System.Diagnostics;
 using System.Windows.Forms;
 using Dataverse.Browser.Context;
 using Dataverse.Browser.Requests;
+using Dataverse.Browser.ViewModels;
+using Dataverse.Browser.Services;
 using Dataverse.Plugin.Emulator.ExecutionTree;
 
 namespace Dataverse.Browser.UI
@@ -11,6 +13,8 @@ namespace Dataverse.Browser.UI
     internal partial class BrowserWindow : Form
     {
         public BrowserContext DataverseContext { get; }
+        public BrowserViewModel ViewModel { get; }
+        public PluginService PluginService { get; }
 
         private delegate void RequestEventDelegate(InterceptedWebApiRequest request);
         private delegate void ClearRequestsDelegate();
@@ -24,6 +28,16 @@ namespace Dataverse.Browser.UI
             }
 
             InitializeComponent();
+
+            // Initialize services and ViewModels
+            this.PluginService = new PluginService();
+            this.ViewModel = new BrowserViewModel
+            {
+                Context = context
+            };
+
+            // Wire up ViewModel event handlers
+            this.ViewModel.PropertyChanged += ViewModel_PropertyChanged;
 
             var tab = new BrowserTab(context);
             this.tabControl1.TabPages[0].Controls.Add(tab);
@@ -40,6 +54,14 @@ namespace Dataverse.Browser.UI
             {
                 AddNewRequest(request);
                 UpdateRequest(request);
+                
+                // Also add to ViewModel
+                this.ViewModel.AddRequest(
+                    request.ConversionResult?.SrcRequest?.Method?.ToUpperInvariant() ?? "UNKNOWN",
+                    request.ConversionResult?.SrcRequest?.LocalPathWithQuery ?? string.Empty,
+                    request.ExecuteException == null ? 200 : 500,
+                    TimeSpan.Zero
+                );
             }
             context.LastRequests.OnNewRequestIntercepted += LastRequests_OnNewRequestIntercepted;
             context.LastRequests.OnHistoryCleared += LastRequests_OnHistoryCleared;
@@ -108,11 +130,21 @@ namespace Dataverse.Browser.UI
             }
             this.treeView1.Nodes.Clear();
             this.Nodes.Clear();
+            
+            // Note: ViewModel already cleared via ClearHistoryCommand
         }
 
         private void LastRequests_OnNewRequestIntercepted(object sender, InterceptedWebApiRequest e)
         {
             AddNewRequest(e);
+            
+            // Also add to ViewModel
+            this.ViewModel.AddRequest(
+                e.ConversionResult?.SrcRequest?.Method?.ToUpperInvariant() ?? "UNKNOWN",
+                e.ConversionResult?.SrcRequest?.LocalPathWithQuery ?? string.Empty,
+                e.ExecuteException == null ? 200 : 500,
+                TimeSpan.Zero
+            );
         }
 
         private void AddNewRequest(InterceptedWebApiRequest request)
@@ -171,25 +203,33 @@ namespace Dataverse.Browser.UI
 
         private void BtnClear_Click(object sender, EventArgs e)
         {
-            this.DataverseContext.LastRequests.Clear();
+            // Execute ViewModel command
+            if (this.ViewModel.ClearHistoryCommand.CanExecute(null))
+            {
+                this.ViewModel.ClearHistoryCommand.Execute(null);
+            }
         }
 
         private void BtnDebugger_Click(object sender, EventArgs e)
         {
-            Debugger.Launch();
-            if (!Debugger.IsAttached)
+            // Execute ViewModel command
+            if (this.ViewModel.AttachDebuggerCommand.CanExecute(null))
             {
-                using (var process = Process.GetCurrentProcess())
-                {
-
-                    MessageBox.Show("Unable to attach a debugger.\nYou may have more info in the event viewer.\nAlternatively, you can start manually your debugger and attach it to process: " + process.Id);
-                }
+                this.ViewModel.AttachDebuggerCommand.Execute(null);
             }
-            else
+
+            // Show feedback
+            if (Debugger.IsAttached)
             {
                 MessageBox.Show("Debugger is attached. You can add relevant breakpoints in your plugins code");
             }
-
+            else
+            {
+                using (var process = Process.GetCurrentProcess())
+                {
+                    MessageBox.Show("Unable to attach a debugger.\nYou may have more info in the event viewer.\nAlternatively, you can start manually your debugger and attach it to process: " + process.Id);
+                }
+            }
         }
 
         private void ComboBoxBehavior_SelectedIndexChanged(object sender, EventArgs e)
@@ -199,11 +239,13 @@ namespace Dataverse.Browser.UI
             {
                 case 0:
                     this.DataverseContext.IsEnabled = false;
+                    this.ViewModel.PluginsEnabled = false;
                     text = "Plugins will no longer be executed locally.";
                     break;
                 case 1:
                     this.DataverseContext.IsEnabled = true;
                     this.DataverseContext.PluginsEmulator.EmulatorOptions.BreakBeforeExecutingPlugins = false;
+                    this.ViewModel.PluginsEnabled = true;
                     text = "Plugins will be executed locally. If you have attached a debugger and set breakpoints, you will be able to debug the plugins.";
                     break;
                 case 2:
@@ -259,6 +301,22 @@ namespace Dataverse.Browser.UI
             }
 
             MessageBox.Show(this, message, "Hot Reload", MessageBoxButtons.OK, icon);
+        }
+
+        private void ViewModel_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            // Handle ViewModel property changes and update UI accordingly
+            if (e.PropertyName == nameof(BrowserViewModel.PluginsEnabled))
+            {
+                // Sync UI state if needed
+                this.Text = this.ViewModel.PluginsEnabled 
+                    ? "Dataverse Browser - Plugins Enabled" 
+                    : "Dataverse Browser - Plugins Disabled";
+            }
+            else if (e.PropertyName == nameof(BrowserViewModel.StatusMessage))
+            {
+                // Could update a status bar if we add one
+            }
         }
     }
 }
