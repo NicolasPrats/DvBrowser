@@ -4,7 +4,7 @@ using System.Text.Json;
 
 namespace Dataverse.Browser.Configuration
 {
-    internal static class ConfigurationManager
+    public static class ConfigurationManager
     {
 
         public static string GetApplicationDataPath()

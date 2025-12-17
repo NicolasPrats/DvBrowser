@@ -5,7 +5,7 @@ using Dataverse.Browser.Requests;
 
 namespace Dataverse.Browser.Context
 {
-    internal class LastRequestsList : IEnumerable<InterceptedWebApiRequest>
+    public class LastRequestsList : IEnumerable<InterceptedWebApiRequest>
     {
         private List<InterceptedWebApiRequest> InnerList { get; } = new List<InterceptedWebApiRequest>();
         private readonly object Locker = new object();

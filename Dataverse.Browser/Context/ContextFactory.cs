@@ -17,7 +17,7 @@ using Microsoft.Xrm.Tooling.Connector;
 
 namespace Dataverse.Browser.Context
 {
-    internal class ContextFactory
+    public class ContextFactory
     {
         //TODO allow ui to stop the process
         public event EventHandler<string> OnNewProgress;

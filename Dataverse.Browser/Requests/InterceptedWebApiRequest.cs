@@ -4,7 +4,7 @@ using Dataverse.Plugin.Emulator.ExecutionTree;
 
 namespace Dataverse.Browser.Requests
 {
-    internal class InterceptedWebApiRequest
+    public class InterceptedWebApiRequest
     {
         public ExecutionTreeNode ExecutionTreeRoot { get; internal set; }
         public RequestConversionResult ConversionResult { get; internal set; }

@@ -5,7 +5,7 @@ using Dataverse.Utils;
 
 namespace Dataverse.Browser.Context
 {
-    internal class BrowserContext
+    public class BrowserContext
         : DataverseContext
     {
 

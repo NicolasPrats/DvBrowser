@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Dataverse.Browser.Configuration
 {
-    internal class EnvironnementConfiguration
+    public class EnvironnementConfiguration
     {
         public string Name { get; set; }
         public string DataverseHost { get; set; }

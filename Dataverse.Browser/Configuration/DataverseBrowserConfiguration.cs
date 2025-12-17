@@ -1,6 +1,6 @@
 ﻿namespace Dataverse.Browser.Configuration
 {
-    internal class DataverseBrowserConfiguration
+    public class DataverseBrowserConfiguration
     {
         public EnvironnementConfiguration[] Environnements { get; set; }
     }
