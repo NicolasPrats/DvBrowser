@@ -276,13 +276,9 @@ namespace Dataverse.Browser.Context
                 bool allStepsLoaded = emulator.AddPluginAssembly(pluginPath);
                 if (!allStepsLoaded)
                 {
-                    //TODO: let the caller display the message
-                    //TODO: give more details about steps and features
-                    var result = MessageBox.Show("Some steps could not be loaded because they use some not implemented features like impersonation or configuration.\nIf you continue these steps will be ignored and not executed.\nDo you want to continue?", "Steps using not implemented features", MessageBoxButton.YesNo);
-                    if (result == MessageBoxResult.No)
-                    {
-                        throw new NotImplementedException("Some steps could not be loaded!");
-                    }
+                    // Just log that some steps were skipped - don't show dialog
+                    // Steps with unsupported features (configuration, impersonation) are already logged during load
+                    System.Diagnostics.Trace.WriteLine("[PluginEmulator] Some steps were skipped due to unsupported features (configuration/impersonation)");
                 }
             }
             if (environnementConfiguration.DisableAsyncSteps)
