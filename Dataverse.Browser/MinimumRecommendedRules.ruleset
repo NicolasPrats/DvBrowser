@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RuleSet Name="MinimumRecommendedRules" Description="Placeholder ruleset to avoid missing file warnings during build." ToolsVersion="15.0">
+</RuleSet>

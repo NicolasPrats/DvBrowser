@@ -140,6 +140,11 @@ namespace Dataverse.Browser.ViewModels
             ((RelayCommand)ClearHistoryCommand).NotifyCanExecuteChanged();
         }
 
+        public void ClearHistoryItems()
+        {
+            ClearHistory();
+        }
+
         private void TogglePlugins()
         {
             PluginsEnabled = !PluginsEnabled;

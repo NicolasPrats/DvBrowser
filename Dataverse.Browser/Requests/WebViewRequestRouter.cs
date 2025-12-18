@@ -1,15 +1,6 @@
 using System;
-using System.Collections.Specialized;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Diagnostics;
 using Dataverse.Browser.Context;
-using Dataverse.Plugin.Emulator.ExecutionTree;
-using Dataverse.WebApi2IOrganizationService.Converters;
-using Dataverse.WebApi2IOrganizationService.Model;
 using Microsoft.Web.WebView2.Core;
-using Microsoft.Xrm.Sdk;
 
 namespace Dataverse.Browser.Requests
 {
@@ -23,26 +14,41 @@ namespace Dataverse.Browser.Requests
         private readonly ExtensionsRequestHandler extensions;
         private readonly WebApiRequestHandler webApiRequestHandler;
 
-        public WebViewRequestRouter(BrowserContext context, CoreWebView2Environment environment)
+        public WebViewRequestRouter(BrowserContext context, CoreWebView2Environment environment, bool alwaysProxyWebApi, bool interceptNonGetOnly)
         {
             this.context = context ?? throw new ArgumentNullException(nameof(context));
             this.environment = environment ?? throw new ArgumentNullException(nameof(environment));
             this.extensions = new ExtensionsRequestHandler();
-            this.webApiRequestHandler = new WebApiRequestHandler(context);
+            this.webApiRequestHandler = new WebApiRequestHandler(context, alwaysProxyWebApi, interceptNonGetOnly);
         }
 
-        public void HandleWebResourceRequested(object sender, CoreWebView2WebResourceRequestedEventArgs e)
+        public async void HandleWebResourceRequested(object sender, CoreWebView2WebResourceRequestedEventArgs e)
         {
+            if (e == null)
+                return;
+
             // First serve fake webresources if matched.
             if (this.extensions.TryHandle(e, this.environment))
             {
                 return;
             }
 
-            // Then handle intercepted Dataverse Web API calls.
-            if (this.webApiRequestHandler.TryHandle(e, this.environment))
+            var uri = e.Request?.Uri;
+            if (string.IsNullOrEmpty(uri) || uri.IndexOf("/api/data/v9.", StringComparison.OrdinalIgnoreCase) < 0)
             {
                 return;
+            }
+
+            // WebView2 supports async request handling via deferral.
+            var deferral = e.GetDeferral();
+            try
+            {
+                // Then handle intercepted Dataverse Web API calls.
+                await this.webApiRequestHandler.TryHandleAsync(e, this.environment);
+            }
+            finally
+            {
+                deferral.Complete();
             }
         }
     }

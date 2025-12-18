@@ -1,0 +1,160 @@
+<ImportExportXml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Entities></Entities>
+  <Roles></Roles>
+  <Workflows></Workflows>
+  <FieldSecurityProfiles></FieldSecurityProfiles>
+  <Templates />
+  <EntityMaps />
+  <EntityRelationships />
+  <OrganizationSettings />
+  <optionsets />
+  <WebResources>
+    <WebResource>
+      <WebResourceId>{64e6c6f7-4e35-ec11-8c64-000d3ab87e83}</WebResourceId>
+      <Name>gp_/drb/img/32px.png</Name>
+      <DisplayName>DRB jsTree Theme 32px.png</DisplayName>
+      <WebResourceType>5</WebResourceType>
+      <IntroducedVersion>1.0.0.0</IntroducedVersion>
+      <IsEnabledForMobileClient>0</IsEnabledForMobileClient>
+      <IsAvailableForMobileOffline>0</IsAvailableForMobileOffline>
+      <DependencyXml>&lt;Dependencies&gt;&lt;Dependency componentType="WebResource"/&gt;&lt;/Dependencies&gt;</DependencyXml>
+      <IsCustomizable>1</IsCustomizable>
+      <CanBeDeleted>1</CanBeDeleted>
+      <IsHidden>0</IsHidden>
+      <FileName>/WebResources/gp_drbimg32pxpng64E6C6F7-4E35-EC11-8C64-000D3AB87E83</FileName>
+    </WebResource>
+    <WebResource>
+      <WebResourceId>{0c47faa9-5035-ec11-8c64-000d3ab87e83}</WebResourceId>
+      <Name>gp_/drb/img/drb_icon.png</Name>
+      <DisplayName>DRB Icon</DisplayName>
+      <WebResourceType>5</WebResourceType>
+      <IntroducedVersion>1.0.0.0</IntroducedVersion>
+      <IsEnabledForMobileClient>0</IsEnabledForMobileClient>
+      <IsAvailableForMobileOffline>0</IsAvailableForMobileOffline>
+      <DependencyXml>&lt;Dependencies&gt;&lt;Dependency componentType="WebResource"/&gt;&lt;/Dependencies&gt;</DependencyXml>
+      <IsCustomizable>1</IsCustomizable>
+      <CanBeDeleted>1</CanBeDeleted>
+      <IsHidden>0</IsHidden>
+      <FileName>/WebResources/gp_drbimgdrb_iconpng0C47FAA9-5035-EC11-8C64-000D3AB87E83</FileName>
+    </WebResource>
+    <WebResource>
+      <WebResourceId>{a1ac3f84-391f-ec11-b6e6-000d3ade6a1d}</WebResourceId>
+      <Name>gp_/drb/css/drb_custom.css</Name>
+      <DisplayName>DRB CSS Custom</DisplayName>
+      <WebResourceType>2</WebResourceType>
+      <IntroducedVersion>0.9.9.9</IntroducedVersion>
+      <IsEnabledForMobileClient>0</IsEnabledForMobileClient>
+      <IsAvailableForMobileOffline>0</IsAvailableForMobileOffline>
+      <DependencyXml>&lt;Dependencies&gt;&lt;Dependency componentType="WebResource"/&gt;&lt;/Dependencies&gt;</DependencyXml>
+      <IsCustomizable>1</IsCustomizable>
+      <CanBeDeleted>1</CanBeDeleted>
+      <IsHidden>0</IsHidden>
+      <FileName>/WebResources/gp_drbcssdrb_customcssA1AC3F84-391F-EC11-B6E6-000D3ADE6A1D</FileName>
+    </WebResource>
+    <WebResource>
+      <WebResourceId>{57847c98-391f-ec11-b6e6-000d3ade6a1d}</WebResourceId>
+      <Name>gp_/drb/css/drb_requirements.css</Name>
+      <DisplayName>DRB CSS Requirements</DisplayName>
+      <WebResourceType>2</WebResourceType>
+      <IntroducedVersion>0.9.9.9</IntroducedVersion>
+      <IsEnabledForMobileClient>0</IsEnabledForMobileClient>
+      <IsAvailableForMobileOffline>0</IsAvailableForMobileOffline>
+      <DependencyXml>&lt;Dependencies&gt;&lt;Dependency componentType="WebResource"/&gt;&lt;/Dependencies&gt;</DependencyXml>
+      <IsCustomizable>1</IsCustomizable>
+      <CanBeDeleted>1</CanBeDeleted>
+      <IsHidden>0</IsHidden>
+      <FileName>/WebResources/gp_drbcssdrb_requirementscss57847C98-391F-EC11-B6E6-000D3ADE6A1D</FileName>
+    </WebResource>
+    <WebResource>
+      <WebResourceId>{c6aa162f-3a1f-ec11-b6e6-000d3ade6a1d}</WebResourceId>
+      <Name>gp_/drb/drb_index.htm</Name>
+      <DisplayName>Dataverse REST Builder</DisplayName>
+      <WebResourceType>1</WebResourceType>
+      <IntroducedVersion>0.9.9.9</IntroducedVersion>
+      <IsEnabledForMobileClient>0</IsEnabledForMobileClient>
+      <IsAvailableForMobileOffline>0</IsAvailableForMobileOffline>
+      <DependencyXml>&lt;Dependencies&gt;&lt;Dependency componentType="WebResource"/&gt;&lt;/Dependencies&gt;</DependencyXml>
+      <IsCustomizable>1</IsCustomizable>
+      <CanBeDeleted>1</CanBeDeleted>
+      <IsHidden>0</IsHidden>
+      <FileName>/WebResources/gp_drbdrb_indexhtmC6AA162F-3A1F-EC11-B6E6-000D3ADE6A1D</FileName>
+    </WebResource>
+    <WebResource>
+      <WebResourceId>{d522ec98-3a1f-ec11-b6e6-000d3ade6a1d}</WebResourceId>
+      <Name>gp_/drb/js/drb_custom.js</Name>
+      <DisplayName>DRB JS Custom</DisplayName>
+      <WebResourceType>3</WebResourceType>
+      <IntroducedVersion>0.9.9.9</IntroducedVersion>
+      <IsEnabledForMobileClient>0</IsEnabledForMobileClient>
+      <IsAvailableForMobileOffline>0</IsAvailableForMobileOffline>
+      <DependencyXml>&lt;Dependencies&gt;&lt;Dependency componentType="WebResource"/&gt;&lt;/Dependencies&gt;</DependencyXml>
+      <IsCustomizable>1</IsCustomizable>
+      <CanBeDeleted>1</CanBeDeleted>
+      <IsHidden>0</IsHidden>
+      <FileName>/WebResources/gp_drbjsdrb_customjsD522EC98-3A1F-EC11-B6E6-000D3ADE6A1D</FileName>
+    </WebResource>
+    <WebResource>
+      <WebResourceId>{fa2496b3-3a1f-ec11-b6e6-000d3ade6a1d}</WebResourceId>
+      <Name>gp_/drb/js/drb_requirements.js</Name>
+      <DisplayName>DRB JS Requirements</DisplayName>
+      <WebResourceType>3</WebResourceType>
+      <IntroducedVersion>0.9.9.9</IntroducedVersion>
+      <IsEnabledForMobileClient>0</IsEnabledForMobileClient>
+      <IsAvailableForMobileOffline>0</IsAvailableForMobileOffline>
+      <DependencyXml>&lt;Dependencies&gt;&lt;Dependency componentType="WebResource"/&gt;&lt;/Dependencies&gt;</DependencyXml>
+      <IsCustomizable>1</IsCustomizable>
+      <CanBeDeleted>1</CanBeDeleted>
+      <IsHidden>0</IsHidden>
+      <FileName>/WebResources/gp_drbjsdrb_requirementsjsFA2496B3-3A1F-EC11-B6E6-000D3ADE6A1D</FileName>
+    </WebResource>
+  </WebResources>
+  <CustomControls />
+  <AppModuleSiteMaps>
+    <AppModuleSiteMap>
+      <SiteMapUniqueName>gp_dataverserestbuilder</SiteMapUniqueName>
+      <SiteMap IntroducedVersion="7.0.0.0">
+        <Area Id="New_Area" ResourceId="SitemapDesigner.NewArea" DescriptionResourceId="SitemapDesigner.NewArea" Icon="/WebResources/msdyn_/Images/Area_Default_Icon.png" ShowGroups="true" IntroducedVersion="7.0.0.0">
+		  <Titles>
+            <Title LCID="1033" Title="Dataverse REST Builder" />
+          </Titles>
+          <Group Id="New_Group" ResourceId="SitemapDesigner.NewGroup" DescriptionResourceId="SitemapDesigner.NewGroup" IntroducedVersion="7.0.0.0" IsProfile="false" ToolTipResourseId="SitemapDesigner.Unknown">
+            <Titles>
+              <Title LCID="1033" Title="Dataverse REST Builder" />
+            </Titles>
+            <SubArea Id="gp_drb_index" ResourceId="SitemapDesigner.NewSubArea" Icon="/WebResources/msdyn_/Images/Subarea_Webresource_Default_Icon.png" Url="$webresource:gp_/drb/drb_index.htm" IntroducedVersion="7.0.0.0" Client="All,Outlook,OutlookLaptopClient,OutlookWorkstationClient,Web" AvailableOffline="true" PassParams="false" Sku="All,OnPremise,Live,SPLA">
+              <Titles>
+                <Title LCID="1033" Title="DRB" />
+              </Titles>
+            </SubArea>
+          </Group>
+        </Area>
+      </SiteMap>
+      <LocalizedNames>
+        <LocalizedName description="Dataverse REST Builder" languagecode="1033" />
+      </LocalizedNames>
+    </AppModuleSiteMap>
+  </AppModuleSiteMaps>
+  <AppModules>
+    <AppModule>
+      <UniqueName>gp_dataverserestbuilder</UniqueName>
+      <IntroducedVersion>0.9.9.9</IntroducedVersion>
+      <WebResourceId>0c47faa9-5035-ec11-8c64-000d3ab87e83</WebResourceId>
+      <FormFactor>1</FormFactor>
+      <ClientType>4</ClientType>      
+      <AppModuleComponents>
+        <AppModuleComponent type="62" schemaName="gp_dataverserestbuilder" />
+      </AppModuleComponents>
+      <AppModuleRoleMaps>
+        <Role id="{627090ff-40a3-4053-8790-584edc5be201}" />
+        <Role id="{119f245c-3cc8-4b62-b31c-d1a046ced15d}" />
+      </AppModuleRoleMaps>
+      <LocalizedNames>
+        <LocalizedName description="Dataverse REST Builder" languagecode="1033" />
+      </LocalizedNames>
+    </AppModule>
+  </AppModules>
+  <EntityDataProviders />
+  <Languages>
+    <Language>1033</Language>
+  </Languages>
+</ImportExportXml>

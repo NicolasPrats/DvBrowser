@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using System.Windows.Forms;
 using Dataverse.Browser.Configuration;
 using Dataverse.Browser.Context;
@@ -13,6 +14,8 @@ namespace Dataverse.Browser
     {
         private static EnvironnementConfiguration selectedEnvironment = null;
         private static BrowserContext context = null;
+        private static readonly object CleanupLock = new object();
+        private static int CleanupInvoked = 0;
 
         /// <summary>
         /// The main entry point for the application.
@@ -38,15 +41,9 @@ namespace Dataverse.Browser
                 EnsureApplicationPathExists();
                 ClearLogFiles();
                 var configuration = ConfigurationManager.LoadConfiguration();
-                selectedEnvironment = SelectEnvironment(configuration);
-                if (selectedEnvironment == null)
-                    return;
-                context = CreateContext(selectedEnvironment);
-                ConfigurationManager.SaveConfiguration(configuration);
-                if (context == null)
-                    return;
-
-                StartBrowser(context);
+                
+                // Show main window directly with environment selection integrated
+                Application.Run(new BrowserWindow(configuration));
             }
             catch (Exception ex)
             {
@@ -55,6 +52,15 @@ namespace Dataverse.Browser
             finally
             {
                 CleanupAsyncSteps();
+            }
+        }
+
+        internal static void RegisterCleanupContext(EnvironnementConfiguration environment, BrowserContext browserContext)
+        {
+            lock (CleanupLock)
+            {
+                selectedEnvironment = environment;
+                context = browserContext;
             }
         }
 
@@ -75,16 +81,55 @@ namespace Dataverse.Browser
 
         private static void CleanupAsyncSteps()
         {
+            if (Interlocked.Exchange(ref CleanupInvoked, 1) == 1)
+            {
+                return;
+            }
+
             try
             {
-                if (selectedEnvironment?.DisableAsyncSteps == true)
+                lock (CleanupLock)
                 {
-                    context?.PluginsEmulator.ReenableAsyncSteps();
+                    LogCleanup("CleanupAsyncSteps starting...");
+                    if (selectedEnvironment?.DisableAsyncSteps == true)
+                    {
+                        var pluginEmulator = context?.PluginsEmulator;
+                        if (pluginEmulator == null)
+                        {
+                            LogCleanup("CleanupAsyncSteps skipped: no PluginEmulator instance.");
+                            return;
+                        }
+
+                        var enabledStepIds = pluginEmulator.ReenableAsyncStepsAndGetEnabledStepIds();
+                        LogCleanup($"CleanupAsyncSteps: re-enabled {enabledStepIds?.Count ?? 0} async step(s).");
+                    }
+                    else
+                    {
+                        LogCleanup("CleanupAsyncSteps skipped: DisableAsyncSteps is false or environment not set.");
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                LogCleanup("CleanupAsyncSteps failed: " + ex);
+                // Suppress exceptions during cleanup to avoid crashing during shutdown
+            }
+        }
+
+        private static void LogCleanup(string message)
+        {
+            try
+            {
+                var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+                var line = $"[{timestamp}] {message}";
+
+                // Write via Trace so it lands in the same session log.txt created by ContextFactory.
+                Trace.WriteLine(line);
+                Trace.Flush();
             }
             catch
             {
-                // Suppress exceptions during cleanup to avoid crashing during shutdown
+                // best-effort logging during shutdown
             }
         }
 

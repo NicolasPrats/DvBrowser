@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System.Text;
 using Dataverse.Browser.Context;
 using Dataverse.Plugin.Emulator.ExecutionTree;
@@ -19,15 +20,19 @@ namespace Dataverse.Browser.Requests
         private BrowserContext Context { get; }
         private RequestConverter RequestConverter { get; }
         private ResponseConverter ResponseConverter { get; }
+        private bool AlwaysProxyWebApi { get; }
+        private bool InterceptNonGetOnly { get; }
 
-        public WebApiRequestHandler(BrowserContext context)
+        public WebApiRequestHandler(BrowserContext context, bool alwaysProxyWebApi, bool interceptNonGetOnly)
         {
             this.Context = context ?? throw new ArgumentNullException(nameof(context));
+            this.AlwaysProxyWebApi = alwaysProxyWebApi;
+            this.InterceptNonGetOnly = interceptNonGetOnly;
             this.RequestConverter = new RequestConverter(this.Context);
             this.ResponseConverter = new ResponseConverter(this.Context);
         }
 
-        public bool TryHandle(CoreWebView2WebResourceRequestedEventArgs e, CoreWebView2Environment environment)
+        public async Task<bool> TryHandleAsync(CoreWebView2WebResourceRequestedEventArgs e, CoreWebView2Environment environment)
         {
             WebApiRequest webApiRequest;
             try
@@ -49,7 +54,7 @@ namespace Dataverse.Browser.Requests
             // RequestConverter.Convert can return null for system metadata functions
             if (conversionResult == null)
             {
-                var proxyResponse = ProxyToDataverse(e.Request);
+                var proxyResponse = await ProxyToDataverseAsync(e.Request);
                 e.Response = BuildWebViewResponse(environment, proxyResponse);
                 return true;
             }
@@ -59,16 +64,72 @@ namespace Dataverse.Browser.Requests
             // Add null safety for Context and LastRequests (defensive programming)
             if (this.Context?.LastRequests == null)
             {
-                var proxyResponse = ProxyToDataverse(e.Request);
+                var proxyResponse = await ProxyToDataverseAsync(e.Request);
                 e.Response = BuildWebViewResponse(environment, proxyResponse);
                 return true;
             }
             
             this.Context.LastRequests.AddRequest(interceptedRequest);
 
+            if (this.InterceptNonGetOnly)
+            {
+                // Let the embedded browser handle all GETs (auth via cookies, better perf).
+                // Only non-GET calls are intercepted so local plugins can execute and debugger can break.
+                if (string.Equals(e.Request.Method, "GET", StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+
+                // Only intercept when plugin execution is enabled and conversion succeeded.
+                if (!this.Context.IsEnabled || conversionResult.ConvertedRequest == null || this.Context.ProxyWithEmulator == null)
+                {
+                    return false;
+                }
+
+                WebApiResponse nonGetResponse;
+                try
+                {
+                    interceptedRequest.ExecutionTreeRoot = new ExecutionTreeNode();
+                    var orgResponse = this.Context.ProxyWithEmulator.ExecuteWithTree(conversionResult.ConvertedRequest, interceptedRequest.ExecutionTreeRoot);
+                    nonGetResponse = this.ResponseConverter.Convert(conversionResult, orgResponse);
+                }
+                catch (Exception ex)
+                {
+                    interceptedRequest.ExecuteException = ex;
+                    nonGetResponse = this.ResponseConverter.Convert(ex);
+                }
+
+                e.Response = BuildWebViewResponse(environment, nonGetResponse);
+                this.Context.LastRequests.TriggerUpdateRequest(interceptedRequest);
+                return true;
+            }
+
+            if (this.AlwaysProxyWebApi)
+            {
+                LogToFile("[WebApi] AlwaysProxy enabled: " + e.Request.Method + " " + e.Request.Uri);
+                var proxyResponse = await ProxyToDataverseAsync(e.Request);
+                interceptedRequest.Proxied = true;
+                e.Response = BuildWebViewResponse(environment, proxyResponse);
+                this.Context.LastRequests.TriggerUpdateRequest(interceptedRequest);
+                return true;
+            }
+
+            // DRB (Dataverse REST Builder) is a webresource that expects real Web API responses.
+            // Our emulator conversion is optimized for plugin interception and can return shapes that
+            // don't match what DRB expects (e.g. metadata queries). Always proxy DRB Web API traffic.
+            if (IsRestBuilderCaller(e.Request))
+            {
+                LogToFile("[WebApi] DRB proxy: " + e.Request.Method + " " + e.Request.Uri);
+                var proxyResponse = await ProxyToDataverseAsync(e.Request);
+                interceptedRequest.Proxied = true;
+                e.Response = BuildWebViewResponse(environment, proxyResponse);
+                this.Context.LastRequests.TriggerUpdateRequest(interceptedRequest);
+                return true;
+            }
+
             if (conversionResult.ConvertedRequest == null || !this.Context.IsEnabled)
             {
-                var proxyResponse = ProxyToDataverse(e.Request);
+                var proxyResponse = await ProxyToDataverseAsync(e.Request);
                 interceptedRequest.Proxied = true;
                 e.Response = BuildWebViewResponse(environment, proxyResponse);
                 this.Context.LastRequests.TriggerUpdateRequest(interceptedRequest);
@@ -81,7 +142,7 @@ namespace Dataverse.Browser.Requests
                 // Check if proxy is available (might be null during hot reload)
                 if (this.Context.ProxyWithEmulator == null)
                 {
-                    var proxyResponse = ProxyToDataverse(e.Request);
+                    var proxyResponse = await ProxyToDataverseAsync(e.Request);
                     interceptedRequest.Proxied = true;
                     e.Response = BuildWebViewResponse(environment, proxyResponse);
                     this.Context.LastRequests.TriggerUpdateRequest(interceptedRequest);
@@ -147,7 +208,7 @@ namespace Dataverse.Browser.Requests
             return apiRequest;
         }
 
-        private WebApiResponse ProxyToDataverse(CoreWebView2WebResourceRequest request)
+        private async Task<WebApiResponse> ProxyToDataverseAsync(CoreWebView2WebResourceRequest request)
         {
             var msg = new HttpRequestMessage(new HttpMethod(request.Method), request.Uri);
             this.Context.AddAuthorizationHeaders(msg);
@@ -163,6 +224,29 @@ namespace Dataverse.Browser.Requests
                     if (string.Equals(current.Key, "Content-Type", StringComparison.OrdinalIgnoreCase))
                     {
                         // handled below with content
+                    }
+                    else if (string.Equals(current.Key, "Authorization", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Always use the CrmServiceClient token (added above). Avoid forwarding an existing Authorization header
+                        // from the page because duplicate/invalid auth headers can trigger 401s.
+                    }
+                    else if (string.Equals(current.Key, "Cookie", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Do not forward cookies from the embedded browser; we rely on bearer token auth.
+                    }
+                    else if (string.Equals(current.Key, "Accept-Encoding", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Avoid compressed responses. WebView2's WebResourceRequested synthetic responses
+                        // don't reliably support transparent decompression, and some pages (like DRB) expect
+                        // plain JSON/text bodies.
+                    }
+                    else if (string.Equals(current.Key, "Host", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // HttpClient manages Host.
+                    }
+                    else if (string.Equals(current.Key, "Connection", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // HttpClient manages Connection.
                     }
                     else
                     {
@@ -193,8 +277,8 @@ namespace Dataverse.Browser.Requests
                 msg.Content = content;
             }
 
-            var httpResponse = this.Context.HttpClient.SendAsync(msg).Result;
-            var responseBody = httpResponse.Content.ReadAsByteArrayAsync().Result;
+            var httpResponse = await this.Context.HttpClient.SendAsync(msg);
+            var responseBody = await httpResponse.Content.ReadAsByteArrayAsync();
 
             var headers = new NameValueCollection();
             foreach (var h in httpResponse.Headers)
@@ -206,12 +290,116 @@ namespace Dataverse.Browser.Requests
                 headers.Add(h.Key, string.Join(",", h.Value));
             }
 
+            // If the server still returned compressed content, decompress it so JS clients receive usable bodies.
+            var contentEncoding = headers["Content-Encoding"];
+            if (!string.IsNullOrEmpty(contentEncoding))
+            {
+                var enc = contentEncoding.ToLowerInvariant();
+                try
+                {
+                    if (enc.Contains("gzip"))
+                    {
+                        responseBody = DecompressGzip(responseBody);
+                        headers.Remove("Content-Encoding");
+                        headers["Content-Length"] = responseBody.Length.ToString();
+                    }
+                    else if (enc.Contains("deflate"))
+                    {
+                        responseBody = DecompressDeflate(responseBody);
+                        headers.Remove("Content-Encoding");
+                        headers["Content-Length"] = responseBody.Length.ToString();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LogToFile("[WebApi] decompress failed: " + ex);
+                }
+            }
+
+            if ((int)httpResponse.StatusCode == 401)
+            {
+                try
+                {
+                    var token = this.Context?.CrmServiceClient?.CurrentAccessToken ?? string.Empty;
+                    LogToFile("[WebApi] 401 from Dataverse. tokenEmpty=" + string.IsNullOrEmpty(token) + " tokenLen=" + token.Length + " uri=" + request?.Uri);
+                }
+                catch
+                {
+                    // ignore
+                }
+            }
+
+            // Lightweight diagnostics for DRB init calls (File menu depends on these succeeding).
+            if (request?.Uri != null)
+            {
+                var uri = request.Uri;
+                if (uri.IndexOf("/api/data/v9.", StringComparison.OrdinalIgnoreCase) >= 0 &&
+                    (uri.IndexOf("EntityDefinitions", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                     uri.IndexOf("systemusers", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                     uri.IndexOf("$batch", StringComparison.OrdinalIgnoreCase) >= 0))
+                {
+                    var ct = headers["Content-Type"] ?? string.Empty;
+                    var ce = contentEncoding ?? string.Empty;
+                    LogToFile("[WebApi] Resp " + (int)httpResponse.StatusCode + " " + request.Method + " " + uri + " ct=" + ct + " ce=" + ce);
+                }
+            }
+
             return new WebApiResponse
             {
                 StatusCode = (int)httpResponse.StatusCode,
                 Body = responseBody,
                 Headers = headers
             };
+        }
+
+        private static bool IsRestBuilderCaller(CoreWebView2WebResourceRequest request)
+        {
+            if (request == null)
+                return false;
+
+            try
+            {
+                var referer = request.Headers.GetHeader("Referer") ?? string.Empty;
+                if (string.IsNullOrEmpty(referer))
+                    return false;
+
+                // The DRB iframe is a fake webresource: ".../WebResources/dvbrowser_fakewr_/gp_/drb/..."
+                if (referer.IndexOf(ExtensionsRequestHandler.FakeIdentifier, StringComparison.OrdinalIgnoreCase) < 0)
+                    return false;
+
+                return referer.IndexOf("/gp_/drb/", StringComparison.OrdinalIgnoreCase) >= 0
+                       || referer.IndexOf("gp_%2fdrb", StringComparison.OrdinalIgnoreCase) >= 0;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static byte[] DecompressGzip(byte[] data)
+        {
+            if (data == null || data.Length == 0)
+                return data;
+            using (var input = new MemoryStream(data))
+            using (var gzip = new System.IO.Compression.GZipStream(input, System.IO.Compression.CompressionMode.Decompress))
+            using (var output = new MemoryStream())
+            {
+                gzip.CopyTo(output);
+                return output.ToArray();
+            }
+        }
+
+        private static byte[] DecompressDeflate(byte[] data)
+        {
+            if (data == null || data.Length == 0)
+                return data;
+            using (var input = new MemoryStream(data))
+            using (var deflate = new System.IO.Compression.DeflateStream(input, System.IO.Compression.CompressionMode.Decompress))
+            using (var output = new MemoryStream())
+            {
+                deflate.CopyTo(output);
+                return output.ToArray();
+            }
         }
 
         private static CoreWebView2WebResourceResponse BuildWebViewResponse(CoreWebView2Environment env, WebApiResponse response)

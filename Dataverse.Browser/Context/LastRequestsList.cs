@@ -17,11 +17,14 @@ namespace Dataverse.Browser.Context
 
         public void AddRequest(InterceptedWebApiRequest request)
         {
+            EventHandler<InterceptedWebApiRequest> handler;
             lock (this.Locker)
             {
                 this.InnerList.Add(request);
-                OnNewRequestIntercepted?.Invoke(this, request);
+                handler = OnNewRequestIntercepted;
             }
+
+            handler?.Invoke(this, request);
         }
 
         public void TriggerUpdateRequest(InterceptedWebApiRequest request)
@@ -34,16 +37,22 @@ namespace Dataverse.Browser.Context
             //TODO : le lock ici garantit que ça va bien se passer pour la liste interne
             // mais dans le treeview qui les affiche, à cause des invoke
             // on peut avoir des surprises 
+            EventHandler handler;
             lock (this.Locker)
             {
                 this.InnerList.Clear();
-                OnHistoryCleared.Invoke(this, EventArgs.Empty);
+                handler = OnHistoryCleared;
             }
+
+            handler?.Invoke(this, EventArgs.Empty);
         }
 
         IEnumerator<InterceptedWebApiRequest> IEnumerable<InterceptedWebApiRequest>.GetEnumerator()
         {
-            return this.InnerList.GetEnumerator();
+            lock (this.Locker)
+            {
+                return new List<InterceptedWebApiRequest>(this.InnerList).GetEnumerator();
+            }
         }
 
         IEnumerator IEnumerable.GetEnumerator()

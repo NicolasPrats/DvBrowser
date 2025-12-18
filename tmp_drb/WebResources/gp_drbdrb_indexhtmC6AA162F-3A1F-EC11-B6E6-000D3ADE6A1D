@@ -1,0 +1,19 @@
+<html>
+<head>
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+    <title>Dataverse REST Builder</title>
+    <script src="js/drb_requirements.js" type="text/javascript" charset="utf-8"></script>
+    <script src="js/drb_custom.js" type="text/javascript" charset="utf-8"></script>
+
+    <link rel="stylesheet" href="css/drb_requirements.css">
+    <link rel="stylesheet" href="css/drb_custom.css">
+</head>
+<body>
+    <div id="main_body">
+    </div>
+    <script>
+        DRB.InsertMainBodyContent();
+        DRB.Initialize();
+    </script>
+</body>
+</html>

@@ -243,6 +243,16 @@ namespace Dataverse.Plugin.Emulator.Steps
         /// </summary>
         public void ReenableAsyncSteps()
         {
+            ReenableAsyncStepsAndGetEnabledStepIds();
+        }
+
+        /// <summary>
+        /// Re-enables async steps and returns which steps were enabled (by id).
+        /// </summary>
+        public List<Guid> ReenableAsyncStepsAndGetEnabledStepIds()
+        {
+            var enabledStepIds = new List<Guid>();
+
             string lockFilePath = GetAsyncStepsLockFilePath();
             if (!string.IsNullOrEmpty(lockFilePath) && File.Exists(lockFilePath))
             {
@@ -252,7 +262,13 @@ namespace Dataverse.Plugin.Emulator.Steps
                     var disabledStepIds = ReadLockFile(lockFilePath);
                     if (disabledStepIds != null && disabledStepIds.Count > 0)
                     {
+                        System.Diagnostics.Trace.WriteLine($"[PluginEmulator] Re-enabling {disabledStepIds.Count} async steps from lock file...");
+                        foreach (var stepId in disabledStepIds)
+                        {
+                            System.Diagnostics.Trace.WriteLine($"[PluginEmulator] Re-enabling async step: {stepId}");
+                        }
                         SetAsyncStepsStateByIds(disabledStepIds, true);
+                        enabledStepIds.AddRange(disabledStepIds);
                     }
                     // Delete the lock file after successfully re-enabling
                     File.Delete(lockFilePath);
@@ -260,15 +276,28 @@ namespace Dataverse.Plugin.Emulator.Steps
                 catch (Exception ex)
                 {
                     System.Diagnostics.Trace.WriteLine($"[PluginEmulator] Error re-enabling async steps from lock file: {ex.Message}");
+
                     // Try the fallback method
+                    foreach (var stepDescription in this.AsynchronousSteps)
+                    {
+                        enabledStepIds.Add(stepDescription.Id);
+                    }
+                    System.Diagnostics.Trace.WriteLine($"[PluginEmulator] Falling back to re-enabling {enabledStepIds.Count} async steps from AsynchronousSteps...");
                     SetAsyncStepsState(true);
                 }
             }
             else
             {
                 // Fallback: re-enable all steps in AsynchronousSteps collection
+                foreach (var stepDescription in this.AsynchronousSteps)
+                {
+                    enabledStepIds.Add(stepDescription.Id);
+                }
+                System.Diagnostics.Trace.WriteLine($"[PluginEmulator] No lock file found; re-enabling {enabledStepIds.Count} async steps from AsynchronousSteps...");
                 SetAsyncStepsState(true);
             }
+
+            return enabledStepIds;
         }
 
         /// <summary>
@@ -366,6 +395,7 @@ namespace Dataverse.Plugin.Emulator.Steps
                     Entity step = new Entity("sdkmessageprocessingstep", stepId);
                     step["statecode"] = new OptionSetValue(enabled ? 0 : 1);
                     this.InnerServiceProxy.Update(step);
+                    System.Diagnostics.Trace.WriteLine($"[PluginEmulator] {(enabled ? "Enabled" : "Disabled")} async step: {stepId}");
                 }
                 catch (Exception ex)
                 {
