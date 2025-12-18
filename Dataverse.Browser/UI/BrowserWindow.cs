@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.ComponentModel;
 using System.Diagnostics;
+using System.Drawing;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
@@ -44,6 +46,9 @@ namespace Dataverse.Browser.UI
         private const int ListViewCacheLimit = 500;
         private int _lastRequestCountUi;
         private int _lastHistoryTabTitleCount = -1;
+
+        private BindingList<Configuration.EnvironnementConfiguration> _environmentsBindingList;
+        private BindingSource _environmentsBindingSource;
 
         private static class NativeMethods
         {
@@ -124,9 +129,7 @@ namespace Dataverse.Browser.UI
                 }
             }
 
-            // Bind environments to ListBox with display member
-            this.listBoxEnvironments.DataSource = this.EnvironmentViewModel.Environments;
-            this.listBoxEnvironments.DisplayMember = "Name";
+            BindEnvironmentsToList(this.EnvironmentViewModel.Environments);
 
             // Show instruction in status bar
             this.toolStripStatusLabel1.Text = "Select an environment from the list to connect";
@@ -134,6 +137,7 @@ namespace Dataverse.Browser.UI
             // Disable toolbar until connected
             this.ComboBoxBehavior.Enabled = false;
             this.btnDebugger.Enabled = false;
+            this.btnClear.Enabled = false;
         }
 
         // Original constructor for backward compatibility
@@ -173,11 +177,45 @@ namespace Dataverse.Browser.UI
             };
             this.EnvironmentViewModel.Environments.Add(currentEnv);
 
-            // Bind environments to ListBox with display member
-            this.listBoxEnvironments.DataSource = this.EnvironmentViewModel.Environments;
-            this.listBoxEnvironments.DisplayMember = "Name";
+            BindEnvironmentsToList(this.EnvironmentViewModel.Environments);
 
             InitializeWithContext(context);
+        }
+
+        private void BindEnvironmentsToList(IEnumerable<Configuration.EnvironnementConfiguration> environments)
+        {
+            var list = environments != null ? new List<Configuration.EnvironnementConfiguration>(environments) : new List<Configuration.EnvironnementConfiguration>();
+            _environmentsBindingList = new BindingList<Configuration.EnvironnementConfiguration>(list);
+            _environmentsBindingSource = new BindingSource { DataSource = _environmentsBindingList };
+
+            this.listBoxEnvironments.DataSource = _environmentsBindingSource;
+            this.listBoxEnvironments.DisplayMember = "Name";
+
+            UpdateEnvironmentButtonsEnabledState();
+        }
+
+        private void UpdateEnvironmentButtonsEnabledState()
+        {
+            var canManage = _configuration != null;
+            var hasSelection = GetSelectedEnvironment() != null;
+
+            if (this.btnEnvAdd != null) this.btnEnvAdd.Enabled = canManage;
+            if (this.btnEnvEdit != null) this.btnEnvEdit.Enabled = canManage && hasSelection;
+            if (this.btnEnvDelete != null) this.btnEnvDelete.Enabled = canManage && hasSelection;
+        }
+
+        private Configuration.EnvironnementConfiguration GetSelectedEnvironment()
+        {
+            return this.listBoxEnvironments != null ? this.listBoxEnvironments.SelectedItem as Configuration.EnvironnementConfiguration : null;
+        }
+
+        private void SaveCurrentEnvironmentsToConfiguration()
+        {
+            if (_configuration == null || _environmentsBindingList == null)
+                return;
+
+            _configuration.Environnements = new List<Configuration.EnvironnementConfiguration>(_environmentsBindingList).ToArray();
+            ConfigurationManager.SaveConfiguration(_configuration);
         }
 
         private void InitializeWithContext(BrowserContext context)
@@ -230,8 +268,10 @@ namespace Dataverse.Browser.UI
             this.ComboBoxBehavior.SelectedIndex = 1;
             this.ComboBoxBehavior.Enabled = true;
             this.btnDebugger.Enabled = true;
-            
+            this.btnClear.Enabled = true;
+             
             this.toolStripStatusLabel1.Text = $"Connected to {context.CrmServiceClient.ConnectedOrgFriendlyName}";
+            UpdateEnvironmentButtonsEnabledState();
         }
 
         private static string TryGetPreferredAppId(BrowserContext context)
@@ -1174,6 +1214,121 @@ namespace Dataverse.Browser.UI
         {
             this.treeView1.CollapseAll();
             this.toolStripStatusLabel1.Text = "All nodes collapsed";
+        }
+
+        private void BtnEnvAdd_Click(object sender, EventArgs e)
+        {
+            if (_configuration == null)
+            {
+                MessageBox.Show(this, "Environment management is not available in legacy mode.", "Not Available", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            using (var editor = new EnvironmentEditor(null))
+            {
+                editor.ShowDialog(this);
+                if (editor.SelectedEnvironment == null)
+                    return;
+
+                _environmentsBindingList.Add(editor.SelectedEnvironment);
+                this.EnvironmentViewModel?.Environments?.Add(editor.SelectedEnvironment);
+                SaveCurrentEnvironmentsToConfiguration();
+                _environmentsBindingSource.ResetBindings(false);
+                this.listBoxEnvironments.SelectedItem = editor.SelectedEnvironment;
+            }
+        }
+
+        private void BtnEnvEdit_Click(object sender, EventArgs e)
+        {
+            if (_configuration == null)
+            {
+                MessageBox.Show(this, "Environment management is not available in legacy mode.", "Not Available", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            var env = GetSelectedEnvironment();
+            if (env == null)
+                return;
+
+            using (var editor = new EnvironmentEditor(env))
+            {
+                editor.ShowDialog(this);
+                if (editor.SelectedEnvironment == null)
+                    return;
+
+                SaveCurrentEnvironmentsToConfiguration();
+                _environmentsBindingSource.ResetBindings(false);
+                this.listBoxEnvironments.Refresh();
+            }
+        }
+
+        private void BtnEnvDelete_Click(object sender, EventArgs e)
+        {
+            if (_configuration == null)
+            {
+                MessageBox.Show(this, "Environment management is not available in legacy mode.", "Not Available", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            var env = GetSelectedEnvironment();
+            if (env == null)
+                return;
+
+            var confirm = MessageBox.Show(this, $"Delete environment '{env.Name}'?", "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+            if (confirm != DialogResult.Yes)
+                return;
+
+            _environmentsBindingList.Remove(env);
+            this.EnvironmentViewModel?.Environments?.Remove(env);
+            SaveCurrentEnvironmentsToConfiguration();
+            _environmentsBindingSource.ResetBindings(false);
+            UpdateEnvironmentButtonsEnabledState();
+        }
+
+        private void ListBoxEnvironments_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            UpdateEnvironmentButtonsEnabledState();
+        }
+
+        private void ListBoxEnvironments_DrawItem(object sender, DrawItemEventArgs e)
+        {
+            if (e.Index < 0)
+                return;
+
+            var listBox = sender as ListBox;
+            if (listBox == null)
+                return;
+
+            var isSelected = (e.State & DrawItemState.Selected) == DrawItemState.Selected;
+            var background = isSelected ? Color.FromArgb(0, 120, 215) : listBox.BackColor;
+            var foreground = listBox.ForeColor;
+
+            using (var backBrush = new SolidBrush(background))
+            {
+                e.Graphics.FillRectangle(backBrush, e.Bounds);
+            }
+
+            var text = listBox.GetItemText(listBox.Items[e.Index]);
+            var textRect = Rectangle.Inflate(e.Bounds, -8, 0);
+
+            TextRenderer.DrawText(
+                e.Graphics,
+                text,
+                listBox.Font,
+                textRect,
+                foreground,
+                TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
+
+            using (var separatorPen = new Pen(Color.FromArgb(55, 55, 58)))
+            {
+                var y = e.Bounds.Bottom - 1;
+                e.Graphics.DrawLine(separatorPen, e.Bounds.Left, y, e.Bounds.Right, y);
+            }
+
+            if ((e.State & DrawItemState.Focus) == DrawItemState.Focus)
+            {
+                e.DrawFocusRectangle();
+            }
         }
 
         private void ListBoxEnvironments_DoubleClick(object sender, EventArgs e)

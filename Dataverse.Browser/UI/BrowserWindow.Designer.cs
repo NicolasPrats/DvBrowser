@@ -56,7 +56,12 @@
             this.labelMode = new System.Windows.Forms.Label();
             this.splitContainerMain = new System.Windows.Forms.SplitContainer();
             this.panelLeftSidebar = new System.Windows.Forms.Panel();
+            this.panelEnvHeader = new System.Windows.Forms.Panel();
             this.labelEnvironments = new System.Windows.Forms.Label();
+            this.panelEnvButtons = new System.Windows.Forms.FlowLayoutPanel();
+            this.btnEnvDelete = new System.Windows.Forms.Button();
+            this.btnEnvEdit = new System.Windows.Forms.Button();
+            this.btnEnvAdd = new System.Windows.Forms.Button();
             this.listBoxEnvironments = new System.Windows.Forms.ListBox();
             this.panelConnectionLog = new System.Windows.Forms.Panel();
             this.txtConnectionLog = new System.Windows.Forms.TextBox();
@@ -225,8 +230,8 @@
             // 
             this.btnClear.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.btnClear.BackColor = System.Drawing.Color.Transparent;
-            this.btnClear.FlatAppearance.BorderColor = System.Drawing.Color.White;
-            this.btnClear.FlatAppearance.BorderSize = 1;
+            this.btnClear.FlatAppearance.BorderSize = 0;
+            this.btnClear.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(101)))), ((int)(((byte)(201)))));
             this.btnClear.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(101)))), ((int)(((byte)(201)))));
             this.btnClear.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnClear.ForeColor = System.Drawing.Color.White;
@@ -242,8 +247,8 @@
             // btnDebugger
             // 
             this.btnDebugger.BackColor = System.Drawing.Color.Transparent;
-            this.btnDebugger.FlatAppearance.BorderColor = System.Drawing.Color.White;
-            this.btnDebugger.FlatAppearance.BorderSize = 1;
+            this.btnDebugger.FlatAppearance.BorderSize = 0;
+            this.btnDebugger.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(101)))), ((int)(((byte)(201)))));
             this.btnDebugger.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(101)))), ((int)(((byte)(201)))));
             this.btnDebugger.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnDebugger.ForeColor = System.Drawing.Color.White;
@@ -411,7 +416,7 @@
             // 
             this.panelLeftSidebar.Controls.Add(this.listBoxEnvironments);
             this.panelLeftSidebar.Controls.Add(this.panelConnectionLog);
-            this.panelLeftSidebar.Controls.Add(this.labelEnvironments);
+            this.panelLeftSidebar.Controls.Add(this.panelEnvHeader);
             this.panelLeftSidebar.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panelLeftSidebar.Location = new System.Drawing.Point(0, 0);
             this.panelLeftSidebar.Name = "panelLeftSidebar";
@@ -419,33 +424,127 @@
             this.panelLeftSidebar.Size = new System.Drawing.Size(200, 355);
             this.panelLeftSidebar.TabIndex = 0;
             // 
+            // panelEnvHeader
+            // 
+            this.panelEnvHeader.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
+            this.panelEnvHeader.Controls.Add(this.panelEnvButtons);
+            this.panelEnvHeader.Controls.Add(this.labelEnvironments);
+            this.panelEnvHeader.Dock = System.Windows.Forms.DockStyle.Top;
+            this.panelEnvHeader.Location = new System.Drawing.Point(8, 8);
+            this.panelEnvHeader.Margin = new System.Windows.Forms.Padding(0);
+            this.panelEnvHeader.Name = "panelEnvHeader";
+            this.panelEnvHeader.Size = new System.Drawing.Size(184, 40);
+            this.panelEnvHeader.TabIndex = 5;
+            // 
             // labelEnvironments
             // 
-            this.labelEnvironments.AutoSize = true;
-            this.labelEnvironments.Dock = System.Windows.Forms.DockStyle.Top;
+            this.labelEnvironments.Dock = System.Windows.Forms.DockStyle.Fill;
             this.labelEnvironments.Font = new System.Drawing.Font("Segoe UI Semibold", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.labelEnvironments.ForeColor = System.Drawing.Color.White;
-            this.labelEnvironments.Location = new System.Drawing.Point(8, 8);
+            this.labelEnvironments.Location = new System.Drawing.Point(0, 0);
             this.labelEnvironments.Name = "labelEnvironments";
-            this.labelEnvironments.Padding = new System.Windows.Forms.Padding(0, 0, 0, 4);
-            this.labelEnvironments.Size = new System.Drawing.Size(96, 24);
+            this.labelEnvironments.Padding = new System.Windows.Forms.Padding(0);
+            this.labelEnvironments.Size = new System.Drawing.Size(94, 40);
             this.labelEnvironments.TabIndex = 0;
             this.labelEnvironments.Text = "Environments";
+            this.labelEnvironments.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // panelEnvButtons
+            // 
+            this.panelEnvButtons.AutoSize = true;
+            this.panelEnvButtons.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.panelEnvButtons.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
+            this.panelEnvButtons.Controls.Add(this.btnEnvAdd);
+            this.panelEnvButtons.Controls.Add(this.btnEnvEdit);
+            this.panelEnvButtons.Controls.Add(this.btnEnvDelete);
+            this.panelEnvButtons.Dock = System.Windows.Forms.DockStyle.Right;
+            this.panelEnvButtons.FlowDirection = System.Windows.Forms.FlowDirection.LeftToRight;
+            this.panelEnvButtons.Location = new System.Drawing.Point(100, 0);
+            this.panelEnvButtons.Margin = new System.Windows.Forms.Padding(0);
+            this.panelEnvButtons.Name = "panelEnvButtons";
+            this.panelEnvButtons.Padding = new System.Windows.Forms.Padding(0, 4, 0, 4);
+            this.panelEnvButtons.Size = new System.Drawing.Size(84, 40);
+            this.panelEnvButtons.TabIndex = 4;
+            this.panelEnvButtons.WrapContents = false;
+            // 
+            // btnEnvDelete
+            // 
+            this.btnEnvDelete.BackColor = System.Drawing.Color.Transparent;
+            this.btnEnvDelete.FlatAppearance.BorderSize = 0;
+            this.btnEnvDelete.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(101)))), ((int)(((byte)(201)))));
+            this.btnEnvDelete.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(101)))), ((int)(((byte)(201)))));
+            this.btnEnvDelete.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnEnvDelete.Font = new System.Drawing.Font("Segoe MDL2 Assets", 11F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnEnvDelete.ForeColor = System.Drawing.Color.White;
+            this.btnEnvDelete.Location = new System.Drawing.Point(56, 4);
+            this.btnEnvDelete.Margin = new System.Windows.Forms.Padding(1);
+            this.btnEnvDelete.Name = "btnEnvDelete";
+            this.btnEnvDelete.Size = new System.Drawing.Size(26, 30);
+            this.btnEnvDelete.TabIndex = 2;
+            this.btnEnvDelete.Text = "";
+            this.btnEnvDelete.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.toolTipButtons.SetToolTip(this.btnEnvDelete, "Delete environment");
+            this.btnEnvDelete.UseVisualStyleBackColor = false;
+            this.btnEnvDelete.Click += new System.EventHandler(this.BtnEnvDelete_Click);
+            // 
+            // btnEnvEdit
+            // 
+            this.btnEnvEdit.BackColor = System.Drawing.Color.Transparent;
+            this.btnEnvEdit.FlatAppearance.BorderSize = 0;
+            this.btnEnvEdit.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(101)))), ((int)(((byte)(201)))));
+            this.btnEnvEdit.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(101)))), ((int)(((byte)(201)))));
+            this.btnEnvEdit.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnEnvEdit.Font = new System.Drawing.Font("Segoe MDL2 Assets", 11F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnEnvEdit.ForeColor = System.Drawing.Color.White;
+            this.btnEnvEdit.Location = new System.Drawing.Point(28, 4);
+            this.btnEnvEdit.Margin = new System.Windows.Forms.Padding(1);
+            this.btnEnvEdit.Name = "btnEnvEdit";
+            this.btnEnvEdit.Size = new System.Drawing.Size(26, 30);
+            this.btnEnvEdit.TabIndex = 1;
+            this.btnEnvEdit.Text = "";
+            this.btnEnvEdit.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.toolTipButtons.SetToolTip(this.btnEnvEdit, "Edit environment");
+            this.btnEnvEdit.UseVisualStyleBackColor = false;
+            this.btnEnvEdit.Click += new System.EventHandler(this.BtnEnvEdit_Click);
+            // 
+            // btnEnvAdd
+            // 
+            this.btnEnvAdd.BackColor = System.Drawing.Color.Transparent;
+            this.btnEnvAdd.FlatAppearance.BorderSize = 0;
+            this.btnEnvAdd.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(101)))), ((int)(((byte)(201)))));
+            this.btnEnvAdd.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(83)))), ((int)(((byte)(101)))), ((int)(((byte)(201)))));
+            this.btnEnvAdd.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnEnvAdd.Font = new System.Drawing.Font("Segoe MDL2 Assets", 11F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnEnvAdd.ForeColor = System.Drawing.Color.White;
+            this.btnEnvAdd.Location = new System.Drawing.Point(0, 4);
+            this.btnEnvAdd.Margin = new System.Windows.Forms.Padding(1);
+            this.btnEnvAdd.Name = "btnEnvAdd";
+            this.btnEnvAdd.Size = new System.Drawing.Size(26, 30);
+            this.btnEnvAdd.TabIndex = 0;
+            this.btnEnvAdd.Text = "";
+            this.btnEnvAdd.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.toolTipButtons.SetToolTip(this.btnEnvAdd, "Add environment");
+            this.btnEnvAdd.UseVisualStyleBackColor = false;
+            this.btnEnvAdd.Click += new System.EventHandler(this.BtnEnvAdd_Click);
             // 
             // listBoxEnvironments
             // 
             this.listBoxEnvironments.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(37)))), ((int)(((byte)(37)))), ((int)(((byte)(38)))));
             this.listBoxEnvironments.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.listBoxEnvironments.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.listBoxEnvironments.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
             this.listBoxEnvironments.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.listBoxEnvironments.ForeColor = System.Drawing.Color.White;
             this.listBoxEnvironments.FormattingEnabled = true;
-            this.listBoxEnvironments.ItemHeight = 20;
-            this.listBoxEnvironments.Location = new System.Drawing.Point(8, 32);
+            this.listBoxEnvironments.IntegralHeight = false;
+            this.listBoxEnvironments.ItemHeight = 36;
+            this.listBoxEnvironments.Location = new System.Drawing.Point(8, 40);
             this.listBoxEnvironments.Name = "listBoxEnvironments";
-            this.listBoxEnvironments.Size = new System.Drawing.Size(184, 315);
+            this.listBoxEnvironments.Size = new System.Drawing.Size(184, 307);
             this.listBoxEnvironments.TabIndex = 1;
+            this.listBoxEnvironments.DrawItem += new System.Windows.Forms.DrawItemEventHandler(this.ListBoxEnvironments_DrawItem);
             this.listBoxEnvironments.DoubleClick += new System.EventHandler(this.ListBoxEnvironments_DoubleClick);
+            this.listBoxEnvironments.SelectedIndexChanged += new System.EventHandler(this.ListBoxEnvironments_SelectedIndexChanged);
             // 
             // panelTop
             // 
@@ -544,7 +643,12 @@
         private System.Windows.Forms.Label labelMode;
         private System.Windows.Forms.SplitContainer splitContainerMain;
         private System.Windows.Forms.Panel panelLeftSidebar;
+        private System.Windows.Forms.Panel panelEnvHeader;
         private System.Windows.Forms.Label labelEnvironments;
+        private System.Windows.Forms.FlowLayoutPanel panelEnvButtons;
+        private System.Windows.Forms.Button btnEnvAdd;
+        private System.Windows.Forms.Button btnEnvEdit;
+        private System.Windows.Forms.Button btnEnvDelete;
         private System.Windows.Forms.ListBox listBoxEnvironments;
         private System.Windows.Forms.Panel panelConnectionLog;
         private System.Windows.Forms.TextBox txtConnectionLog;

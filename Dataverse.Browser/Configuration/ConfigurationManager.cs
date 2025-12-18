@@ -27,7 +27,13 @@ namespace Dataverse.Browser.Configuration
 
         public static void SaveConfiguration(DataverseBrowserConfiguration config)
         {
-            File.WriteAllText(GetConfigPath(), JsonSerializer.Serialize(config));
+            var path = GetConfigPath();
+            var dir = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+            {
+                Directory.CreateDirectory(dir);
+            }
+            File.WriteAllText(path, JsonSerializer.Serialize(config));
         }
 
         private static string GetConfigPath()

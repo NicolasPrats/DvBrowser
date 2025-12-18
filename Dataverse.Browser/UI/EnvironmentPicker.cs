@@ -26,6 +26,7 @@ namespace Dataverse.Browser.UI
             }
 
             InitializeComponent();
+            this.StartPosition = FormStartPosition.CenterScreen;
             this.Configuration = configuration;
 
             this.listView1.ItemActivate += ListView1_ItemActivate;
@@ -100,7 +101,7 @@ namespace Dataverse.Browser.UI
         {
             using (EnvironmentEditor editor = new EnvironmentEditor(environment))
             {
-                editor.ShowDialog();
+                editor.ShowDialog(this);
                 this.SelectedEnvironment = editor.SelectedEnvironment;
             }
             if (this.SelectedEnvironment != null)

@@ -18,6 +18,7 @@ namespace Dataverse.Browser.UI
         public ContextSpinner(ContextFactory factory, EnvironnementConfiguration selectedEnvironment)
         {
             InitializeComponent();
+            this.StartPosition = FormStartPosition.CenterScreen;
             factory.OnNewProgress += Factory_OnNewProgress;
             factory.OnError += Factory_OnError;
             factory.OnFinished += Factory_OnFinished;

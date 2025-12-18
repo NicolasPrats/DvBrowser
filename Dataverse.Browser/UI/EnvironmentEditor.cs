@@ -15,6 +15,7 @@ namespace Dataverse.Browser.UI
         public EnvironmentEditor(EnvironnementConfiguration environment)
         {
             InitializeComponent();
+            this.StartPosition = FormStartPosition.CenterParent;
             this.CurrentEnvironment = environment;
             this.openFileDialog.Filter = "Plugins Files (*.dll)|*.dll|All files (*.*)|*.*";
             var defaultPath = this.CurrentEnvironment?.PluginAssemblies?.FirstOrDefault();
@@ -73,7 +74,7 @@ namespace Dataverse.Browser.UI
             }
             if (!File.Exists(assemblyPath))
             {
-                MessageBox.Show("File not found:" + assemblyPath);
+                MessageBox.Show(this, "File not found:" + assemblyPath);
                 return null;
             }
             return assemblyPath;
@@ -93,7 +94,7 @@ namespace Dataverse.Browser.UI
             }
             if (string.IsNullOrEmpty(hostName))
             {
-                MessageBox.Show("Invalid hostname!");
+                MessageBox.Show(this, "Invalid hostname!");
                 return null;
             }
             return hostName;
@@ -101,7 +102,7 @@ namespace Dataverse.Browser.UI
 
         private void BtnSelectAssembly_Click(object sender, EventArgs e)
         {
-            if (this.openFileDialog.ShowDialog() == DialogResult.OK)
+            if (this.openFileDialog.ShowDialog(this) == DialogResult.OK)
             {
                 this.txtAssemblyPath.Text = this.openFileDialog.FileName;
             }
